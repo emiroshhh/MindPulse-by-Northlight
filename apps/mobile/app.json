@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "MindPulse",
+    "slug": "mindpulse",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "mindpulse",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "care.northlight.mindpulse"
+    },
+    "android": {
+      "package": "care.northlight.mindpulse",
+      "adaptiveIcon": { "backgroundColor": "#dce9e3" }
+    },
+    "plugins": ["expo-router"],
+    "experiments": { "typedRoutes": true }
+  }
+}
