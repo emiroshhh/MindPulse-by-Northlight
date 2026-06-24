@@ -174,8 +174,12 @@ export function StudentMindPulseApp() {
       const body = (await response.json().catch(() => ({}))) as {
         reply?: string;
         error?: string;
+        status?: number;
       };
-      if (!response.ok || !body.reply) throw new Error(body.error);
+      if (!response.ok || !body.reply) {
+        console.error('[MindPulse] /api/chat failed:', body);
+        throw new Error(body.error);
+      }
       setMessages((items) => [
         ...items,
         { id: id('ai'), role: 'assistant', text: body.reply!, mode: askMode },
