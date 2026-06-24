@@ -1,5 +1,5 @@
-import { MindPulseApp } from '@/components/mindpulse-app';
+import { StudentMindPulseApp } from '@/components/student-mindpulse-app';
 
 export default function Home() {
-  return <MindPulseApp />;
+  return <StudentMindPulseApp />;
 }

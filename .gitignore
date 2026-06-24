@@ -8,6 +8,10 @@ coverage
 *.log
 .env
 .env.local
+.dev.vars
+.dev.vars.*
+.dev.vars
+.dev.vars.*
 .vercel
 .DS_Store
 apps/mobile/.expo-shared
