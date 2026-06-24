@@ -1,0 +1,32 @@
+{
+  "name": "mindpulse",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "npm@11.4.2",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=@mindpulse/web",
+    "dev:web": "npm run dev --workspace=@mindpulse/web",
+    "dev:mobile": "npm run start --workspace=@mindpulse/mobile",
+    "build": "npm run build --workspace=@mindpulse/shared && npm run build --workspace=@mindpulse/web",
+    "deploy": "npm run build --workspace=@mindpulse/shared && npm run deploy --workspace=@mindpulse/web",
+    "preview:cloudflare": "npm run build --workspace=@mindpulse/shared && npm run preview --workspace=@mindpulse/web",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspace=@mindpulse/shared && npm run test --workspace=@mindpulse/web",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "browserslist": "4.24.4",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.3"
+  },
+  "overrides": {
+    "browserslist": "4.24.4"
+  }
+}
