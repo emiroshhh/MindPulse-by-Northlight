@@ -22,8 +22,11 @@
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
-    "browserslist": "^4.28.3",
+    "browserslist": "4.24.4",
     "prettier": "^3.5.3",
     "typescript": "^5.8.3"
+  },
+  "overrides": {
+    "browserslist": "4.24.4"
   }
 }
