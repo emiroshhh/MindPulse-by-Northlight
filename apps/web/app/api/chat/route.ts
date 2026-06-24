@@ -11,7 +11,6 @@ import {
   type ProviderName,
 } from '@mindpulse/shared';
 
-export const runtime = 'edge';
 export const maxDuration = 30;
 
 const WINDOW_MS = 10 * 60 * 1000;

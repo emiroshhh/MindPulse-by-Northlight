@@ -14,5 +14,8 @@ apps/mobile/.expo-shared
 apps/mobile/web-build
 .agents
 .codex
+.gitrepo
 work
 outputs
+apps/web/.open-next
+apps/web/.wrangler
