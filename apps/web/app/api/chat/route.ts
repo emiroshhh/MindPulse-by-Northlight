@@ -76,27 +76,44 @@ function extractReply(value: unknown): string | null {
   const body = value as Record<string, unknown>;
   if (typeof body.output_text === 'string') return body.output_text;
   if (typeof body.text === 'string') return body.text;
+
+  const textFromContent = (content: unknown) =>
+    Array.isArray(content)
+      ? content
+          .flatMap((part) =>
+            part &&
+            typeof part === 'object' &&
+            typeof (part as Record<string, unknown>).text === 'string'
+              ? [(part as Record<string, unknown>).text as string]
+              : [],
+          )
+          .join('\n')
+          .trim()
+      : '';
+
+  const textFromItems = (items: unknown) =>
+    Array.isArray(items)
+      ? items
+          .flatMap((item) => {
+            if (!item || typeof item !== 'object') return [];
+            const record = item as Record<string, unknown>;
+            if (typeof record.text === 'string') return [record.text];
+            const text = textFromContent(record.content);
+            return text ? [text] : [];
+          })
+          .join('\n')
+          .trim()
+      : '';
+
+  const stepText = textFromItems(body.steps);
+  if (stepText) return stepText;
+
   const outputs = Array.isArray(body.outputs)
     ? body.outputs
     : Array.isArray(body.output)
       ? body.output
       : [];
-  const outputText = outputs
-    .flatMap((item) => {
-      if (!item || typeof item !== 'object') return [];
-      const record = item as Record<string, unknown>;
-      if (typeof record.text === 'string') return [record.text];
-      const content = Array.isArray(record.content) ? record.content : [];
-      return content.flatMap((part) =>
-        part &&
-        typeof part === 'object' &&
-        typeof (part as Record<string, unknown>).text === 'string'
-          ? [(part as Record<string, unknown>).text as string]
-          : [],
-      );
-    })
-    .join('\n')
-    .trim();
+  const outputText = textFromItems(outputs);
   if (outputText) return outputText;
   const candidates = Array.isArray(body.candidates) ? body.candidates : [];
   return (
@@ -105,16 +122,10 @@ function extractReply(value: unknown): string | null {
         if (!candidate || typeof candidate !== 'object') return [];
         const content = (candidate as Record<string, unknown>).content;
         if (!content || typeof content !== 'object') return [];
-        const parts = (content as Record<string, unknown>).parts;
-        return Array.isArray(parts)
-          ? parts.flatMap((part) =>
-              part &&
-              typeof part === 'object' &&
-              typeof (part as Record<string, unknown>).text === 'string'
-                ? [(part as Record<string, unknown>).text as string]
-                : [],
-            )
-          : [];
+        const text = textFromContent(
+          (content as Record<string, unknown>).parts,
+        );
+        return text ? [text] : [];
       })
       .join('\n')
       .trim() || null
@@ -144,7 +155,8 @@ export async function POST(request: Request) {
   if (inputSafety.flagged) return json({ reply: CRISIS_REPLY });
 
   const { key, model } = await geminiConfig();
-  if (!key) return json({ error: 'GEMINI_API_KEY is not configured' }, 503);
+  console.info('[MindPulse] GEMINI_API_KEY configured:', Boolean(key));
+  if (!key) return json({ error: 'missing_key' }, 503);
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 25_000);
@@ -156,18 +168,34 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         model,
         store: false,
-        input: `${SYSTEM_PROMPT}\n\nSelected mode: ${mode}. ${MODE_PROMPTS[mode]}\n\nStudent message: ${message}`,
+        system_instruction: `${SYSTEM_PROMPT}\n\nSelected mode: ${mode}. ${MODE_PROMPTS[mode]}`,
+        input: message,
+        generation_config: { temperature: 0.7 },
       }),
     });
-    if (!response.ok) return json({ error: 'Gemini request failed' }, 502);
+    console.info('[MindPulse] Gemini response status:', response.status);
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error('[MindPulse] Gemini request failed:', {
+        status: response.status,
+        body: errorBody,
+      });
+      return json(
+        { error: 'gemini_request_failed', status: response.status },
+        502,
+      );
+    }
     const reply = extractReply(await response.json());
-    if (!reply)
-      return json({ error: 'Gemini returned an empty response' }, 502);
+    if (!reply) return json({ error: 'gemini_empty_response' }, 502);
     return json({
       reply: assessModelOutput(reply).flagged ? SAFE_FALLBACK : reply,
     });
-  } catch {
-    return json({ error: 'Gemini is temporarily unavailable' }, 502);
+  } catch (error) {
+    console.error('[MindPulse] Gemini unavailable:', {
+      name: error instanceof Error ? error.name : 'UnknownError',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+    return json({ error: 'gemini_unavailable' }, 502);
   } finally {
     clearTimeout(timeout);
   }
