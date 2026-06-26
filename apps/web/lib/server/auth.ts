@@ -37,6 +37,7 @@ const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30;
 const PASSWORD_MIN_LENGTH = 8;
 const PBKDF2_ITERATIONS = 210_000;
 const encoder = new TextEncoder();
+let schemaReady = false;
 
 export function json(body: unknown, status = 200) {
   return Response.json(body, {
@@ -62,6 +63,12 @@ export async function requireDb() {
   const env = await getBindings();
   if (!env.DB) throw new Error('D1 DB binding is not configured');
   return env.DB;
+}
+
+export async function getAuthDb() {
+  const db = await requireDb();
+  await ensureAuthSchema(db);
+  return db;
 }
 
 export async function getSessionSecret() {
@@ -184,7 +191,7 @@ export async function clearSessionCookie() {
 export async function getCurrentUser(): Promise<AuthUser | null> {
   let db: D1DatabaseLike;
   try {
-    db = await requireDb();
+    db = await getAuthDb();
   } catch {
     return null;
   }
@@ -283,4 +290,73 @@ function constantTimeEqual(a: Uint8Array, b: Uint8Array) {
   for (let index = 0; index < a.length; index += 1)
     diff |= a[index]! ^ b[index]!;
   return diff === 0;
+}
+
+async function ensureAuthSchema(db: D1DatabaseLike) {
+  if (schemaReady) return;
+  const statements = [
+    `CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      email TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      name TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    )`,
+    `CREATE TABLE IF NOT EXISTS sessions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      session_hash TEXT NOT NULL UNIQUE,
+      created_at TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )`,
+    `CREATE TABLE IF NOT EXISTS chat_messages (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
+      content TEXT NOT NULL,
+      mode TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )`,
+    `CREATE TABLE IF NOT EXISTS agent_tasks (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      content TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'saved',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )`,
+    `CREATE TABLE IF NOT EXISTS user_preferences (
+      user_id TEXT PRIMARY KEY,
+      data TEXT NOT NULL DEFAULT '{}',
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )`,
+    `CREATE INDEX IF NOT EXISTS idx_sessions_hash ON sessions(session_hash)`,
+    `CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id)`,
+    `CREATE INDEX IF NOT EXISTS idx_chat_messages_user_created ON chat_messages(user_id, created_at DESC)`,
+    `CREATE INDEX IF NOT EXISTS idx_agent_tasks_user_created ON agent_tasks(user_id, created_at DESC)`,
+  ];
+  for (const statement of statements) await db.prepare(statement).run();
+
+  // Repair partial early D1 schemas. SQLite/D1 cannot add NOT NULL columns
+  // without defaults, so these are nullable for compatibility; new writes still
+  // provide every value.
+  for (const statement of [
+    `ALTER TABLE users ADD COLUMN password_hash TEXT`,
+    `ALTER TABLE users ADD COLUMN name TEXT DEFAULT ''`,
+    `ALTER TABLE users ADD COLUMN created_at TEXT`,
+    `ALTER TABLE users ADD COLUMN updated_at TEXT`,
+  ]) {
+    try {
+      await db.prepare(statement).run();
+    } catch {
+      // D1 throws when the column already exists; that is the healthy path.
+    }
+  }
+  schemaReady = true;
 }

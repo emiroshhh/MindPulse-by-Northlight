@@ -1,10 +1,10 @@
 import {
   clientIp,
   createSession,
+  getAuthDb,
   json,
   normalizeEmail,
   publicUser,
-  requireDb,
   setSessionCookie,
   validateEmail,
   verifyPassword,
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     return json({ error: 'Invalid email or password' }, 401);
 
   try {
-    const db = await requireDb();
+    const db = await getAuthDb();
     const user = await db
       .prepare(
         `SELECT id, email, password_hash, name, created_at

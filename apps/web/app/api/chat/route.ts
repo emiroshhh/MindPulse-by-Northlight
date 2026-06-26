@@ -1,6 +1,6 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { assessModelOutput, assessUserInput } from '@mindpulse/shared';
-import { getCurrentUser, json, requireDb } from '../../../lib/server/auth';
+import { getAuthDb, getCurrentUser, json } from '../../../lib/server/auth';
 
 export const maxDuration = 30;
 
@@ -215,7 +215,7 @@ async function saveChatExchange({
   mode: Mode;
 }) {
   try {
-    const db = await requireDb();
+    const db = await getAuthDb();
     const now = new Date().toISOString();
     await db
       .prepare(

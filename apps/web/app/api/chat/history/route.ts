@@ -1,10 +1,10 @@
-import { getCurrentUser, json, requireDb } from '@/lib/server/auth';
+import { getAuthDb, getCurrentUser, json } from '@/lib/server/auth';
 
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) return json({ error: 'unauthorized' }, 401);
   try {
-    const db = await requireDb();
+    const db = await getAuthDb();
     const result = await db
       .prepare(
         `SELECT id, role, content, mode, created_at

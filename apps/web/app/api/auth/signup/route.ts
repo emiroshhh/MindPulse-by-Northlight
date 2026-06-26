@@ -1,11 +1,11 @@
 import {
   clientIp,
   createSession,
+  getAuthDb,
   hashPassword,
   json,
   normalizeEmail,
   publicUser,
-  requireDb,
   setSessionCookie,
   validateEmail,
   validatePassword,
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     return json({ error: 'Password must be at least 8 characters.' }, 400);
 
   try {
-    const db = await requireDb();
+    const db = await getAuthDb();
     const existing = await db
       .prepare('SELECT id FROM users WHERE email = ? LIMIT 1')
       .bind(email)

@@ -1,10 +1,10 @@
-import { getCurrentUser, json, requireDb } from '@/lib/server/auth';
+import { getAuthDb, getCurrentUser, json } from '@/lib/server/auth';
 
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) return json({ error: 'unauthorized' }, 401);
   try {
-    const db = await requireDb();
+    const db = await getAuthDb();
     const result = await db
       .prepare(
         `SELECT id, title, content, status, created_at, updated_at
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
   if (!content || content.length > 8000)
     return json({ error: 'invalid_content' }, 400);
   try {
-    const db = await requireDb();
+    const db = await getAuthDb();
     const now = new Date().toISOString();
     const id = crypto.randomUUID();
     await db

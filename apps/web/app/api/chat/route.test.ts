@@ -7,6 +7,7 @@ const authMocks = vi.hoisted(() => {
   const prepare = vi.fn(() => ({ bind }));
   return {
     getCurrentUser: vi.fn(),
+    getAuthDb: vi.fn().mockResolvedValue({ prepare }),
     requireDb: vi.fn().mockResolvedValue({ prepare }),
     json: (body: unknown, status = 200) =>
       Response.json(body, {
@@ -37,6 +38,7 @@ beforeEach(() => {
     name: 'Student',
     created_at: '2026-01-01T00:00:00.000Z',
   });
+  authMocks.getAuthDb.mockResolvedValue({ prepare: authMocks.prepare });
   authMocks.requireDb.mockResolvedValue({ prepare: authMocks.prepare });
   authMocks.prepare.mockReturnValue({ bind: authMocks.bind });
   authMocks.bind.mockReturnValue({ run: authMocks.run });
