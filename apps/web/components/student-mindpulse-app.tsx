@@ -21,6 +21,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { MindPulseAgentSpine } from './mindpulse-agent-spine';
 import { SafeMarkdown } from './safe-markdown';
 
 type ModeId =
@@ -250,6 +251,9 @@ export function StudentMindPulseApp() {
             </span>
           </a>
           <div className="hidden gap-7 text-sm font-semibold text-muted md:flex">
+            <a href="#agent" className="hover:text-ink">
+              Daily plan
+            </a>
             <a href="#chat" className="hover:text-ink">
               AI tools
             </a>
@@ -270,6 +274,7 @@ export function StudentMindPulseApp() {
       </header>
 
       <main id="main-content">
+        <MindPulseAgentSpine />
         <section id="top" className="px-5 pb-20 pt-16 sm:px-8 sm:pt-24">
           <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1.08fr_.92fr]">
             <div>
