@@ -1,5 +1,26 @@
 // @vitest-environment node
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const authMocks = vi.hoisted(() => {
+  const run = vi.fn().mockResolvedValue({ success: true });
+  const bind = vi.fn(() => ({ run }));
+  const prepare = vi.fn(() => ({ bind }));
+  return {
+    getCurrentUser: vi.fn(),
+    requireDb: vi.fn().mockResolvedValue({ prepare }),
+    json: (body: unknown, status = 200) =>
+      Response.json(body, {
+        status,
+        headers: { 'Cache-Control': 'no-store' },
+      }),
+    prepare,
+    bind,
+    run,
+  };
+});
+
+vi.mock('../../../lib/server/auth', () => authMocks);
+
 import { GET, POST } from './route';
 
 const request = (body: unknown) =>
@@ -9,13 +30,39 @@ const request = (body: unknown) =>
     body: JSON.stringify(body),
   });
 
+beforeEach(() => {
+  authMocks.getCurrentUser.mockResolvedValue({
+    id: 'user-1',
+    email: 'student@example.com',
+    name: 'Student',
+    created_at: '2026-01-01T00:00:00.000Z',
+  });
+  authMocks.requireDb.mockResolvedValue({ prepare: authMocks.prepare });
+  authMocks.prepare.mockReturnValue({ bind: authMocks.bind });
+  authMocks.bind.mockReturnValue({ run: authMocks.run });
+  authMocks.run.mockResolvedValue({ success: true });
+});
+
 afterEach(() => {
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+  authMocks.getCurrentUser.mockReset();
+  authMocks.prepare.mockClear();
+  authMocks.bind.mockClear();
+  authMocks.run.mockClear();
 });
 
 describe('/api/chat', () => {
+  it('requires authentication', async () => {
+    authMocks.getCurrentUser.mockResolvedValueOnce(null);
+    const response = await POST(
+      request({ message: 'Explain photosynthesis', mode: 'study' }),
+    );
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: 'unauthorized' });
+  });
+
   it('validates the request', async () => {
     expect((await POST(request({ message: ' ' }))).status).toBe(400);
     expect((await POST(request({ message: 'x'.repeat(1001) }))).status).toBe(

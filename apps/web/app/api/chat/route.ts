@@ -1,5 +1,6 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { assessModelOutput, assessUserInput } from '@mindpulse/shared';
+import { getCurrentUser, json, requireDb } from '../../../lib/server/auth';
 
 export const maxDuration = 30;
 
@@ -39,13 +40,6 @@ const CRISIS_REPLY =
   'I am glad you reached out. You may need immediate real-world support, and MindPulse is not an emergency service. Please contact local emergency services now or tell a trusted person nearby and stay with someone safe. You do not have to handle this alone.';
 const SAFE_FALLBACK =
   'I cannot provide that answer safely. I can still help you make a safe study plan, break down a goal, or find a trusted person to support you.';
-
-function json(body: unknown, status = 200) {
-  return Response.json(body, {
-    status,
-    headers: { 'Cache-Control': 'no-store' },
-  });
-}
 
 async function geminiConfig() {
   if (process.env.GEMINI_API_KEY)
@@ -133,6 +127,9 @@ function extractReply(value: unknown): string | null {
 }
 
 export async function POST(request: Request) {
+  const user = await getCurrentUser();
+  if (!user) return json({ error: 'unauthorized' }, 401);
+
   let body: unknown;
   try {
     body = await request.json();
@@ -187,9 +184,14 @@ export async function POST(request: Request) {
     }
     const reply = extractReply(await response.json());
     if (!reply) return json({ error: 'gemini_empty_response' }, 502);
-    return json({
-      reply: assessModelOutput(reply).flagged ? SAFE_FALLBACK : reply,
+    const safeReply = assessModelOutput(reply).flagged ? SAFE_FALLBACK : reply;
+    await saveChatExchange({
+      userId: user.id,
+      message,
+      reply: safeReply,
+      mode,
     });
+    return json({ reply: safeReply });
   } catch (error) {
     console.error('[MindPulse] Gemini unavailable:', {
       name: error instanceof Error ? error.name : 'UnknownError',
@@ -199,6 +201,53 @@ export async function POST(request: Request) {
   } finally {
     clearTimeout(timeout);
   }
+}
+
+async function saveChatExchange({
+  userId,
+  message,
+  reply,
+  mode,
+}: {
+  userId: string;
+  message: string;
+  reply: string;
+  mode: Mode;
+}) {
+  try {
+    const db = await requireDb();
+    const now = new Date().toISOString();
+    await db
+      .prepare(
+        `INSERT INTO chat_messages (id, user_id, role, content, mode, created_at)
+         VALUES (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?)`,
+      )
+      .bind(
+        chatId(),
+        userId,
+        'user',
+        message,
+        mode,
+        now,
+        chatId(),
+        userId,
+        'assistant',
+        reply,
+        mode,
+        now,
+      )
+      .run();
+  } catch (error) {
+    console.error('[MindPulse] chat history save failed:', {
+      name: error instanceof Error ? error.name : 'UnknownError',
+    });
+  }
+}
+
+function chatId() {
+  return typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `chat-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 function methodNotAllowed() {

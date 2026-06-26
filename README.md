@@ -1,72 +1,160 @@
 # MindPulse
 
-MindPulse by Northlight is an AI study and self-growth assistant for students. It explains difficult topics, plans realistic days, resets motivation, builds habits, breaks down goals, and supports reflection.
-
-## Current MVP
-
-- Six modes: Study Help, Daily Planner, Motivation Reset, Habit Coach, Goal Breakdown, and Quick Reflection
-- Real Gemini responses through server-only `/api/chat`
-- Secure `GEMINI_API_KEY` handling through Cloudflare Worker secrets
-- Responsive landing page and product-style chat
-- Suggested prompts, recent conversations, Today’s Focus, and a simple Day 1 check-in
-- Copy, regenerate, clear chat, character limit, loading, and error states
-- Browser-local persistence; no account or database required
-- Safety screening and a visible non-clinical disclaimer
+MindPulse by Northlight is an authenticated AI study and self-growth web app for students. It combines a polished public landing page, secure accounts, AI chat, saved history, and an Agent workspace for turning messy study pressure into clear next actions.
 
 ## Stack
 
 - Next.js 15 / React 19
 - OpenNext Cloudflare adapter
-- Cloudflare Worker + Static Assets
-- Gemini Interactions REST API
-- Tailwind CSS and localStorage
+- Cloudflare Workers + Static Assets
+- Cloudflare D1 for users, sessions, chat history, and saved Agent plans
+- Gemini Interactions API through server-only routes
+- Tailwind CSS
 
-The site and `/api/chat` ship in one Cloudflare Worker. API keys never enter browser code.
+## App structure
 
-## Run locally
+- `/` — public landing page
+- `/signup` — create account
+- `/login` — log in
+- `/logout` — invalidates the session and redirects home
+- `/app` — protected dashboard with AI Chat, Agent, history, and settings surfaces
+- `/api/auth/signup`
+- `/api/auth/login`
+- `/api/auth/logout`
+- `/api/auth/me`
+- `/api/chat`
+- `/api/chat/history`
+- `/api/agent`
 
-Use Node 22, then:
+## Security model
+
+- Passwords are never stored in plain text.
+- Passwords are stored as salted PBKDF2-SHA-256 hashes using WebCrypto.
+- Argon2id is preferred in general, but a native/wasm Argon2 dependency would make this OpenNext Cloudflare Worker deployment more fragile. PBKDF2-SHA-256 is available in Workers WebCrypto and uses a unique salt per password.
+- Session tokens are stored only in `HttpOnly`, `Secure`, `SameSite=Lax` cookies.
+- D1 stores only an HMAC-SHA-256 hash of each session token.
+- Login errors are generic: `Invalid email or password`.
+- API keys, session tokens, password hashes, and raw passwords are never logged.
+
+## Required secrets
+
+Set these in Cloudflare Workers secrets / environment variables:
+
+```text
+GEMINI_API_KEY=your Gemini key
+SESSION_SECRET=a random string with at least 32 characters
+```
+
+Optional:
+
+```text
+GEMINI_MODEL=gemini-3.5-flash
+```
+
+Never expose the Gemini key as `NEXT_PUBLIC_*`.
+
+## Create the D1 database
+
+```bash
+npx wrangler d1 create mindpulse-db
+```
+
+Copy the returned `database_id`, then update `wrangler.jsonc` and `apps/web/wrangler.jsonc` by uncommenting the `d1_databases` block:
+
+```jsonc
+"d1_databases": [
+  {
+    "binding": "DB",
+    "database_name": "mindpulse-db",
+    "database_id": "YOUR_DATABASE_ID"
+  }
+]
+```
+
+## Run migrations
+
+Apply the auth/session/history schema:
+
+```bash
+npx wrangler d1 migrations apply mindpulse-db --local
+npx wrangler d1 migrations apply mindpulse-db --remote
+```
+
+The Wrangler migration file is:
+
+```text
+migrations/0001_mindpulse_auth.sql
+```
+
+If you prefer direct SQL execution:
+
+```bash
+npx wrangler d1 execute mindpulse-db --local --file migrations/0001_mindpulse_auth.sql
+npx wrangler d1 execute mindpulse-db --remote --file migrations/0001_mindpulse_auth.sql
+```
+
+## Local development
+
+Use Node 22:
 
 ```bash
 npm install
+```
+
+Create `apps/web/.env.local`:
+
+```text
+GEMINI_API_KEY=your development Gemini key
+SESSION_SECRET=local-dev-secret-at-least-32-characters
+```
+
+For full auth locally, create the D1 database and apply the local migration. Then run:
+
+```bash
 npm run dev
 ```
 
-Copy `.env.example` to `apps/web/.env.local` and add a development Gemini key. Never commit that file.
-
-## Build
+## Build and deploy
 
 ```bash
+npm run lint
+npm run typecheck
+npm test
 npm run build
-npx wrangler deploy --dry-run
+npx wrangler deploy
 ```
 
-The root `wrangler.jsonc` deploys the OpenNext Worker and static assets.
-
-## Cloudflare Workers Builds
+Cloudflare Workers Builds settings:
 
 - Root directory: `/`
 - Build command: `npm run build`
 - Deploy command: `npx wrangler deploy`
 
-In Cloudflare Dashboard open the Worker project, then Variables and Secrets. Add an encrypted secret:
+Before deployment, make sure:
 
-```text
-GEMINI_API_KEY = your Gemini API key
-```
+1. `DB` D1 binding is configured.
+2. D1 migrations have been applied remotely.
+3. `GEMINI_API_KEY` is set as a secret.
+4. `SESSION_SECRET` is set as a secret and is at least 32 characters.
 
-Optionally add `GEMINI_MODEL`; the default is `gemini-3.5-flash`. Never use a `NEXT_PUBLIC_*` variable for the key.
+## API notes
 
-## API
+`POST /api/chat` requires an authenticated session. Messages are saved to `chat_messages` by `user_id`.
 
-`POST /api/chat`
+Example body:
 
 ```json
 { "message": "Explain cellular respiration simply", "mode": "study" }
 ```
 
-Messages must contain 1–1,000 characters. Modes: `study`, `planner`, `motivation`, `habit`, `goal`, `reflection`. Success returns `{ "reply": "..." }`.
+Valid modes:
 
-## Later
+```text
+study, planner, motivation, habit, goal, reflection
+```
 
-Supabase, login, PDF upload, vector search, payments, and usage limits are outside this MVP. The next stage should begin after testing the core modes with students and reviewing Gemini usage and cost.
+`POST /api/agent` saves structured Agent results for the logged-in user.
+
+## Safety disclaimer
+
+MindPulse is an AI study assistant, not a doctor or therapist. It can make mistakes, so students should verify important academic information and seek real-world help for emergencies or serious mental health concerns.
