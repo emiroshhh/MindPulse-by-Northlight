@@ -1,4 +1,4 @@
-import { getAuthDb, getCurrentUser, json } from '@/lib/server/auth';
+import { getAuthDb, getCurrentUser, json, secureId } from '@/lib/server/auth';
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
   try {
     const db = await getAuthDb();
     const now = new Date().toISOString();
-    const id = crypto.randomUUID();
+    const id = secureId('agent');
     await db
       .prepare(
         `INSERT INTO agent_tasks (id, user_id, title, content, status, created_at, updated_at)

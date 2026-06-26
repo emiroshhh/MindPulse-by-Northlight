@@ -155,7 +155,7 @@ export async function createSession(db: D1DatabaseLike, userId: string) {
   const hash = await hashSessionToken(token);
   const now = new Date();
   const expires = new Date(now.getTime() + SESSION_TTL_SECONDS * 1000);
-  const id = crypto.randomUUID();
+  const id = secureId('session');
   await db
     .prepare(
       `INSERT INTO sessions (id, user_id, session_hash, created_at, expires_at)
@@ -241,6 +241,11 @@ export async function clientIp() {
     h.get('x-forwarded-for')?.split(',')[0]?.trim() ??
     'unknown'
   );
+}
+
+export function secureId(prefix: string) {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  return `${prefix}-${base64Url(crypto.getRandomValues(new Uint8Array(16)))}`;
 }
 
 async function hashSessionToken(token: string) {

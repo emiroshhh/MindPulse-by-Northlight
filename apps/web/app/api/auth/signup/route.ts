@@ -6,6 +6,7 @@ import {
   json,
   normalizeEmail,
   publicUser,
+  secureId,
   setSessionCookie,
   validateEmail,
   validatePassword,
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
 
     const now = new Date().toISOString();
     const user = {
-      id: crypto.randomUUID(),
+      id: secureId('user'),
       email,
       name,
       created_at: now,
