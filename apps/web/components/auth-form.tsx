@@ -125,11 +125,3 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
           <Link
             href={isSignup ? '/login' : '/signup'}
             className="font-semibold text-sage hover:text-ink"
-          >
-            {isSignup ? 'Log in' : 'Get started'}
-          </Link>
-        </p>
-      </section>
-    </main>
-  );
-}

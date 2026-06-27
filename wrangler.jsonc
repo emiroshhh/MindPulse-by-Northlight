@@ -1,21 +1,13 @@
 {
-  "$schema": "./node_modules/wrangler/config-schema.json",
-  "main": "apps/web/.open-next/worker.js",
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "main": ".open-next/worker.js",
   "name": "mindpulse",
   "compatibility_date": "2026-06-24",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": {
-    "directory": "apps/web/.open-next/assets",
+    "directory": ".open-next/assets",
     "binding": "ASSETS",
   },
-  // After creating the D1 database, uncomment and replace database_id.
-  // "d1_databases": [
-  //   {
-  //     "binding": "DB",
-  //     "database_name": "mindpulse-db",
-  //     "database_id": "REPLACE_WITH_D1_DATABASE_ID",
-  //   },
-  // ],
   "observability": {
     "enabled": true,
   },
@@ -24,7 +16,4 @@
       "binding": "DB",
       "database_name": "mindpulse-db",
       "database_id": "75bd2bb6-ca86-4496-bdc5-b7406249d74a",
-      "migrations_dir": "migrations",
-    },
-  ],
-}
+      "migrations_

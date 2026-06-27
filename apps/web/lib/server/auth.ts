@@ -350,22 +350,4 @@ async function ensureAuthSchema(db: D1DatabaseLike) {
     `CREATE INDEX IF NOT EXISTS idx_chat_messages_user_created ON chat_messages(user_id, created_at DESC)`,
     `CREATE INDEX IF NOT EXISTS idx_agent_tasks_user_created ON agent_tasks(user_id, created_at DESC)`,
   ];
-  for (const statement of statements) await db.prepare(statement).run();
-
-  // Repair partial early D1 schemas. SQLite/D1 cannot add NOT NULL columns
-  // without defaults, so these are nullable for compatibility; new writes still
-  // provide every value.
-  for (const statement of [
-    `ALTER TABLE users ADD COLUMN password_hash TEXT`,
-    `ALTER TABLE users ADD COLUMN name TEXT DEFAULT ''`,
-    `ALTER TABLE users ADD COLUMN created_at TEXT`,
-    `ALTER TABLE users ADD COLUMN updated_at TEXT`,
-  ]) {
-    try {
-      await db.prepare(statement).run();
-    } catch {
-      // D1 throws when the column already exists; that is the healthy path.
-    }
-  }
-  schemaReady = true;
-}
+  for (const statement of statements) aw

@@ -1,11 +1,11 @@
 {
-  "$schema": "../../node_modules/wrangler/config-schema.json",
-  "main": ".open-next/worker.js",
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "main": "apps/web/.open-next/worker.js",
   "name": "mindpulse",
   "compatibility_date": "2026-06-24",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": {
-    "directory": ".open-next/assets",
+    "directory": "apps/web/.open-next/assets",
     "binding": "ASSETS",
   },
   "observability": {
@@ -16,7 +16,7 @@
       "binding": "DB",
       "database_name": "mindpulse-db",
       "database_id": "75bd2bb6-ca86-4496-bdc5-b7406249d74a",
-      "migrations_dir": "../../migrations",
+      "migrations_dir": "migrations",
     },
   ],
 }
