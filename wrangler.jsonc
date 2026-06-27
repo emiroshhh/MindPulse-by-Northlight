@@ -11,4 +11,12 @@
   "observability": {
     "enabled": true,
   },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "mindpulse-db",
+      "database_id": "75bd2bb6-ca86-4496-bdc5-b7406249d74a",
+      "migrations_dir": "migrations",
+    },
+  ],
 }
