@@ -4,7 +4,8 @@ import { ServiceWorkerRegister } from '@/components/service-worker-register';
 
 export const metadata: Metadata = {
   title: { default: 'MindPulse', template: '%s · MindPulse' },
-  description: 'A calm, private wellbeing space for teens.',
+  description:
+    'An AI study and self-growth assistant for planning, motivation, habits, goals, and learning.',
   applicationName: 'MindPulse',
   manifest: '/manifest.webmanifest',
   appleWebApp: { capable: true, statusBarStyle: 'default', title: 'MindPulse' },
