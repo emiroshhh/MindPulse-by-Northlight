@@ -56,13 +56,23 @@ afterEach(() => {
 });
 
 describe('/api/chat', () => {
-  it('requires authentication', async () => {
+  it('allows guest chat without saving account history', async () => {
     authMocks.getCurrentUser.mockResolvedValueOnce(null);
+    vi.stubEnv('GEMINI_API_KEY', 'test-key');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ output_text: 'Guest answer' }), {
+          status: 200,
+        }),
+      ),
+    );
     const response = await POST(
       request({ message: 'Explain photosynthesis', mode: 'study' }),
     );
-    expect(response.status).toBe(401);
-    expect(await response.json()).toEqual({ error: 'unauthorized' });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ reply: 'Guest answer' });
+    expect(authMocks.getAuthDb).not.toHaveBeenCalled();
   });
 
   it('validates the request', async () => {

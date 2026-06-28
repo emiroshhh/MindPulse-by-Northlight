@@ -15,6 +15,8 @@ const MODES = [
   'reflection',
 ] as const;
 type Mode = (typeof MODES)[number];
+const LANGUAGES = ['en', 'ru', 'kk'] as const;
+type Language = (typeof LANGUAGES)[number];
 
 const MODE_PROMPTS: Record<Mode, string> = {
   study:
@@ -28,6 +30,12 @@ const MODE_PROMPTS: Record<Mode, string> = {
   goal: 'Clarify the goal, create milestones, list the next three actions, and suggest a realistic timeline.',
   reflection:
     'Help the student notice what went well, what was hard, one lesson, and one improvement for tomorrow.',
+};
+
+const LANGUAGE_PROMPTS: Record<Language, string> = {
+  en: 'Respond in English unless the student clearly asks for another language.',
+  ru: 'Отвечай на русском языке, если студент явно не просит другой язык.',
+  kk: 'Қазақ тілінде жауап бер, егер оқушы басқа тілді нақты сұрамаса.',
 };
 
 const SYSTEM_PROMPT = `You are MindPulse, an AI study and self-growth assistant for students.
@@ -128,7 +136,6 @@ function extractReply(value: unknown): string | null {
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
-  if (!user) return json({ error: 'unauthorized' }, 401);
 
   let body: unknown;
   try {
@@ -147,6 +154,11 @@ export async function POST(request: Request) {
     typeof raw.mode === 'string' && MODES.includes(raw.mode as Mode)
       ? (raw.mode as Mode)
       : 'study';
+  const language: Language =
+    typeof raw.language === 'string' &&
+    LANGUAGES.includes(raw.language as Language)
+      ? (raw.language as Language)
+      : 'en';
 
   const inputSafety = assessUserInput(message);
   if (inputSafety.flagged) return json({ reply: CRISIS_REPLY });
@@ -165,7 +177,7 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         model,
         store: false,
-        system_instruction: `${SYSTEM_PROMPT}\n\nSelected mode: ${mode}. ${MODE_PROMPTS[mode]}`,
+        system_instruction: `${SYSTEM_PROMPT}\n\nSelected mode: ${mode}. ${MODE_PROMPTS[mode]}\n\nLanguage: ${LANGUAGE_PROMPTS[language]}`,
         input: message,
         generation_config: { temperature: 0.7 },
       }),
@@ -185,12 +197,14 @@ export async function POST(request: Request) {
     const reply = extractReply(await response.json());
     if (!reply) return json({ error: 'gemini_empty_response' }, 502);
     const safeReply = assessModelOutput(reply).flagged ? SAFE_FALLBACK : reply;
-    await saveChatExchange({
-      userId: user.id,
-      message,
-      reply: safeReply,
-      mode,
-    });
+    if (user) {
+      await saveChatExchange({
+        userId: user.id,
+        message,
+        reply: safeReply,
+        mode,
+      });
+    }
     return json({ reply: safeReply });
   } catch (error) {
     console.error('[MindPulse] Gemini unavailable:', {
