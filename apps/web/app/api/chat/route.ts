@@ -2,7 +2,7 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { assessModelOutput, assessUserInput } from '@mindpulse/shared';
 import {
   getAuthDb,
-  getCurrentUser,
+  getCurrentUserFromRequest,
   json,
   type AuthUser,
 } from '../../../lib/server/auth';
@@ -142,7 +142,7 @@ function extractReply(value: unknown): string | null {
 }
 
 export async function POST(request: Request) {
-  const user = await getCurrentUser();
+  const user = await getCurrentUserFromRequest(request);
 
   let body: unknown;
   try {

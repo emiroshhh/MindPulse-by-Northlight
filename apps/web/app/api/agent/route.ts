@@ -1,7 +1,12 @@
-import { getAuthDb, getCurrentUser, json, secureId } from '@/lib/server/auth';
+import {
+  getAuthDb,
+  getCurrentUserFromRequest,
+  json,
+  secureId,
+} from '@/lib/server/auth';
 
-export async function GET() {
-  const user = await getCurrentUser();
+export async function GET(request: Request) {
+  const user = await getCurrentUserFromRequest(request);
   if (!user) return json({ error: 'unauthorized' }, 401);
   try {
     const db = await getAuthDb();
@@ -22,7 +27,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const user = await getCurrentUser();
+  const user = await getCurrentUserFromRequest(request);
   if (!user) return json({ error: 'unauthorized' }, 401);
   let body: unknown;
   try {

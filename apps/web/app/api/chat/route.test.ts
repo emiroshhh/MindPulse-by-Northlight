@@ -29,6 +29,7 @@ const authMocks = vi.hoisted(() => {
   }));
   return {
     getCurrentUser: vi.fn(),
+    getCurrentUserFromRequest: vi.fn(),
     getAuthDb: vi.fn().mockResolvedValue({ prepare }),
     requireDb: vi.fn().mockResolvedValue({ prepare }),
     json: (body: unknown, status = 200) =>
@@ -67,20 +68,24 @@ function mockGemini(reply = 'A clear answer') {
   vi.stubEnv('GEMINI_API_KEY', 'test-key');
   vi.stubGlobal(
     'fetch',
-    vi
-      .fn()
-      .mockImplementation(() =>
-        Promise.resolve(
-          new Response(JSON.stringify({ output_text: reply }), {
-            status: 200,
-          }),
-        ),
+    vi.fn().mockImplementation(() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ output_text: reply }), {
+          status: 200,
+        }),
       ),
+    ),
   );
 }
 
 beforeEach(() => {
   authMocks.getCurrentUser.mockResolvedValue({
+    id: 'user-1',
+    email: 'student@example.com',
+    name: 'Student',
+    created_at: '2026-01-01T00:00:00.000Z',
+  });
+  authMocks.getCurrentUserFromRequest.mockResolvedValue({
     id: 'user-1',
     email: 'student@example.com',
     name: 'Student',
@@ -96,13 +101,14 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
   authMocks.getCurrentUser.mockReset();
+  authMocks.getCurrentUserFromRequest.mockReset();
   authMocks.prepare.mockClear();
   authMocks.resetUsage();
 });
 
 describe('/api/chat', () => {
   it('allows guest chat under limit without saving account history', async () => {
-    authMocks.getCurrentUser.mockResolvedValueOnce(null);
+    authMocks.getCurrentUserFromRequest.mockResolvedValueOnce(null);
     mockGemini('Guest answer');
     const response = await POST(
       request({ message: 'Explain photosynthesis', mode: 'study' }),
@@ -117,7 +123,7 @@ describe('/api/chat', () => {
   });
 
   it('returns 429 for guest after the daily limit and does not call Gemini', async () => {
-    authMocks.getCurrentUser.mockResolvedValue(null);
+    authMocks.getCurrentUserFromRequest.mockResolvedValue(null);
     mockGemini('Guest answer');
     for (let index = 0; index < 5; index += 1) {
       const response = await POST(
@@ -178,6 +184,37 @@ describe('/api/chat', () => {
       system_instruction: expect.stringContaining('MindPulse'),
       input: 'Explain photosynthesis',
       generation_config: { temperature: 0.7 },
+    });
+    expect(authMocks.historyWrites).toBe(1);
+  });
+
+  it('does not let exhausted guest quota block a valid session', async () => {
+    authMocks.getCurrentUserFromRequest.mockResolvedValue(null);
+    mockGemini('Guest answer');
+    for (let index = 0; index < 5; index += 1) {
+      const response = await POST(
+        request({ message: `Guest quota fill ${index}`, mode: 'study' }),
+      );
+      expect(response.status).toBe(200);
+    }
+    expect(
+      (await POST(request({ message: 'Guest over limit', mode: 'study' })))
+        .status,
+    ).toBe(429);
+
+    authMocks.getCurrentUserFromRequest.mockResolvedValue({
+      id: 'user-1',
+      email: 'student@example.com',
+      name: 'Student',
+      created_at: '2026-01-01T00:00:00.000Z',
+    });
+    const response = await POST(
+      request({ message: 'Account after guest limit', mode: 'study' }),
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      reply: 'Guest answer',
+      usage: { limit: 20, used: 1, remaining: 19, accountRequired: false },
     });
     expect(authMocks.historyWrites).toBe(1);
   });

@@ -20,6 +20,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
     try {
       const response = await fetch(`/api/auth/${mode}`, {
         method: 'POST',
+        credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email,

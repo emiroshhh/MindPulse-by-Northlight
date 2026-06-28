@@ -205,6 +205,22 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
   return getUserBySessionToken(db, token);
 }
 
+export async function getCurrentUserFromRequest(
+  request: Request,
+): Promise<AuthUser | null> {
+  let db: D1DatabaseLike;
+  try {
+    db = await getAuthDb();
+  } catch {
+    return null;
+  }
+  const token =
+    readCookieValue(request.headers.get('cookie') ?? '', SESSION_COOKIE) ??
+    (await readSessionTokenFromCookie().catch(() => null));
+  if (!token) return null;
+  return getUserBySessionToken(db, token);
+}
+
 export async function getUserBySessionToken(
   db: D1DatabaseLike,
   token: string,
@@ -236,6 +252,16 @@ export async function invalidateSessionToken(
 export async function readSessionTokenFromCookie() {
   const jar = await cookies();
   return jar.get(SESSION_COOKIE)?.value ?? null;
+}
+
+function readCookieValue(header: string, name: string) {
+  const prefix = `${name}=`;
+  for (const part of header.split(';')) {
+    const value = part.trim();
+    if (value.startsWith(prefix))
+      return decodeURIComponent(value.slice(prefix.length));
+  }
+  return null;
 }
 
 export async function clientIp() {

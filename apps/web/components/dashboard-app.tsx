@@ -30,7 +30,7 @@ import {
 } from 'react';
 import { SafeMarkdown } from './safe-markdown';
 
-type User = { email: string; name: string };
+type User = { id?: string; email: string; name: string };
 type LanguageCode = 'en' | 'ru' | 'kk';
 type ModeId =
   | 'study'
@@ -66,6 +66,7 @@ type ChatApiBody = {
   remaining?: number;
   usage?: ChatUsage;
 };
+type AuthMeBody = { user?: User | null };
 
 const GUEST_CHAT_KEY = 'mindpulse-guest-chat-v1';
 const GUEST_FOCUS_KEY = 'mindpulse-today-focus-v1';
@@ -291,7 +292,8 @@ function limitCopy(language: LanguageCode, key: keyof typeof uiCopy.en) {
   return uiCopy[language][key] ?? uiCopy.en[key] ?? '';
 }
 
-export function DashboardApp({ user }: { user: User | null }) {
+export function DashboardApp({ user: initialUser }: { user: User | null }) {
+  const [user, setUser] = useState<User | null>(initialUser);
   const [language, setLanguage] = useState<LanguageCode>('en');
   const [mode, setMode] = useState<ModeId>('study');
   const [chatInput, setChatInput] = useState('');
@@ -325,7 +327,9 @@ export function DashboardApp({ user }: { user: User | null }) {
       setHistoryReady(true);
       return;
     }
-    const response = await fetch('/api/chat/history');
+    const response = await fetch('/api/chat/history', {
+      credentials: 'same-origin',
+    });
     if (!response.ok) {
       setHistoryReady(true);
       return;
@@ -334,6 +338,35 @@ export function DashboardApp({ user }: { user: User | null }) {
     setMessages([...(body.messages ?? [])].reverse());
     setHistoryReady(true);
   }, [user]);
+
+  useEffect(() => {
+    setUser(initialUser);
+  }, [initialUser]);
+
+  useEffect(() => {
+    let active = true;
+    async function reconcileSession() {
+      try {
+        const response = await fetch('/api/auth/me', {
+          credentials: 'same-origin',
+          cache: 'no-store',
+        });
+        if (!active) return;
+        if (response.ok) {
+          const body = (await response.json().catch(() => ({}))) as AuthMeBody;
+          setUser(body.user ?? null);
+          return;
+        }
+        if (response.status === 401) setUser(null);
+      } catch {
+        // Keep the server-rendered state if the lightweight session check fails.
+      }
+    }
+    void reconcileSession();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     const storedLanguage = readJson<LanguageCode | null>(LANGUAGE_KEY, null);
@@ -385,6 +418,7 @@ export function DashboardApp({ user }: { user: User | null }) {
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
+        credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text, mode, language }),
       });
@@ -442,6 +476,7 @@ export function DashboardApp({ user }: { user: User | null }) {
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
+        credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mode: 'planner',
@@ -481,6 +516,7 @@ export function DashboardApp({ user }: { user: User | null }) {
     }
     const response = await fetch('/api/agent', {
       method: 'POST',
+      credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         title: agentInput.slice(0, 80) || 'MindPulse Agent plan',
