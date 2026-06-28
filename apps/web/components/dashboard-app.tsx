@@ -52,6 +52,20 @@ type AgentPlan = {
   content: string;
   created_at: string;
 };
+type ChatUsage = {
+  limit: number;
+  used: number;
+  remaining: number;
+  accountRequired: boolean;
+};
+type ChatApiBody = {
+  reply?: string;
+  error?: string;
+  limit?: number;
+  accountRequired?: boolean;
+  remaining?: number;
+  usage?: ChatUsage;
+};
 
 const GUEST_CHAT_KEY = 'mindpulse-guest-chat-v1';
 const GUEST_FOCUS_KEY = 'mindpulse-today-focus-v1';
@@ -83,6 +97,10 @@ const uiCopy: Record<
     guestHistory: string;
     authHistory: string;
     savedLocally: string;
+    guestLimitLabel?: string;
+    accountLimitLabel?: string;
+    guestLimitReached?: string;
+    accountLimitReached?: string;
   }
 > = {
   en: {
@@ -104,6 +122,12 @@ const uiCopy: Record<
     guestHistory: 'Showing recent guest messages saved on this device.',
     authHistory: 'Showing your latest saved messages from this account.',
     savedLocally: 'Saved locally on this device.',
+    guestLimitLabel: '5 free guest messages/day',
+    accountLimitLabel: '20 free messages/day',
+    guestLimitReached:
+      'You’ve reached today’s free guest limit. Create a free account to continue with more messages and save your progress.',
+    accountLimitReached:
+      'You’ve reached today’s free account limit. Come back tomorrow.',
   },
   ru: {
     guestTitle: 'MindPulse можно использовать сразу.',
@@ -263,6 +287,10 @@ function localId(prefix: string) {
     : `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+function limitCopy(language: LanguageCode, key: keyof typeof uiCopy.en) {
+  return uiCopy[language][key] ?? uiCopy.en[key] ?? '';
+}
+
 export function DashboardApp({ user }: { user: User | null }) {
   const [language, setLanguage] = useState<LanguageCode>('en');
   const [mode, setMode] = useState<ModeId>('study');
@@ -277,6 +305,8 @@ export function DashboardApp({ user }: { user: User | null }) {
   const [saved, setSaved] = useState(false);
   const [todayFocus, setTodayFocus] = useState('');
   const [showGuestBanner, setShowGuestBanner] = useState(false);
+  const [usage, setUsage] = useState<ChatUsage | null>(null);
+  const [limitAccountRequired, setLimitAccountRequired] = useState(false);
   const isGuest = !user;
   const t = uiCopy[language];
   const displayModes = useMemo(
@@ -315,6 +345,8 @@ export function DashboardApp({ user }: { user: User | null }) {
 
   useEffect(() => {
     void loadHistory();
+    setUsage(null);
+    setLimitAccountRequired(false);
   }, [loadHistory]);
 
   useEffect(() => {
@@ -340,6 +372,7 @@ export function DashboardApp({ user }: { user: User | null }) {
     if (!text || chatLoading) return;
     setChatLoading(true);
     setChatError('');
+    setLimitAccountRequired(false);
     setChatInput('');
     const localUser: ChatMessage = {
       id: localId('local-user'),
@@ -355,10 +388,24 @@ export function DashboardApp({ user }: { user: User | null }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text, mode, language }),
       });
-      const body = (await response.json().catch(() => ({}))) as {
-        reply?: string;
-        error?: string;
-      };
+      const body = (await response.json().catch(() => ({}))) as ChatApiBody;
+      if (response.status === 429 && body.error === 'daily_limit_reached') {
+        setChatError(
+          body.accountRequired
+            ? limitCopy(language, 'guestLimitReached')
+            : limitCopy(language, 'accountLimitReached'),
+        );
+        setLimitAccountRequired(Boolean(body.accountRequired));
+        if (typeof body.limit === 'number') {
+          setUsage({
+            limit: body.limit,
+            used: body.limit,
+            remaining: 0,
+            accountRequired: Boolean(body.accountRequired),
+          });
+        }
+        return;
+      }
       if (!response.ok || !body.reply) {
         console.error('[MindPulse] chat failed:', body);
         setChatError(
@@ -370,6 +417,7 @@ export function DashboardApp({ user }: { user: User | null }) {
         );
         return;
       }
+      if (body.usage) setUsage(body.usage);
       setMessages((items) => [
         ...items,
         {
@@ -627,6 +675,12 @@ export function DashboardApp({ user }: { user: User | null }) {
             <div className="border-b border-ink/5 p-5">
               <h2 className="text-xl font-semibold">{selectedMode.title}</h2>
               <p className="text-sm text-muted">{selectedMode.copy}</p>
+              <p className="mt-2 text-xs font-bold uppercase tracking-[.16em] text-sage">
+                {user
+                  ? limitCopy(language, 'accountLimitLabel')
+                  : limitCopy(language, 'guestLimitLabel')}
+                {usage ? ` · ${usage.remaining} left today` : ''}
+              </p>
             </div>
             <div className="max-h-[32rem] min-h-[24rem] space-y-4 overflow-y-auto bg-canvas/40 p-5">
               {!messages.length && (
@@ -658,7 +712,23 @@ export function DashboardApp({ user }: { user: User | null }) {
             </div>
             {chatError && (
               <div className="mx-5 mt-4 rounded-2xl bg-warm/15 p-3 text-sm text-danger">
-                {chatError}
+                <p>{chatError}</p>
+                {limitAccountRequired && (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Link
+                      href="/signup"
+                      className="rounded-full bg-ink px-4 py-2 text-xs font-semibold text-canvas"
+                    >
+                      {t.signup}
+                    </Link>
+                    <Link
+                      href="/login"
+                      className="rounded-full bg-canvas px-4 py-2 text-xs font-semibold text-ink"
+                    >
+                      {t.login}
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
             <form onSubmit={sendChat} className="p-5">

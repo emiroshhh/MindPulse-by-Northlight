@@ -345,10 +345,21 @@ async function ensureAuthSchema(db: D1DatabaseLike) {
       updated_at TEXT NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )`,
+    `CREATE TABLE IF NOT EXISTS daily_usage (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NULL,
+      guest_key TEXT NULL,
+      usage_date TEXT NOT NULL,
+      message_count INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    )`,
     `CREATE INDEX IF NOT EXISTS idx_sessions_hash ON sessions(session_hash)`,
     `CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id)`,
     `CREATE INDEX IF NOT EXISTS idx_chat_messages_user_created ON chat_messages(user_id, created_at DESC)`,
     `CREATE INDEX IF NOT EXISTS idx_agent_tasks_user_created ON agent_tasks(user_id, created_at DESC)`,
+    `CREATE INDEX IF NOT EXISTS idx_daily_usage_user_date ON daily_usage(user_id, usage_date)`,
+    `CREATE INDEX IF NOT EXISTS idx_daily_usage_guest_date ON daily_usage(guest_key, usage_date)`,
   ];
   for (const statement of statements) await db.prepare(statement).run();
 

@@ -1,11 +1,18 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { assessModelOutput, assessUserInput } from '@mindpulse/shared';
-import { getAuthDb, getCurrentUser, json } from '../../../lib/server/auth';
+import {
+  getAuthDb,
+  getCurrentUser,
+  json,
+  type AuthUser,
+} from '../../../lib/server/auth';
 
 export const maxDuration = 30;
 
 const GEMINI_URL =
   'https://generativelanguage.googleapis.com/v1beta/interactions';
+const GUEST_DAILY_LIMIT = 5;
+const ACCOUNT_DAILY_LIMIT = 20;
 const MODES = [
   'study',
   'planner',
@@ -163,6 +170,19 @@ export async function POST(request: Request) {
   const inputSafety = assessUserInput(message);
   if (inputSafety.flagged) return json({ reply: CRISIS_REPLY });
 
+  const usage = await reserveDailyUsage({ request, user });
+  if (!usage.allowed) {
+    return json(
+      {
+        error: 'daily_limit_reached',
+        limit: usage.limit,
+        accountRequired: usage.accountRequired,
+        remaining: 0,
+      },
+      429,
+    );
+  }
+
   const { key, model } = await geminiConfig();
   console.info('[MindPulse] GEMINI_API_KEY configured:', Boolean(key));
   if (!key) return json({ error: 'missing_key' }, 503);
@@ -205,7 +225,7 @@ export async function POST(request: Request) {
         mode,
       });
     }
-    return json({ reply: safeReply });
+    return json({ reply: safeReply, usage });
   } catch (error) {
     console.error('[MindPulse] Gemini unavailable:', {
       name: error instanceof Error ? error.name : 'UnknownError',
@@ -215,6 +235,64 @@ export async function POST(request: Request) {
   } finally {
     clearTimeout(timeout);
   }
+}
+
+async function reserveDailyUsage({
+  request,
+  user,
+}: {
+  request: Request;
+  user: AuthUser | null;
+}) {
+  const db = await getAuthDb();
+  const usageDate = new Date().toISOString().slice(0, 10);
+  const now = new Date().toISOString();
+  const limit = user ? ACCOUNT_DAILY_LIMIT : GUEST_DAILY_LIMIT;
+  const accountRequired = !user;
+  const guestKey = user ? null : await guestUsageKey(request);
+  const id = user
+    ? `user:${user.id}:${usageDate}`
+    : `guest:${guestKey}:${usageDate}`;
+
+  const result = await db
+    .prepare(
+      `INSERT INTO daily_usage (
+        id, user_id, guest_key, usage_date, message_count, created_at, updated_at
+      )
+      VALUES (?, ?, ?, ?, 1, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        message_count = message_count + 1,
+        updated_at = excluded.updated_at
+      WHERE daily_usage.message_count < ?`,
+    )
+    .bind(id, user?.id ?? null, guestKey, usageDate, now, now, limit)
+    .run();
+  const changes =
+    (result as { meta?: { changes?: number } }).meta?.changes ?? 1;
+  const row = await db
+    .prepare('SELECT message_count FROM daily_usage WHERE id = ? LIMIT 1')
+    .bind(id)
+    .first<{ message_count: number }>();
+  const used = Number(row?.message_count ?? limit);
+  const allowed = changes > 0 && used <= limit;
+  return {
+    allowed,
+    limit,
+    used: Math.min(used, limit),
+    remaining: Math.max(limit - used, 0),
+    accountRequired,
+  };
+}
+
+async function guestUsageKey(request: Request) {
+  const ip =
+    request.headers.get('cf-connecting-ip') ??
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+    'unknown-ip';
+  const userAgent = request.headers.get('user-agent') ?? 'unknown-agent';
+  const bytes = new TextEncoder().encode(`${ip}|${userAgent}`);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return base64Url(new Uint8Array(digest));
 }
 
 async function saveChatExchange({
@@ -262,6 +340,17 @@ function chatId() {
   return typeof crypto.randomUUID === 'function'
     ? crypto.randomUUID()
     : `chat-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function base64Url(bytes: Uint8Array) {
+  let binary = '';
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return btoa(binary)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '');
 }
 
 function methodNotAllowed() {
