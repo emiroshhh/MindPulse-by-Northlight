@@ -192,6 +192,46 @@ export async function clearSessionCookie() {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Explicit Set-Cookie header helpers
+// On Cloudflare Workers / OpenNext, cookies().set() may not reliably write
+// Set-Cookie headers in the outgoing response. These pure helpers produce a
+// valid Set-Cookie string that callers append directly to a Response.
+// ---------------------------------------------------------------------------
+
+/** Returns a Set-Cookie header value that sets the session cookie. */
+export function sessionCookieHeader(token: string, expires: Date): string {
+  return [
+    `${SESSION_COOKIE}=${encodeURIComponent(token)}`,
+    'Path=/',
+    'HttpOnly',
+    'Secure',
+    'SameSite=Lax',
+    `Expires=${expires.toUTCString()}`,
+  ].join('; ');
+}
+
+/** Returns a Set-Cookie header value that immediately expires the session cookie. */
+export function clearSessionCookieHeader(): string {
+  return [
+    `${SESSION_COOKIE}=`,
+    'Path=/',
+    'HttpOnly',
+    'Secure',
+    'SameSite=Lax',
+    'Max-Age=0',
+    'Expires=Thu, 01 Jan 1970 00:00:00 GMT',
+  ].join('; ');
+}
+
+/**
+ * Reads the session token from the incoming request's Cookie header.
+ * More reliable than cookies() on Cloudflare Workers.
+ */
+export function readTokenFromRequest(request: Request): string | null {
+  return readCookieValue(request.headers.get('cookie') ?? '', SESSION_COOKIE);
+}
+
 export async function getCurrentUser(): Promise<AuthUser | null> {
   let db: D1DatabaseLike;
   try {

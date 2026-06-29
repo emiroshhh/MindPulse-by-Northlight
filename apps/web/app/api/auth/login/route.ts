@@ -5,6 +5,7 @@ import {
   json,
   normalizeEmail,
   publicUser,
+  sessionCookieHeader,
   setSessionCookie,
   validateEmail,
   verifyPassword,
@@ -47,8 +48,12 @@ export async function POST(request: Request) {
     const ok = await verifyPassword(password, user.password_hash);
     if (!ok) return json({ error: 'Invalid email or password' }, 401);
     const session = await createSession(db, user.id);
-    await setSessionCookie(session.token, session.expires);
-    return json({ user: publicUser(user) });
+    // Belt-and-suspenders: try the Next.js cookies() path, then attach an
+    // explicit Set-Cookie header which is reliable on Cloudflare Workers.
+    await setSessionCookie(session.token, session.expires).catch(() => undefined);
+    const response = json({ user: publicUser(user) });
+    response.headers.append('Set-Cookie', sessionCookieHeader(session.token, session.expires));
+    return response;
   } catch (error) {
     console.error('[MindPulse] login failed:', {
       name: error instanceof Error ? error.name : 'UnknownError',

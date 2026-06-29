@@ -7,6 +7,7 @@ import {
   normalizeEmail,
   publicUser,
   secureId,
+  sessionCookieHeader,
   setSessionCookie,
   validateEmail,
   validatePassword,
@@ -71,8 +72,12 @@ export async function POST(request: Request) {
     step = 'create_session';
     const session = await createSession(db, user.id);
     step = 'set_cookie';
-    await setSessionCookie(session.token, session.expires);
-    return json({ user: publicUser(user) }, 201);
+    // Belt-and-suspenders: try the Next.js cookies() path, then attach an
+    // explicit Set-Cookie header which is reliable on Cloudflare Workers.
+    await setSessionCookie(session.token, session.expires).catch(() => undefined);
+    const response = json({ user: publicUser(user) }, 201);
+    response.headers.append('Set-Cookie', sessionCookieHeader(session.token, session.expires));
+    return response;
   } catch (error) {
     console.error(
       '[MindPulse] signup failed:',
