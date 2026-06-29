@@ -82,8 +82,14 @@ export async function POST(request: Request) {
     const session = await createSession(db, user.id);
     const resolved = await getUserBySessionToken(db, session.token);
     if (!resolved) {
-      console.error('[MindPulse] session created but not resolvable');
+      console.error('[MindPulse] immediate session verification:', {
+        passed: false,
+      });
+      throw new Error('Session verification failed');
     }
+    console.info('[MindPulse] immediate session verification:', {
+      passed: true,
+    });
     step = 'set_cookie';
     // Belt-and-suspenders: try the Next.js cookies() path, then attach an
     // explicit Set-Cookie header which is reliable on Cloudflare Workers.

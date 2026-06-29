@@ -55,6 +55,10 @@ function makeSessionDb(options: {
             query.includes('FROM sessions') &&
             query.includes('WHERE session_hash')
           ) {
+            if (query.includes('SELECT 1 AS found')) {
+              const [sessionHash] = this.values as [string];
+              return sessions.has(sessionHash) ? ({ found: 1 } as T) : null;
+            }
             const [nowIso, sessionHash] = this.values as [string, string];
             const session = sessions.get(sessionHash);
             if (!session) return null;
@@ -378,6 +382,35 @@ describe('session DB resolution', () => {
       sessionRowFound: false,
       userResolved: false,
     });
+
+    process.env.SESSION_SECRET = previousSecret;
+  });
+
+  it('createSession throws if insert cannot be selected back by session_hash', async () => {
+    process.env.SESSION_SECRET = 'x'.repeat(40);
+    const db: D1DatabaseLike = {
+      prepare(query: string) {
+        return {
+          bind() {
+            return this;
+          },
+          async first<T>() {
+            if (query.includes('SELECT 1 AS found')) return null;
+            return null as T | null;
+          },
+          async all() {
+            return { success: true, results: [] };
+          },
+          async run() {
+            return { success: true, meta: { changes: 1 } };
+          },
+        };
+      },
+    };
+
+    await expect(createSession(db, 'user-1')).rejects.toThrow(
+      'Session insert verification failed',
+    );
 
     process.env.SESSION_SECRET = previousSecret;
   });

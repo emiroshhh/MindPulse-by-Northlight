@@ -182,7 +182,19 @@ export async function createSession(db: D1DatabaseLike, userId: string) {
     )
     .bind(id, userId, hash, now.toISOString(), expires.toISOString())
     .run();
+  console.info('[MindPulse] session insert result:', {
+    success: Boolean(result.success),
+    changes: result.meta?.changes ?? null,
+  });
   if (!result.success) throw new Error('Session insert failed');
+  const inserted = await db
+    .prepare('SELECT 1 AS found FROM sessions WHERE session_hash = ? LIMIT 1')
+    .bind(hash)
+    .first<{ found: number }>();
+  console.info('[MindPulse] session insert verification:', {
+    passed: Boolean(inserted),
+  });
+  if (!inserted) throw new Error('Session insert verification failed');
   return { token, expires };
 }
 
