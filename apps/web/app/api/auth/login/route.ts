@@ -16,24 +16,26 @@ import { checkRateLimit } from '@/lib/server/rate-limit';
 type UserRow = AuthUser & { password_hash: string };
 
 export async function POST(request: Request) {
+  const wantsJson = isJsonRequest(request);
   const ip = await clientIp();
-  if (!checkRateLimit(`login:${ip}`, 8, 60_000))
+  if (!checkRateLimit(`login:${ip}`, 8, 60_000)) {
+    if (!wantsJson) return formErrorRedirect('/login', 'rate_limited');
     return json({ error: 'rate_limited' }, 429);
+  }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
+  const input = await readAuthInput(request, wantsJson);
+  if (!input) {
+    if (!wantsJson) return formErrorRedirect('/login', 'invalid');
     return json({ error: 'invalid_request' }, 400);
   }
-  const input =
-    body && typeof body === 'object' ? (body as Record<string, unknown>) : {};
   const email = normalizeEmail(
     typeof input.email === 'string' ? input.email : '',
   );
   const password = typeof input.password === 'string' ? input.password : '';
-  if (!validateEmail(email) || !password)
+  if (!validateEmail(email) || !password) {
+    if (!wantsJson) return formErrorRedirect('/login', 'invalid');
     return json({ error: 'Invalid email or password' }, 401);
+  }
 
   try {
     const db = await getAuthDb();
@@ -44,13 +46,21 @@ export async function POST(request: Request) {
       )
       .bind(email)
       .first<UserRow>();
-    if (!user) return json({ error: 'Invalid email or password' }, 401);
+    if (!user) {
+      if (!wantsJson) return formErrorRedirect('/login', 'invalid');
+      return json({ error: 'Invalid email or password' }, 401);
+    }
     const ok = await verifyPassword(password, user.password_hash);
-    if (!ok) return json({ error: 'Invalid email or password' }, 401);
+    if (!ok) {
+      if (!wantsJson) return formErrorRedirect('/login', 'invalid');
+      return json({ error: 'Invalid email or password' }, 401);
+    }
     const session = await createSession(db, user.id);
     // Belt-and-suspenders: try the Next.js cookies() path, then attach an
     // explicit Set-Cookie header which is reliable on Cloudflare Workers.
     await setSessionCookie(session.token, session.expires).catch(() => undefined);
+    if (!wantsJson)
+      return formSuccessRedirect('/app', session.token, session.expires);
     const response = json({ user: publicUser(user) });
     response.headers.append('Set-Cookie', sessionCookieHeader(session.token, session.expires));
     return response;
@@ -65,6 +75,51 @@ export async function POST(request: Request) {
         .replace(/[A-Za-z0-9_-]{32,}/g, '[redacted]')
         .slice(0, 180),
     });
+    if (!wantsJson) return formErrorRedirect('/login', 'unavailable');
     return json({ error: 'auth_unavailable' }, 503);
   }
+}
+
+function isJsonRequest(request: Request) {
+  return Boolean(request.headers
+    .get('content-type')
+    ?.toLowerCase()
+    .includes('application/json'));
+}
+
+async function readAuthInput(request: Request, wantsJson: boolean) {
+  try {
+    if (wantsJson) {
+      const body = await request.json();
+      return body && typeof body === 'object'
+        ? (body as Record<string, unknown>)
+        : {};
+    }
+    const form = await request.formData();
+    return Object.fromEntries(form.entries());
+  } catch {
+    return null;
+  }
+}
+
+function formSuccessRedirect(location: string, token: string, expires: Date) {
+  const response = new Response(null, {
+    status: 303,
+    headers: {
+      Location: location,
+      'Cache-Control': 'no-store',
+    },
+  });
+  response.headers.append('Set-Cookie', sessionCookieHeader(token, expires));
+  return response;
+}
+
+function formErrorRedirect(path: string, code: string) {
+  return new Response(null, {
+    status: 303,
+    headers: {
+      Location: `${path}?error=${encodeURIComponent(code)}`,
+      'Cache-Control': 'no-store',
+    },
+  });
 }

@@ -16,18 +16,18 @@ import { checkRateLimit } from '@/lib/server/rate-limit';
 
 export async function POST(request: Request) {
   let step = 'start';
+  const wantsJson = isJsonRequest(request);
   const ip = await clientIp();
-  if (!checkRateLimit(`signup:${ip}`, 5, 60_000))
+  if (!checkRateLimit(`signup:${ip}`, 5, 60_000)) {
+    if (!wantsJson) return formErrorRedirect('/signup', 'rate_limited');
     return json({ error: 'rate_limited' }, 429);
+  }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
+  const input = await readAuthInput(request, wantsJson);
+  if (!input) {
+    if (!wantsJson) return formErrorRedirect('/signup', 'invalid');
     return json({ error: 'invalid_request' }, 400);
   }
-  const input =
-    body && typeof body === 'object' ? (body as Record<string, unknown>) : {};
   const email = normalizeEmail(
     typeof input.email === 'string' ? input.email : '',
   );
@@ -37,10 +37,14 @@ export async function POST(request: Request) {
       ? input.name.trim().slice(0, 80)
       : email.split('@')[0] || 'Student';
 
-  if (!validateEmail(email))
+  if (!validateEmail(email)) {
+    if (!wantsJson) return formErrorRedirect('/signup', 'invalid');
     return json({ error: 'Please enter a valid email address.' }, 400);
-  if (!validatePassword(password))
+  }
+  if (!validatePassword(password)) {
+    if (!wantsJson) return formErrorRedirect('/signup', 'invalid');
     return json({ error: 'Password must be at least 10 characters.' }, 400);
+  }
 
   try {
     step = 'get_auth_db';
@@ -50,7 +54,10 @@ export async function POST(request: Request) {
       .prepare('SELECT id FROM users WHERE email = ? LIMIT 1')
       .bind(email)
       .first<{ id: string }>();
-    if (existing) return json({ error: 'An account already exists.' }, 409);
+    if (existing) {
+      if (!wantsJson) return formErrorRedirect('/signup', 'invalid');
+      return json({ error: 'An account already exists.' }, 409);
+    }
 
     const now = new Date().toISOString();
     const user = {
@@ -75,6 +82,8 @@ export async function POST(request: Request) {
     // Belt-and-suspenders: try the Next.js cookies() path, then attach an
     // explicit Set-Cookie header which is reliable on Cloudflare Workers.
     await setSessionCookie(session.token, session.expires).catch(() => undefined);
+    if (!wantsJson)
+      return formSuccessRedirect('/app', session.token, session.expires);
     const response = json({ user: publicUser(user) }, 201);
     response.headers.append('Set-Cookie', sessionCookieHeader(session.token, session.expires));
     return response;
@@ -83,8 +92,53 @@ export async function POST(request: Request) {
       '[MindPulse] signup failed:',
       sanitizeSignupError(error, step),
     );
+    if (!wantsJson) return formErrorRedirect('/signup', 'unavailable');
     return json({ error: 'auth_unavailable' }, 503);
   }
+}
+
+function isJsonRequest(request: Request) {
+  return Boolean(request.headers
+    .get('content-type')
+    ?.toLowerCase()
+    .includes('application/json'));
+}
+
+async function readAuthInput(request: Request, wantsJson: boolean) {
+  try {
+    if (wantsJson) {
+      const body = await request.json();
+      return body && typeof body === 'object'
+        ? (body as Record<string, unknown>)
+        : {};
+    }
+    const form = await request.formData();
+    return Object.fromEntries(form.entries());
+  } catch {
+    return null;
+  }
+}
+
+function formSuccessRedirect(location: string, token: string, expires: Date) {
+  const response = new Response(null, {
+    status: 303,
+    headers: {
+      Location: location,
+      'Cache-Control': 'no-store',
+    },
+  });
+  response.headers.append('Set-Cookie', sessionCookieHeader(token, expires));
+  return response;
+}
+
+function formErrorRedirect(path: string, code: string) {
+  return new Response(null, {
+    status: 303,
+    headers: {
+      Location: `${path}?error=${encodeURIComponent(code)}`,
+      'Cache-Control': 'no-store',
+    },
+  });
 }
 
 function sanitizeSignupError(error: unknown, step: string) {

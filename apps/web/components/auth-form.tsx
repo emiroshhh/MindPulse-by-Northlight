@@ -1,50 +1,20 @@
 'use client';
 
-import { Brain, Loader2 } from 'lucide-react';
+import { Brain } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
-  const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/auth/${mode}`, {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          password,
-          ...(mode === 'signup' ? { name } : {}),
-        }),
-      });
-      const body = (await response.json().catch(() => ({}))) as {
-        error?: string;
-      };
-      if (!response.ok) {
-        setError(body.error ?? 'Something went wrong. Please try again.');
-        return;
-      }
-      router.push('/app');
-      router.refresh();
-    } catch {
-      setError('MindPulse could not connect. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  const searchParams = useSearchParams();
   const isSignup = mode === 'signup';
+  const errorCode = searchParams.get('error');
+  const error =
+    errorCode && isSignup
+      ? 'Could not create account. Please check your details.'
+      : errorCode
+        ? 'Invalid email or password.'
+        : '';
+
   return (
     <main className="ambient grid min-h-screen place-items-center px-5 py-10">
       <section className="w-full max-w-md rounded-[2rem] border border-ink/5 bg-surface p-6 shadow-soft sm:p-8">
@@ -67,13 +37,16 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
             ? 'Save your study history, AI chats, and Agent plans privately.'
             : 'Log in to continue your dashboard, chat history, and Agent plans.'}
         </p>
-        <form onSubmit={submit} className="mt-6 space-y-4">
+        <form
+          method="post"
+          action={isSignup ? '/api/auth/signup' : '/api/auth/login'}
+          className="mt-6 space-y-4"
+        >
           {isSignup && (
             <label className="block text-sm font-semibold">
               Name
               <input
-                value={name}
-                onChange={(event) => setName(event.target.value)}
+                name="name"
                 autoComplete="name"
                 className="mt-2 w-full rounded-2xl border border-ink/10 bg-canvas/70 px-4 py-3 outline-none focus:border-sage focus:ring-4 focus:ring-sage/10"
                 placeholder="Alex"
@@ -83,8 +56,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
           <label className="block text-sm font-semibold">
             Email
             <input
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              name="email"
               type="email"
               autoComplete="email"
               required
@@ -95,8 +67,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
           <label className="block text-sm font-semibold">
             Password
             <input
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              name="password"
               type="password"
               autoComplete={isSignup ? 'new-password' : 'current-password'}
               minLength={10}
@@ -113,11 +84,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
               {error}
             </div>
           )}
-          <button
-            disabled={loading}
-            className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-sage px-5 font-semibold text-canvas hover:bg-ink disabled:opacity-50"
-          >
-            {loading && <Loader2 size={17} className="animate-spin" />}
+          <button className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-sage px-5 font-semibold text-canvas hover:bg-ink">
             {isSignup ? 'Create your free account' : 'Log in'}
           </button>
         </form>
