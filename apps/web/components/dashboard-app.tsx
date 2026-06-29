@@ -1,9 +1,7 @@
 'use client';
 
 import {
-  BookOpen,
   Brain,
-  CalendarDays,
   CheckCircle2,
   Globe2,
   History,
@@ -11,253 +9,38 @@ import {
   LogIn,
   LogOut,
   MessageSquareText,
-  Repeat2,
-  Send,
-  Sparkles,
+  ShieldCheck,
   Target,
   UserPlus,
-  Wand2,
-  Zap,
-  type LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useEffect, useMemo, useState } from 'react';
 import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  type FormEvent,
-} from 'react';
+  GUEST_AGENT_KEY,
+  GUEST_BANNER_KEY,
+  GUEST_FOCUS_KEY,
+  LANGUAGE_KEY,
+  localId,
+  readJson,
+  writeJson,
+} from '@/lib/mindpulse/local-store';
+import {
+  languages,
+  mindPulseTools,
+  type LanguageCode,
+} from '@/lib/mindpulse/tools';
+import { ChatPanel, type ChatPanelCopy } from './mindpulse/chat-panel';
+import { FeedbackModal } from './mindpulse/feedback-modal';
+import { ToolCard } from './mindpulse/tool-card';
 import { SafeMarkdown } from './safe-markdown';
 
 type User = { id?: string; email: string; name: string };
-type LanguageCode = 'en' | 'ru' | 'kk';
-type ModeId =
-  | 'study'
-  | 'planner'
-  | 'motivation'
-  | 'habit'
-  | 'goal'
-  | 'reflection';
-type ChatMessage = {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  mode: ModeId;
-  created_at: string;
-};
+type AuthMeBody = { user?: User | null };
 type AgentPlan = {
   id: string;
   title: string;
   content: string;
   created_at: string;
-};
-type ChatUsage = {
-  limit: number;
-  used: number;
-  remaining: number;
-  accountRequired: boolean;
-};
-type ChatApiBody = {
-  reply?: string;
-  error?: string;
-  limit?: number;
-  accountRequired?: boolean;
-  remaining?: number;
-  usage?: ChatUsage;
-};
-type AuthMeBody = { user?: User | null };
-
-const GUEST_CHAT_KEY = 'mindpulse-guest-chat-v1';
-const GUEST_FOCUS_KEY = 'mindpulse-today-focus-v1';
-const GUEST_AGENT_KEY = 'mindpulse-guest-agent-plans-v1';
-const LANGUAGE_KEY = 'mindpulse-language-v1';
-const GUEST_BANNER_KEY = 'mindpulse-guest-banner-dismissed-v1';
-
-const languages: Array<{ id: LanguageCode; label: string; prompt: string }> = [
-  { id: 'en', label: 'English', prompt: 'English' },
-  { id: 'ru', label: 'Русский', prompt: 'Russian' },
-  { id: 'kk', label: 'Қазақша', prompt: 'Kazakh' },
-];
-
-const uiCopy: Record<
-  LanguageCode,
-  {
-    guestTitle: string;
-    guestBody: string;
-    syncCta: string;
-    continueGuest: string;
-    login: string;
-    signup: string;
-    logout: string;
-    language: string;
-    emptyGuest: string;
-    emptyAuth: string;
-    todayFocus: string;
-    focusPlaceholder: string;
-    guestHistory: string;
-    authHistory: string;
-    savedLocally: string;
-    guestLimitLabel?: string;
-    accountLimitLabel?: string;
-    guestLimitReached?: string;
-    accountLimitReached?: string;
-  }
-> = {
-  en: {
-    guestTitle: 'Use MindPulse right away.',
-    guestBody:
-      'No login wall. Use all six modes now; guest chat history and today focus stay on this device.',
-    syncCta:
-      'Create a free account to sync across devices and keep your progress safe. Your local history stays on this device for now; account migration is coming soon.',
-    continueGuest: 'Continue as guest',
-    login: 'Log in',
-    signup: 'Create free account',
-    logout: 'Logout',
-    language: 'Language',
-    emptyGuest:
-      'Your guest conversation will appear here and stay in this browser.',
-    emptyAuth: 'Your saved conversation history will appear here.',
-    todayFocus: "Today's focus",
-    focusPlaceholder: 'One useful thing for today...',
-    guestHistory: 'Showing recent guest messages saved on this device.',
-    authHistory: 'Showing your latest saved messages from this account.',
-    savedLocally: 'Saved locally on this device.',
-    guestLimitLabel: '5 free guest messages/day',
-    accountLimitLabel: '20 free messages/day',
-    guestLimitReached:
-      'You’ve reached today’s free guest limit. Create a free account to continue with more messages and save your progress.',
-    accountLimitReached:
-      'You’ve reached today’s free account limit. Come back tomorrow.',
-  },
-  ru: {
-    guestTitle: 'MindPulse можно использовать сразу.',
-    guestBody:
-      'Без обязательного входа. Все шесть режимов доступны сразу; гостевая история и фокус дня хранятся на этом устройстве.',
-    syncCta:
-      'Создай бесплатный аккаунт, чтобы синхронизировать прогресс между устройствами. Локальная история пока остаётся на этом устройстве; перенос в аккаунт скоро появится.',
-    continueGuest: 'Продолжить гостем',
-    login: 'Войти',
-    signup: 'Создать аккаунт',
-    logout: 'Выйти',
-    language: 'Язык',
-    emptyGuest:
-      'Гостевой разговор появится здесь и сохранится в этом браузере.',
-    emptyAuth: 'Сохранённая история разговоров появится здесь.',
-    todayFocus: 'Фокус на сегодня',
-    focusPlaceholder: 'Одна полезная вещь на сегодня...',
-    guestHistory:
-      'Показаны последние гостевые сообщения, сохранённые на этом устройстве.',
-    authHistory: 'Показаны последние сохранённые сообщения этого аккаунта.',
-    savedLocally: 'Сохранено локально на этом устройстве.',
-  },
-  kk: {
-    guestTitle: 'MindPulse-ты бірден қолдана аласың.',
-    guestBody:
-      'Міндетті логин жоқ. Алты режимнің бәрі ашық; қонақ чат тарихы мен бүгінгі фокус осы құрылғыда сақталады.',
-    syncCta:
-      'Прогресті құрылғылар арасында синхрондау үшін тегін аккаунт ашуға болады. Жергілікті тарих әзірге осы құрылғыда қалады; аккаунтқа көшіру жақында қосылады.',
-    continueGuest: 'Қонақ ретінде жалғастыру',
-    login: 'Кіру',
-    signup: 'Тегін аккаунт ашу',
-    logout: 'Шығу',
-    language: 'Тіл',
-    emptyGuest: 'Қонақ сөйлесуі осында шығады және осы браузерде сақталады.',
-    emptyAuth: 'Сақталған сөйлесу тарихы осында шығады.',
-    todayFocus: 'Бүгінгі фокус',
-    focusPlaceholder: 'Бүгінге бір пайдалы іс...',
-    guestHistory:
-      'Осы құрылғыда сақталған соңғы қонақ хабарламалары көрсетіледі.',
-    authHistory: 'Осы аккаунттағы соңғы сақталған хабарламалар көрсетіледі.',
-    savedLocally: 'Осы құрылғыда жергілікті сақталды.',
-  },
-};
-
-const modes: Array<{
-  id: ModeId;
-  title: string;
-  icon: LucideIcon;
-  copy: string;
-}> = [
-  {
-    id: 'study',
-    title: 'Study Help',
-    icon: BookOpen,
-    copy: 'Explain topics and practice.',
-  },
-  {
-    id: 'planner',
-    title: 'Daily Planner',
-    icon: CalendarDays,
-    copy: 'Make time blocks realistic.',
-  },
-  {
-    id: 'motivation',
-    title: 'Motivation Reset',
-    icon: Zap,
-    copy: 'Start with one tiny action.',
-  },
-  {
-    id: 'habit',
-    title: 'Habit Coach',
-    icon: Repeat2,
-    copy: 'Build routines that survive busy days.',
-  },
-  {
-    id: 'goal',
-    title: 'Goal Breakdown',
-    icon: Target,
-    copy: 'Turn goals into milestones.',
-  },
-  {
-    id: 'reflection',
-    title: 'Quick Reflection',
-    icon: Sparkles,
-    copy: 'Learn from today without guilt.',
-  },
-];
-
-const modeCopy: Record<
-  LanguageCode,
-  Record<ModeId, { title: string; copy: string }>
-> = {
-  en: Object.fromEntries(
-    modes.map(({ id, title, copy }) => [id, { title, copy }]),
-  ) as Record<ModeId, { title: string; copy: string }>,
-  ru: {
-    study: { title: 'Помощь в учёбе', copy: 'Объяснения, примеры и практика.' },
-    planner: { title: 'План на день', copy: 'Реалистичные блоки времени.' },
-    motivation: {
-      title: 'Сброс мотивации',
-      copy: 'Начни с одного маленького действия.',
-    },
-    habit: {
-      title: 'Тренер привычек',
-      copy: 'Рутины, которые выдерживают занятые дни.',
-    },
-    goal: { title: 'Разбор цели', copy: 'Преврати цель в этапы.' },
-    reflection: {
-      title: 'Быстрая рефлексия',
-      copy: 'Понять день без чувства вины.',
-    },
-  },
-  kk: {
-    study: { title: 'Оқуға көмек', copy: 'Түсіндіру, мысал және практика.' },
-    planner: { title: 'Күндік жоспар', copy: 'Уақыт блоктарын шынайы жасау.' },
-    motivation: {
-      title: 'Мотивация reset',
-      copy: 'Бір кішкентай әрекеттен бастау.',
-    },
-    habit: {
-      title: 'Әдет коучы',
-      copy: 'Қарбалас күнге төзетін әдеттер.',
-    },
-    goal: { title: 'Мақсатты бөлу', copy: 'Мақсатты кезеңдерге айналдыру.' },
-    reflection: {
-      title: 'Жылдам рефлексия',
-      copy: 'Күннен сабақ алу, кінәсіз.',
-    },
-  },
 };
 
 const agentPrompts = [
@@ -266,78 +49,42 @@ const agentPrompts = [
   'I keep procrastinating. Give me the smallest first step',
 ];
 
-function readJson<T>(key: string, fallback: T): T {
-  if (typeof window === 'undefined') return fallback;
-  try {
-    const raw = window.localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function writeJson<T>(key: string, value: T) {
-  if (typeof window === 'undefined') return;
-  window.localStorage.setItem(key, JSON.stringify(value));
-}
-
-function localId(prefix: string) {
-  return typeof crypto !== 'undefined' &&
-    typeof crypto.randomUUID === 'function'
-    ? `${prefix}-${crypto.randomUUID()}`
-    : `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
-
-function limitCopy(language: LanguageCode, key: keyof typeof uiCopy.en) {
-  return uiCopy[language][key] ?? uiCopy.en[key] ?? '';
+function chatCopyFor(language: LanguageCode): ChatPanelCopy {
+  return {
+    chooseMode: 'Choose a mode',
+    emptyGuest:
+      'Your guest conversation will appear here and stay in this browser.',
+    emptyAuth: 'Your saved conversation history will appear here.',
+    guestLimitLabel: '5 free guest messages/day',
+    accountLimitLabel: '20 free messages/day',
+    guestLimitReached:
+      'You’ve reached today’s free guest limit. Create a free account to continue with more messages and save your progress.',
+    accountLimitReached:
+      'You’ve reached today’s free account limit. Come back tomorrow.',
+    signup: 'Create free account',
+    login: 'Log in',
+    send: 'Send',
+    safetyNote: 'AI can make mistakes. MindPulse is not a doctor or therapist.',
+    fallbackError:
+      language === 'ru'
+        ? 'MindPulse сейчас не смог ответить. Попробуй ещё раз.'
+        : language === 'kk'
+          ? 'MindPulse қазір жауап бере алмады. Қайта байқап көр.'
+          : 'MindPulse could not answer right now. Please try again.',
+  };
 }
 
 export function DashboardApp({ user: initialUser }: { user: User | null }) {
   const [user, setUser] = useState<User | null>(initialUser);
   const [language, setLanguage] = useState<LanguageCode>('en');
-  const [mode, setMode] = useState<ModeId>('study');
-  const [chatInput, setChatInput] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [historyReady, setHistoryReady] = useState(false);
-  const [chatLoading, setChatLoading] = useState(false);
-  const [chatError, setChatError] = useState('');
+  const [todayFocus, setTodayFocus] = useState('');
+  const [showGuestBanner, setShowGuestBanner] = useState(false);
   const [agentInput, setAgentInput] = useState('');
   const [agentOutput, setAgentOutput] = useState('');
   const [agentLoading, setAgentLoading] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [todayFocus, setTodayFocus] = useState('');
-  const [showGuestBanner, setShowGuestBanner] = useState(false);
-  const [usage, setUsage] = useState<ChatUsage | null>(null);
-  const [limitAccountRequired, setLimitAccountRequired] = useState(false);
   const isGuest = !user;
-  const t = uiCopy[language];
-  const displayModes = useMemo(
-    () =>
-      modes.map((item) => ({
-        ...item,
-        ...modeCopy[language][item.id],
-      })),
-    [language],
-  );
-
-  const loadHistory = useCallback(async () => {
-    setHistoryReady(false);
-    if (!user) {
-      setMessages(readJson<ChatMessage[]>(GUEST_CHAT_KEY, []));
-      setHistoryReady(true);
-      return;
-    }
-    const response = await fetch('/api/chat/history', {
-      credentials: 'same-origin',
-    });
-    if (!response.ok) {
-      setHistoryReady(true);
-      return;
-    }
-    const body = (await response.json()) as { messages?: ChatMessage[] };
-    setMessages([...(body.messages ?? [])].reverse());
-    setHistoryReady(true);
-  }, [user]);
+  const chatCopy = useMemo(() => chatCopyFor(language), [language]);
 
   useEffect(() => {
     setUser(initialUser);
@@ -359,7 +106,7 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
         }
         if (response.status === 401) setUser(null);
       } catch {
-        // Keep the server-rendered state if the lightweight session check fails.
+        // Keep server-rendered state if the lightweight session check fails.
       }
     }
     void reconcileSession();
@@ -377,95 +124,12 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
   }, []);
 
   useEffect(() => {
-    void loadHistory();
-    setUsage(null);
-    setLimitAccountRequired(false);
-  }, [loadHistory]);
-
-  useEffect(() => {
     writeJson(LANGUAGE_KEY, language);
   }, [language]);
 
   useEffect(() => {
-    if (isGuest && historyReady) writeJson(GUEST_CHAT_KEY, messages.slice(-80));
-  }, [historyReady, isGuest, messages]);
-
-  useEffect(() => {
     writeJson(GUEST_FOCUS_KEY, todayFocus);
   }, [todayFocus]);
-
-  const selectedMode = useMemo(
-    () => displayModes.find((item) => item.id === mode)!,
-    [displayModes, mode],
-  );
-
-  async function sendChat(event: FormEvent) {
-    event.preventDefault();
-    const text = chatInput.trim();
-    if (!text || chatLoading) return;
-    setChatLoading(true);
-    setChatError('');
-    setLimitAccountRequired(false);
-    setChatInput('');
-    const localUser: ChatMessage = {
-      id: localId('local-user'),
-      role: 'user',
-      content: text,
-      mode,
-      created_at: new Date().toISOString(),
-    };
-    setMessages((items) => [...items, localUser]);
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, mode, language }),
-      });
-      const body = (await response.json().catch(() => ({}))) as ChatApiBody;
-      if (response.status === 429 && body.error === 'daily_limit_reached') {
-        setChatError(
-          body.accountRequired
-            ? limitCopy(language, 'guestLimitReached')
-            : limitCopy(language, 'accountLimitReached'),
-        );
-        setLimitAccountRequired(Boolean(body.accountRequired));
-        if (typeof body.limit === 'number') {
-          setUsage({
-            limit: body.limit,
-            used: body.limit,
-            remaining: 0,
-            accountRequired: Boolean(body.accountRequired),
-          });
-        }
-        return;
-      }
-      if (!response.ok || !body.reply) {
-        console.error('[MindPulse] chat failed:', body);
-        setChatError(
-          language === 'ru'
-            ? 'MindPulse сейчас не смог ответить. Попробуй ещё раз.'
-            : language === 'kk'
-              ? 'MindPulse қазір жауап бере алмады. Қайта байқап көр.'
-              : 'MindPulse could not answer right now. Please try again.',
-        );
-        return;
-      }
-      if (body.usage) setUsage(body.usage);
-      setMessages((items) => [
-        ...items,
-        {
-          id: localId('local-ai'),
-          role: 'assistant',
-          content: body.reply!,
-          mode,
-          created_at: new Date().toISOString(),
-        },
-      ]);
-    } finally {
-      setChatLoading(false);
-    }
-  }
 
   async function runAgent(prompt = agentInput) {
     const text = prompt.trim();
@@ -529,30 +193,39 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
   return (
     <div className="ambient min-h-screen">
       <header className="sticky top-0 z-40 border-b border-ink/5 bg-canvas/85 backdrop-blur-xl">
-        <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
+        <nav className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 py-4 sm:px-8">
           <Link href="/app" className="flex items-center gap-3">
             <span className="grid h-10 w-10 place-items-center rounded-2xl bg-ink text-canvas">
               <Brain size={20} />
             </span>
-            <b>MindPulse</b>
+            <span>
+              <b className="block text-sm">MindPulse</b>
+              <small className="font-semibold uppercase tracking-[.16em] text-muted">
+                by Northlight
+              </small>
+            </span>
           </Link>
-          <div className="hidden gap-6 text-sm font-semibold text-muted md:flex">
-            <a href="#dashboard">Dashboard</a>
-            <a href="#chat">AI Chat</a>
-            <a href="#agent">Agent</a>
-            <a href="#history">History</a>
-            <a href="#settings">Settings</a>
+          <div className="hidden gap-6 text-sm font-semibold text-muted lg:flex">
+            <Link href="/app" className="hover:text-ink">
+              Dashboard
+            </Link>
+            <Link href="/why" className="hover:text-ink">
+              Why I built this
+            </Link>
+            <a href="#agent" className="hover:text-ink">
+              Agent
+            </a>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <label className="inline-flex min-h-10 items-center gap-2 rounded-full bg-surface px-3 text-sm font-semibold text-muted shadow-soft">
               <Globe2 size={15} />
-              <span className="sr-only">{t.language}</span>
+              <span className="sr-only">Language</span>
               <select
                 value={language}
                 onChange={(event) =>
                   setLanguage(event.target.value as LanguageCode)
                 }
-                aria-label={t.language}
+                aria-label="Language"
                 className="bg-transparent font-semibold text-ink outline-none"
               >
                 {languages.map((item) => (
@@ -567,7 +240,7 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
                 href="/logout"
                 className="inline-flex min-h-10 items-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-canvas"
               >
-                <LogOut size={15} /> {t.logout}
+                <LogOut size={15} /> Logout
               </Link>
             ) : (
               <>
@@ -575,13 +248,13 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
                   href="/login"
                   className="inline-flex min-h-10 items-center gap-2 rounded-full bg-surface px-4 text-sm font-semibold text-ink shadow-soft"
                 >
-                  <LogIn size={15} /> {t.login}
+                  <LogIn size={15} /> Log in
                 </Link>
                 <Link
                   href="/signup"
                   className="inline-flex min-h-10 items-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-canvas"
                 >
-                  <UserPlus size={15} /> {t.signup}
+                  <UserPlus size={15} /> Sign up
                 </Link>
               </>
             )}
@@ -594,20 +267,21 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
           <section className="mb-6 rounded-[1.75rem] border border-sage/20 bg-sage-soft/70 p-5 shadow-soft">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <p className="max-w-3xl text-sm leading-6 text-muted">
-                {t.syncCta}
+                Create a free account to continue with more messages and save
+                your progress. Guest history stays local to this device.
               </p>
               <div className="flex flex-wrap gap-2">
                 <Link
                   href="/signup"
                   className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-canvas"
                 >
-                  {t.signup}
+                  Create free account
                 </Link>
                 <Link
                   href="/login"
                   className="rounded-full bg-canvas px-4 py-2 text-sm font-semibold text-ink"
                 >
-                  {t.login}
+                  Log in
                 </Link>
                 <button
                   onClick={() => {
@@ -616,176 +290,123 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
                   }}
                   className="rounded-full bg-canvas/70 px-4 py-2 text-sm font-semibold text-muted"
                 >
-                  {t.continueGuest}
+                  Continue as guest
                 </button>
               </div>
             </div>
           </section>
         )}
 
-        <section id="dashboard" className="grid gap-5 lg:grid-cols-[1fr_22rem]">
-          <div className="rounded-[2rem] bg-surface p-6 shadow-soft sm:p-8">
-            <p className="text-xs font-bold uppercase tracking-[.2em] text-sage">
-              {isGuest ? 'Free student beta' : 'Dashboard'}
-            </p>
-            <h1 className="mt-3 text-4xl font-semibold tracking-tight">
-              {user ? `Welcome, ${user.name || user.email}.` : t.guestTitle}
+        <section className="grid gap-5 lg:grid-cols-[1fr_22rem]">
+          <div className="overflow-hidden rounded-[2rem] bg-surface p-6 shadow-soft sm:p-8">
+            <div className="flex flex-wrap gap-2">
+              <span className="rounded-full bg-sage-soft px-4 py-2 text-xs font-bold uppercase tracking-[.18em] text-sage">
+                Beta
+              </span>
+              <span className="rounded-full bg-canvas px-4 py-2 text-xs font-bold uppercase tracking-[.18em] text-muted">
+                Built by a student, for students
+              </span>
+            </div>
+            <h1 className="mt-6 max-w-3xl text-5xl font-semibold leading-tight tracking-[-.045em] sm:text-6xl">
+              A calmer student workspace for messy days.
             </h1>
-            <p className="mt-3 leading-7 text-muted">
-              {user ? (
-                <>
-                  Your account is connected to <b>{user.email}</b>. Chat history
-                  and saved Agent plans stay attached to this login.
-                </>
-              ) : (
-                t.guestBody
-              )}
+            <p className="mt-5 max-w-2xl text-lg leading-8 text-muted">
+              MindPulse helps you study, plan, reset motivation, build habits,
+              break down goals, and reflect without guilt. Start as a guest, or
+              create a free account when you want saved progress.
             </p>
-            <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {[
-                ...displayModes,
-                {
-                  id: 'chat' as const,
-                  title: 'AI Chat',
-                  icon: MessageSquareText,
-                  copy: 'Ask anything study-related.',
-                },
-                {
-                  id: 'agent' as const,
-                  title: 'Agent',
-                  icon: Wand2,
-                  copy: 'Generate structured plans.',
-                },
-              ].map((item) => (
-                <a
-                  key={item.title}
-                  href={item.id === 'agent' ? '#agent' : '#chat'}
-                  className="rounded-mp bg-canvas/70 p-4 transition hover:-translate-y-1 hover:bg-sage-soft/70"
-                >
-                  <item.icon className="text-sage" size={20} />
-                  <h2 className="mt-4 font-semibold">{item.title}</h2>
-                  <p className="mt-1 text-sm leading-6 text-muted">
-                    {item.copy}
-                  </p>
-                </a>
-              ))}
+            <div className="mt-7 flex flex-wrap gap-3">
+              <a
+                href="#chat"
+                className="inline-flex min-h-12 items-center rounded-full bg-sage px-6 font-semibold text-canvas"
+              >
+                Open AI chat
+              </a>
+              <Link
+                href="/why"
+                className="inline-flex min-h-12 items-center rounded-full bg-canvas px-6 font-semibold text-ink"
+              >
+                Why I built this
+              </Link>
+              <FeedbackModal />
             </div>
           </div>
           <aside className="rounded-[2rem] bg-ink p-6 text-canvas shadow-soft">
             <Target className="text-sage-soft" />
-            <h2 className="mt-5 text-xl font-semibold">{t.todayFocus}</h2>
+            <h2 className="mt-5 text-xl font-semibold">Today’s focus</h2>
             <textarea
               value={todayFocus}
               onChange={(event) => setTodayFocus(event.target.value)}
               rows={4}
               className="mt-4 w-full resize-none rounded-2xl border border-canvas/10 bg-canvas/10 px-4 py-3 text-sm text-canvas outline-none placeholder:text-canvas/45 focus:border-sage-soft"
-              placeholder={t.focusPlaceholder}
+              placeholder="One useful thing for today..."
             />
-            <p className="mt-2 text-sm leading-6 text-canvas/70">
+            <p className="mt-3 text-sm leading-6 text-canvas/70">
               No shame streaks. Pick one useful return today and let the rest
               become easier after that.
             </p>
+            <div className="mt-5 rounded-2xl bg-canvas/10 p-4">
+              <p className="text-xs font-bold uppercase tracking-[.16em] text-sage-soft">
+                {isGuest ? 'Guest plan' : 'Account plan'}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-canvas/75">
+                {isGuest
+                  ? '5 free guest messages/day · local history only'
+                  : '20 free messages/day · D1 chat history enabled'}
+              </p>
+            </div>
           </aside>
         </section>
 
-        <section id="chat" className="mt-8 grid gap-5 lg:grid-cols-[20rem_1fr]">
-          <div className="rounded-mp bg-surface p-5 shadow-soft">
-            <h2 className="font-semibold">Choose a mode</h2>
-            <div className="mt-4 space-y-2">
-              {displayModes.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setMode(item.id)}
-                  className={`w-full rounded-2xl p-3 text-left text-sm font-semibold ${
-                    mode === item.id
-                      ? 'bg-sage-soft text-ink'
-                      : 'bg-canvas/60 text-muted'
-                  }`}
-                >
-                  {item.title}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="rounded-[2rem] bg-surface shadow-soft">
-            <div className="border-b border-ink/5 p-5">
-              <h2 className="text-xl font-semibold">{selectedMode.title}</h2>
-              <p className="text-sm text-muted">{selectedMode.copy}</p>
-              <p className="mt-2 text-xs font-bold uppercase tracking-[.16em] text-sage">
-                {user
-                  ? limitCopy(language, 'accountLimitLabel')
-                  : limitCopy(language, 'guestLimitLabel')}
-                {usage ? ` · ${usage.remaining} left today` : ''}
+        <section className="mt-8 grid gap-4 sm:grid-cols-3">
+          {[
+            ['Free student beta', 'No payments, subscriptions, or ads.'],
+            ['Guest-first', 'Try MindPulse without a login wall.'],
+            [
+              'Private by design',
+              'API keys and account data stay server-side.',
+            ],
+          ].map(([title, copy]) => (
+            <article
+              key={title}
+              className="rounded-mp bg-surface p-5 shadow-soft"
+            >
+              <ShieldCheck className="text-sage" size={20} />
+              <h2 className="mt-4 font-semibold">{title}</h2>
+              <p className="mt-2 text-sm leading-6 text-muted">{copy}</p>
+            </article>
+          ))}
+        </section>
+
+        <section className="mt-8">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[.2em] text-sage">
+                Six tools
               </p>
+              <h2 className="mt-2 text-3xl font-semibold">
+                Choose what kind of support you need.
+              </h2>
             </div>
-            <div className="max-h-[32rem] min-h-[24rem] space-y-4 overflow-y-auto bg-canvas/40 p-5">
-              {!messages.length && (
-                <p className="rounded-mp bg-surface p-4 text-muted">
-                  {isGuest ? t.emptyGuest : t.emptyAuth}
-                </p>
-              )}
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[85%] rounded-[1.35rem] px-4 py-3 text-sm leading-7 ${
-                      message.role === 'user'
-                        ? 'rounded-br-md bg-ink text-canvas'
-                        : 'rounded-bl-md bg-surface'
-                    }`}
-                  >
-                    {message.role === 'assistant' ? (
-                      <SafeMarkdown>{message.content}</SafeMarkdown>
-                    ) : (
-                      message.content
-                    )}
-                  </div>
-                </div>
-              ))}
-              {chatLoading && <Loader2 className="animate-spin text-sage" />}
-            </div>
-            {chatError && (
-              <div className="mx-5 mt-4 rounded-2xl bg-warm/15 p-3 text-sm text-danger">
-                <p>{chatError}</p>
-                {limitAccountRequired && (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Link
-                      href="/signup"
-                      className="rounded-full bg-ink px-4 py-2 text-xs font-semibold text-canvas"
-                    >
-                      {t.signup}
-                    </Link>
-                    <Link
-                      href="/login"
-                      className="rounded-full bg-canvas px-4 py-2 text-xs font-semibold text-ink"
-                    >
-                      {t.login}
-                    </Link>
-                  </div>
-                )}
-              </div>
-            )}
-            <form onSubmit={sendChat} className="p-5">
-              <textarea
-                value={chatInput}
-                onChange={(event) => setChatInput(event.target.value)}
-                maxLength={1000}
-                rows={3}
-                className="w-full resize-none rounded-2xl border border-ink/10 bg-canvas/70 px-4 py-3 outline-none focus:border-sage"
-                placeholder={`Ask ${selectedMode.title}...`}
-              />
-              <div className="mt-3 flex items-center justify-between">
-                <p className="text-xs text-muted">
-                  AI can make mistakes. MindPulse is not a doctor or therapist.
-                </p>
-                <button className="inline-flex min-h-11 items-center gap-2 rounded-full bg-sage px-5 font-semibold text-canvas">
-                  Send <Send size={15} />
-                </button>
-              </div>
-            </form>
+            <p className="max-w-xl text-sm leading-6 text-muted">
+              Each tool opens a focused chat mode with examples, while
+              preserving the same guest/account limits and language setting.
+            </p>
           </div>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {mindPulseTools.map((tool) => (
+              <ToolCard key={tool.id} tool={tool} />
+            ))}
+          </div>
+        </section>
+
+        <section id="chat" className="scroll-mt-24">
+          <ChatPanel
+            user={user}
+            language={language}
+            copy={chatCopy}
+            className="mt-8"
+          />
         </section>
 
         <section
@@ -850,35 +471,48 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
               </button>
               {saved && isGuest && (
                 <p className="mt-2 text-xs font-semibold text-sage">
-                  {t.savedLocally}
+                  Saved locally on this device.
                 </p>
               )}
             </div>
           </div>
         </section>
 
-        <section
-          id="history"
-          className="mt-8 rounded-mp bg-surface p-5 shadow-soft"
-        >
+        <section className="mt-8 rounded-mp bg-surface p-5 shadow-soft">
           <h2 className="flex items-center gap-2 font-semibold">
-            <History size={18} className="text-sage" /> Recent conversations
+            <History size={18} className="text-sage" /> Recent sessions
           </h2>
-          <p className="mt-2 text-sm text-muted">
-            {isGuest ? t.guestHistory : t.authHistory}
+          <p className="mt-2 text-sm leading-6 text-muted">
+            {isGuest
+              ? 'Guest conversations stay in this browser. Open the chat above to continue your local session.'
+              : 'Your latest account conversations load inside the chat panel and are saved to D1.'}
           </p>
         </section>
 
-        <section
-          id="settings"
-          className="mt-8 rounded-mp bg-surface p-5 shadow-soft"
-        >
-          <h2 className="font-semibold">Settings</h2>
-          <p className="mt-2 text-sm text-muted">
-            Preferences are ready for the next iteration. Private configuration
-            stays server-side.
+        <footer className="mt-8 flex flex-col gap-4 rounded-mp bg-surface p-5 text-sm text-muted shadow-soft lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap gap-4">
+            <Link href="/app" className="font-semibold hover:text-ink">
+              Dashboard
+            </Link>
+            <Link href="/why" className="font-semibold hover:text-ink">
+              Why I built this
+            </Link>
+            {isGuest && (
+              <>
+                <Link href="/login" className="font-semibold hover:text-ink">
+                  Login
+                </Link>
+                <Link href="/signup" className="font-semibold hover:text-ink">
+                  Sign up
+                </Link>
+              </>
+            )}
+          </div>
+          <p className="flex items-center gap-2">
+            <MessageSquareText size={16} className="text-sage" />
+            Privacy note: MindPulse is not therapy or emergency help.
           </p>
-        </section>
+        </footer>
       </main>
     </div>
   );
