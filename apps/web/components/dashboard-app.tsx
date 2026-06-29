@@ -45,6 +45,9 @@ type AgentPlan = {
 
 export function DashboardApp({ user: initialUser }: { user: User | null }) {
   const [user, setUser] = useState<User | null>(initialUser);
+  // authReady starts true if the server already confirmed a user (no flash needed).
+  // If the server passed null, we wait for /api/auth/me before showing guest UI.
+  const [authReady, setAuthReady] = useState(Boolean(initialUser));
   const [language, setLanguage] = useState<LanguageCode>('en');
   const [todayFocus, setTodayFocus] = useState('');
   const [showGuestBanner, setShowGuestBanner] = useState(false);
@@ -52,6 +55,7 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
   const [agentOutput, setAgentOutput] = useState('');
   const [agentLoading, setAgentLoading] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const isGuest = !user;
 
   const ui = useMemo(() => copyFor(language), [language]);
@@ -70,15 +74,20 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
           credentials: 'same-origin',
           cache: 'no-store',
         });
-        if (!active) return;
-        if (response.ok) {
-          const body = (await response.json().catch(() => ({}))) as AuthMeBody;
-          setUser(body.user ?? null);
-          return;
+        if (active) {
+          if (response.ok) {
+            const body = (await response.json().catch(() => ({}))) as AuthMeBody;
+            setUser(body.user ?? null);
+          } else if (response.status === 401) {
+            setUser(null);
+          }
+          // For other status codes (network error handled in catch), keep initialUser.
         }
-        if (response.status === 401) setUser(null);
       } catch {
         // Keep server-rendered state if the lightweight session check fails.
+      } finally {
+        // Always mark auth as ready so the UI stops blocking on the check.
+        if (active) setAuthReady(true);
       }
     }
     void reconcileSession();
@@ -109,6 +118,7 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
     setAgentInput(text);
     setAgentLoading(true);
     setSaved(false);
+    setSaveError('');
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -131,7 +141,17 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
 
   async function savePlan() {
     if (!agentOutput.trim()) return;
+    setSaved(false);
+    setSaveError('');
+
+    // Do not save while session check is still in progress.
+    if (!authReady) {
+      setSaveError(ui.authChecking);
+      return;
+    }
+
     if (!user) {
+      // Confirmed guest — save locally.
       const plans = readJson<AgentPlan[]>(GUEST_AGENT_KEY, []);
       writeJson(
         GUEST_AGENT_KEY,
@@ -148,6 +168,8 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
       setSaved(true);
       return;
     }
+
+    // Logged-in user — POST to account.
     const response = await fetch('/api/agent', {
       method: 'POST',
       credentials: 'same-origin',
@@ -157,7 +179,13 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
         content: agentOutput,
       }),
     });
-    setSaved(response.ok);
+    if (response.ok) {
+      setSaved(true);
+    } else if (response.status === 401) {
+      setSaveError(ui.agentNeedLogin);
+    } else {
+      setSaveError(ui.agentFallback);
+    }
   }
 
   return (
@@ -205,35 +233,39 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
                 ))}
               </select>
             </label>
-            {user ? (
-              <Link
-                href="/logout"
-                className="inline-flex min-h-10 items-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-canvas"
-              >
-                <LogOut size={15} /> {ui.navLogout}
-              </Link>
-            ) : (
-              <>
+            {/* Hide auth-dependent nav buttons until session is confirmed */}
+            {authReady && (
+              user ? (
                 <Link
-                  href="/login"
-                  className="inline-flex min-h-10 items-center gap-2 rounded-full bg-surface px-4 text-sm font-semibold text-ink shadow-soft"
-                >
-                  <LogIn size={15} /> {ui.navLogin}
-                </Link>
-                <Link
-                  href="/signup"
+                  href="/logout"
                   className="inline-flex min-h-10 items-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-canvas"
                 >
-                  <UserPlus size={15} /> {ui.navSignup}
+                  <LogOut size={15} /> {ui.navLogout}
                 </Link>
-              </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className="inline-flex min-h-10 items-center gap-2 rounded-full bg-surface px-4 text-sm font-semibold text-ink shadow-soft"
+                  >
+                    <LogIn size={15} /> {ui.navLogin}
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="inline-flex min-h-10 items-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-canvas"
+                  >
+                    <UserPlus size={15} /> {ui.navSignup}
+                  </Link>
+                </>
+              )
             )}
           </div>
         </nav>
       </header>
 
       <main id="main-content" className="mx-auto max-w-7xl px-5 py-10 sm:px-8">
-        {isGuest && showGuestBanner && (
+        {/* Guest banner — only show after auth check confirms user is null */}
+        {authReady && isGuest && showGuestBanner && (
           <section className="mb-6 rounded-[1.75rem] border border-sage/20 bg-sage-soft/70 p-5 shadow-soft">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <p className="max-w-3xl text-sm leading-6 text-muted">
@@ -313,11 +345,17 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
             </p>
             <div className="mt-5 rounded-2xl bg-canvas/10 p-4">
               <p className="text-xs font-bold uppercase tracking-[.16em] text-sage-soft">
-                {isGuest ? ui.planGuestLabel : ui.planAccountLabel}
+                {!authReady
+                  ? ui.authChecking
+                  : isGuest
+                    ? ui.planGuestLabel
+                    : ui.planAccountLabel}
               </p>
-              <p className="mt-2 text-sm leading-6 text-canvas/75">
-                {isGuest ? ui.planGuestDesc : ui.planAccountDesc}
-              </p>
+              {authReady && (
+                <p className="mt-2 text-sm leading-6 text-canvas/75">
+                  {isGuest ? ui.planGuestDesc : ui.planAccountDesc}
+                </p>
+              )}
             </div>
           </aside>
         </section>
@@ -361,6 +399,7 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
             user={user}
             language={language}
             copy={chatCopy}
+            authReady={authReady}
             className="mt-8"
           />
         </section>
@@ -426,6 +465,11 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
                   {ui.agentSavedLocal}
                 </p>
               )}
+              {saveError && (
+                <p className="mt-2 text-xs font-semibold text-danger">
+                  {saveError}
+                </p>
+              )}
             </div>
           </div>
         </section>
@@ -435,7 +479,11 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
             <History size={18} className="text-sage" /> {ui.recentTitle}
           </h2>
           <p className="mt-2 text-sm leading-6 text-muted">
-            {isGuest ? ui.recentGuest : ui.recentAccount}
+            {!authReady
+              ? ui.authChecking
+              : isGuest
+                ? ui.recentGuest
+                : ui.recentAccount}
           </p>
         </section>
 

@@ -34,12 +34,14 @@ export function ToolPage({
   user: MindPulseUser | null;
 }) {
   const [user, setUser] = useState<MindPulseUser | null>(initialUser);
+  // authReady starts true when the server already confirmed the user.
+  // If the server passed null (Cloudflare cookies() unreliable), we wait.
+  const [authReady, setAuthReady] = useState(Boolean(initialUser));
   const [language, setLanguage] = useState<LanguageCode>('en');
   const isGuest = !user;
 
   const ui = useMemo(() => copyFor(language), [language]);
   const chatCopy = useMemo(() => chatCopyFor(language), [language]);
-  // Overlay tool text (title, explanation, examples) with translations
   const localizedTool = useMemo<MindPulseTool>(() => {
     const localized = getToolsForLanguage(language).find((t) => t.id === tool.id);
     return localized ?? tool;
@@ -67,15 +69,18 @@ export function ToolPage({
           credentials: 'same-origin',
           cache: 'no-store',
         });
-        if (!active) return;
-        if (response.ok) {
-          const body = (await response.json().catch(() => ({}))) as AuthMeBody;
-          setUser(body.user ?? null);
-          return;
+        if (active) {
+          if (response.ok) {
+            const body = (await response.json().catch(() => ({}))) as AuthMeBody;
+            setUser(body.user ?? null);
+          } else if (response.status === 401) {
+            setUser(null);
+          }
         }
-        if (response.status === 401) setUser(null);
       } catch {
         // Keep the server-rendered state if the lightweight session check fails.
+      } finally {
+        if (active) setAuthReady(true);
       }
     }
     void reconcileSession();
@@ -113,28 +118,31 @@ export function ToolPage({
                 ))}
               </select>
             </label>
-            {user ? (
-              <Link
-                href="/logout"
-                className="inline-flex min-h-10 items-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-canvas"
-              >
-                <LogOut size={15} /> {ui.navLogout}
-              </Link>
-            ) : (
-              <>
+            {/* Hide auth-dependent nav buttons until session is confirmed */}
+            {authReady && (
+              user ? (
                 <Link
-                  href="/login"
-                  className="inline-flex min-h-10 items-center gap-2 rounded-full bg-surface px-4 text-sm font-semibold text-ink shadow-soft"
-                >
-                  <LogIn size={15} /> {ui.navLogin}
-                </Link>
-                <Link
-                  href="/signup"
+                  href="/logout"
                   className="inline-flex min-h-10 items-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-canvas"
                 >
-                  <UserPlus size={15} /> {ui.navSignup}
+                  <LogOut size={15} /> {ui.navLogout}
                 </Link>
-              </>
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className="inline-flex min-h-10 items-center gap-2 rounded-full bg-surface px-4 text-sm font-semibold text-ink shadow-soft"
+                  >
+                    <LogIn size={15} /> {ui.navLogin}
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="inline-flex min-h-10 items-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-canvas"
+                  >
+                    <UserPlus size={15} /> {ui.navSignup}
+                  </Link>
+                </>
+              )
             )}
           </div>
         </nav>
@@ -159,31 +167,39 @@ export function ToolPage({
               {localizedTool.explanation}
             </p>
           </div>
+
+          {/* Access card — neutral until auth is confirmed */}
           <div className="rounded-[2rem] bg-surface p-6 shadow-soft">
-            <p className="text-xs font-bold uppercase tracking-[.18em] text-sage">
-              {isGuest ? ui.toolPageGuestAccess : ui.toolPageAccountAccess}
-            </p>
-            <h2 className="mt-3 text-2xl font-semibold">
-              {isGuest ? ui.toolPageGuestSlogan : ui.toolPageAccountSlogan}
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-muted">
-              {isGuest ? ui.toolPageGuestDesc : ui.toolPageAccountDesc}
-            </p>
-            {isGuest && (
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Link
-                  href="/signup"
-                  className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-canvas"
-                >
-                  {ui.toolPageCreate}
-                </Link>
-                <Link
-                  href="/login"
-                  className="rounded-full bg-canvas px-4 py-2 text-sm font-semibold text-ink"
-                >
-                  {ui.toolPageLogin}
-                </Link>
-              </div>
+            {!authReady ? (
+              <p className="text-sm text-muted">{ui.authChecking}</p>
+            ) : (
+              <>
+                <p className="text-xs font-bold uppercase tracking-[.18em] text-sage">
+                  {isGuest ? ui.toolPageGuestAccess : ui.toolPageAccountAccess}
+                </p>
+                <h2 className="mt-3 text-2xl font-semibold">
+                  {isGuest ? ui.toolPageGuestSlogan : ui.toolPageAccountSlogan}
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-muted">
+                  {isGuest ? ui.toolPageGuestDesc : ui.toolPageAccountDesc}
+                </p>
+                {isGuest && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Link
+                      href="/signup"
+                      className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-canvas"
+                    >
+                      {ui.toolPageCreate}
+                    </Link>
+                    <Link
+                      href="/login"
+                      className="rounded-full bg-canvas px-4 py-2 text-sm font-semibold text-ink"
+                    >
+                      {ui.toolPageLogin}
+                    </Link>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </section>
@@ -195,6 +211,7 @@ export function ToolPage({
           fixedMode
           copy={chatCopy}
           examples={localizedTool.examples}
+          authReady={authReady}
           className="mt-8"
         />
 

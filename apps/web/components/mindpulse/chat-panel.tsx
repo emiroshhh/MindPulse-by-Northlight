@@ -58,6 +58,8 @@ export type ChatPanelCopy = {
   send: string;
   safetyNote: string;
   fallbackError: string;
+  /** Shown in the empty-messages area while auth check is pending */
+  authChecking?: string;
 };
 
 export function ChatPanel({
@@ -68,6 +70,7 @@ export function ChatPanel({
   copy,
   examples = [],
   className = '',
+  authReady = true,
 }: {
   user: MindPulseUser | null;
   language: LanguageCode;
@@ -76,6 +79,9 @@ export function ChatPanel({
   copy: ChatPanelCopy;
   examples?: string[];
   className?: string;
+  /** Set to false while the parent is still confirming the user session.
+   *  ChatPanel will not load history (guest or account) until this is true. */
+  authReady?: boolean;
 }) {
   const [mode, setMode] = useState<ModeId>(initialMode);
   const [chatInput, setChatInput] = useState('');
@@ -116,11 +122,16 @@ export function ChatPanel({
     setMode(initialMode);
   }, [initialMode]);
 
+  // Only load history once the parent has confirmed the auth state.
+  // Without this guard, a server-rendered guest (initialUser = null due to
+  // Cloudflare cookies() unreliability) would flash guest local history
+  // before the /api/auth/me check confirms the real user.
   useEffect(() => {
+    if (!authReady) return;
     void loadHistory();
     setUsage(null);
     setLimitAccountRequired(false);
-  }, [loadHistory]);
+  }, [loadHistory, authReady]);
 
   useEffect(() => {
     if (isGuest && historyReady) writeJson(GUEST_CHAT_KEY, messages.slice(-80));
@@ -188,6 +199,13 @@ export function ChatPanel({
     }
   }
 
+  // Derive the empty-state message shown before any messages exist
+  const emptyStateText = !authReady
+    ? (copy.authChecking ?? 'Checking your session…')
+    : isGuest
+      ? copy.emptyGuest
+      : copy.emptyAuth;
+
   return (
     <section
       className={`grid gap-5 ${fixedMode ? '' : 'lg:grid-cols-[20rem_1fr]'} ${className}`}
@@ -237,7 +255,7 @@ export function ChatPanel({
         <div className="max-h-[32rem] min-h-[24rem] space-y-4 overflow-y-auto bg-canvas/40 p-5">
           {!messages.length && (
             <p className="rounded-mp bg-surface p-4 text-muted">
-              {isGuest ? copy.emptyGuest : copy.emptyAuth}
+              {emptyStateText}
             </p>
           )}
           {messages.map((message) => (

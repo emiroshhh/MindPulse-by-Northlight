@@ -77,6 +77,9 @@ export type UiCopy = {
   toolPageAccountDesc: string;
   toolPageCreate: string;
   toolPageLogin: string;
+  // Auth state
+  authChecking: string;
+  agentNeedLogin: string;
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -168,6 +171,8 @@ const EN: UiCopy = {
     'Your account has 20 free AI messages per day and saves chat history in D1.',
   toolPageCreate: 'Create account',
   toolPageLogin: 'Log in',
+  authChecking: 'Checking your session…',
+  agentNeedLogin: 'Sign in to save your plan to your account.',
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -259,6 +264,8 @@ const RU: UiCopy = {
     '20 бесплатных AI-сообщений в день. История чата сохраняется в D1.',
   toolPageCreate: 'Создать аккаунт',
   toolPageLogin: 'Войти',
+  authChecking: 'Проверяем сессию…',
+  agentNeedLogin: 'Войдите, чтобы сохранить план в аккаунте.',
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -351,6 +358,8 @@ const KK: UiCopy = {
     'Аккаунтыңызда күніне 20 тегін AI хабарламасы бар. Чат тарихы D1-де сақталады.',
   toolPageCreate: 'Аккаунт ашу',
   toolPageLogin: 'Кіру',
+  authChecking: 'Сессия тексерілуде…',
+  agentNeedLogin: 'Жоспарды аккаунтта сақтау үшін кіріңіз.',
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -389,6 +398,7 @@ export function chatCopyFor(language: string) {
         'MindPulse даёт практическую поддержку, но не идеальные ответы. Проверяйте важную информацию.',
       fallbackError:
         'MindPulse сейчас не смог ответить. Попробуй ещё раз.',
+      authChecking: 'Проверяем сессию…',
     };
   }
   if (language === 'kk') {
@@ -409,6 +419,7 @@ export function chatCopyFor(language: string) {
       safetyNote:
         'MindPulse практикалық қолдау береді, кемел жауаптар емес. Маңызды ақпаратты тексеріңіз.',
       fallbackError: 'MindPulse қазір жауап бере алмады. Қайта байқап көр.',
+      authChecking: 'Сессия тексерілуде…',
     };
   }
   // English (default)
@@ -429,6 +440,7 @@ export function chatCopyFor(language: string) {
     safetyNote:
       'MindPulse gives practical support, not perfect answers. Always double-check important information.',
     fallbackError: 'MindPulse could not answer right now. Please try again.',
+    authChecking: 'Checking your session…',
   };
 }
 

@@ -148,3 +148,29 @@ describe('getToolsForLanguage', () => {
     expect(study?.title).toBe('Study Help');
   });
 });
+
+describe('authChecking and agentNeedLogin strings', () => {
+  it('copyFor English has authChecking', () => {
+    expect(copyFor('en').authChecking).toContain('Checking');
+  });
+
+  it('copyFor Russian has authChecking in Russian', () => {
+    expect(copyFor('ru').authChecking).toContain('сессию');
+  });
+
+  it('copyFor Kazakh has authChecking in Kazakh', () => {
+    expect(copyFor('kk').authChecking).toContain('тексерілуде');
+  });
+
+  it('agentNeedLogin present in all languages', () => {
+    expect(copyFor('en').agentNeedLogin).toContain('Sign in');
+    expect(copyFor('ru').agentNeedLogin).toContain('Войдите');
+    expect(copyFor('kk').agentNeedLogin).toContain('кіріңіз');
+  });
+
+  it('chatCopyFor includes authChecking in all languages', () => {
+    expect(chatCopyFor('en').authChecking).toContain('Checking');
+    expect(chatCopyFor('ru').authChecking).toContain('сессию');
+    expect(chatCopyFor('kk').authChecking).toContain('тексерілуде');
+  });
+});
