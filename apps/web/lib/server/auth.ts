@@ -33,6 +33,7 @@ type WorkerBindings = {
 };
 
 const SESSION_COOKIE = 'mindpulse_session';
+const HOST_SESSION_COOKIE = '__Host-mindpulse_session';
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30;
 const PASSWORD_MIN_LENGTH = 10;
 // Cloudflare Workers' WebCrypto rejects PBKDF2 iteration counts above 100000
@@ -172,24 +173,28 @@ export async function createSession(db: D1DatabaseLike, userId: string) {
 
 export async function setSessionCookie(token: string, expires: Date) {
   const jar = await cookies();
-  jar.set(SESSION_COOKIE, token, {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'lax',
-    path: '/',
-    expires,
-  });
+  for (const name of [SESSION_COOKIE, HOST_SESSION_COOKIE]) {
+    jar.set(name, token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      path: '/',
+      expires,
+    });
+  }
 }
 
 export async function clearSessionCookie() {
   const jar = await cookies();
-  jar.set(SESSION_COOKIE, '', {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 0,
-  });
+  for (const name of [SESSION_COOKIE, HOST_SESSION_COOKIE]) {
+    jar.set(name, '', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 0,
+    });
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -201,8 +206,24 @@ export async function clearSessionCookie() {
 
 /** Returns a Set-Cookie header value that sets the session cookie. */
 export function sessionCookieHeader(token: string, expires: Date): string {
+  return sessionCookieHeaderFor(SESSION_COOKIE, token, expires);
+}
+
+/** Returns Set-Cookie header values for both legacy and host-prefixed cookies. */
+export function sessionCookieHeaders(token: string, expires: Date): string[] {
   return [
-    `${SESSION_COOKIE}=${encodeURIComponent(token)}`,
+    sessionCookieHeaderFor(HOST_SESSION_COOKIE, token, expires),
+    sessionCookieHeaderFor(SESSION_COOKIE, token, expires),
+  ];
+}
+
+function sessionCookieHeaderFor(
+  name: string,
+  token: string,
+  expires: Date,
+): string {
+  return [
+    `${name}=${encodeURIComponent(token)}`,
     'Path=/',
     'HttpOnly',
     'Secure',
@@ -213,8 +234,20 @@ export function sessionCookieHeader(token: string, expires: Date): string {
 
 /** Returns a Set-Cookie header value that immediately expires the session cookie. */
 export function clearSessionCookieHeader(): string {
+  return clearSessionCookieHeaderFor(SESSION_COOKIE);
+}
+
+/** Returns Set-Cookie header values that clear both session cookie names. */
+export function clearSessionCookieHeaders(): string[] {
   return [
-    `${SESSION_COOKIE}=`,
+    clearSessionCookieHeaderFor(HOST_SESSION_COOKIE),
+    clearSessionCookieHeaderFor(SESSION_COOKIE),
+  ];
+}
+
+function clearSessionCookieHeaderFor(name: string): string {
+  return [
+    `${name}=`,
     'Path=/',
     'HttpOnly',
     'Secure',
@@ -224,12 +257,44 @@ export function clearSessionCookieHeader(): string {
   ].join('; ');
 }
 
+export function authSuccessHtmlResponse(
+  cookieHeaders: string[],
+  redirectTo = '/app',
+) {
+  const safeRedirect = redirectTo.startsWith('/') ? redirectTo : '/app';
+  const safeRedirectAttribute = safeRedirect.replace(/"/g, '%22');
+  const response = new Response(
+    `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="refresh" content="0;url=${safeRedirectAttribute}" />
+  <title>Signing in...</title>
+</head>
+<body>
+  <p>Signing you in...</p>
+  <script>window.location.replace(${JSON.stringify(safeRedirect)});</script>
+</body>
+</html>`,
+    {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-store',
+      },
+    },
+  );
+  for (const cookie of cookieHeaders)
+    response.headers.append('Set-Cookie', cookie);
+  return response;
+}
+
 /**
  * Reads the session token from the incoming request's Cookie header.
  * More reliable than cookies() on Cloudflare Workers.
  */
 export function readTokenFromRequest(request: Request): string | null {
-  return readCookieValue(request.headers.get('cookie') ?? '', SESSION_COOKIE);
+  return readSessionTokenFromHeader(request.headers.get('cookie') ?? '');
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
@@ -240,7 +305,8 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     return null;
   }
   const jar = await cookies();
-  const token = jar.get(SESSION_COOKIE)?.value;
+  const token =
+    jar.get(HOST_SESSION_COOKIE)?.value ?? jar.get(SESSION_COOKIE)?.value;
   if (!token) return null;
   return getUserBySessionToken(db, token);
 }
@@ -255,7 +321,7 @@ export async function getCurrentUserFromRequest(
     return null;
   }
   const token =
-    readCookieValue(request.headers.get('cookie') ?? '', SESSION_COOKIE) ??
+    readTokenFromRequest(request) ??
     (await readSessionTokenFromCookie().catch(() => null));
   if (!token) return null;
   return getUserBySessionToken(db, token);
@@ -291,7 +357,14 @@ export async function invalidateSessionToken(
 
 export async function readSessionTokenFromCookie() {
   const jar = await cookies();
-  return jar.get(SESSION_COOKIE)?.value ?? null;
+  return jar.get(HOST_SESSION_COOKIE)?.value ?? jar.get(SESSION_COOKIE)?.value ?? null;
+}
+
+function readSessionTokenFromHeader(header: string) {
+  return (
+    readCookieValue(header, HOST_SESSION_COOKIE) ??
+    readCookieValue(header, SESSION_COOKIE)
+  );
 }
 
 function readCookieValue(header: string, name: string) {

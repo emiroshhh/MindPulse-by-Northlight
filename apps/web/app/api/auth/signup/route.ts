@@ -1,4 +1,5 @@
 import {
+  authSuccessHtmlResponse,
   clientIp,
   createSession,
   getAuthDb,
@@ -7,7 +8,7 @@ import {
   normalizeEmail,
   publicUser,
   secureId,
-  sessionCookieHeader,
+  sessionCookieHeaders,
   setSessionCookie,
   validateEmail,
   validatePassword,
@@ -82,10 +83,12 @@ export async function POST(request: Request) {
     // Belt-and-suspenders: try the Next.js cookies() path, then attach an
     // explicit Set-Cookie header which is reliable on Cloudflare Workers.
     await setSessionCookie(session.token, session.expires).catch(() => undefined);
+    const cookieHeaders = sessionCookieHeaders(session.token, session.expires);
     if (!wantsJson)
-      return formSuccessRedirect('/app', session.token, session.expires);
+      return authSuccessHtmlResponse(cookieHeaders, '/app');
     const response = json({ user: publicUser(user) }, 201);
-    response.headers.append('Set-Cookie', sessionCookieHeader(session.token, session.expires));
+    for (const cookie of cookieHeaders)
+      response.headers.append('Set-Cookie', cookie);
     return response;
   } catch (error) {
     console.error(
@@ -117,18 +120,6 @@ async function readAuthInput(request: Request, wantsJson: boolean) {
   } catch {
     return null;
   }
-}
-
-function formSuccessRedirect(location: string, token: string, expires: Date) {
-  const response = new Response(null, {
-    status: 303,
-    headers: {
-      Location: location,
-      'Cache-Control': 'no-store',
-    },
-  });
-  response.headers.append('Set-Cookie', sessionCookieHeader(token, expires));
-  return response;
 }
 
 function formErrorRedirect(path: string, code: string) {

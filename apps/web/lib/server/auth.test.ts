@@ -1,6 +1,13 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { clearSessionCookieHeader, sessionCookieHeader } from './auth';
+import {
+  authSuccessHtmlResponse,
+  clearSessionCookieHeader,
+  clearSessionCookieHeaders,
+  readTokenFromRequest,
+  sessionCookieHeader,
+  sessionCookieHeaders,
+} from './auth';
 
 describe('sessionCookieHeader', () => {
   const token = 'test-token-abc123';
@@ -66,5 +73,72 @@ describe('clearSessionCookieHeader', () => {
 
   it('includes Path=/', () => {
     expect(header).toContain('Path=/');
+  });
+});
+
+describe('sessionCookieHeaders', () => {
+  const token = 'test-token-abc123';
+  const expires = new Date('2030-01-01T00:00:00.000Z');
+  const headers = sessionCookieHeaders(token, expires);
+
+  it('sets both legacy and host-prefixed cookie names', () => {
+    expect(headers).toHaveLength(2);
+    expect(headers[0]).toContain('__Host-mindpulse_session=');
+    expect(headers[1]).toContain('mindpulse_session=');
+  });
+
+  it('keeps the __Host cookie host-only compatible', () => {
+    expect(headers[0]).toContain('Secure');
+    expect(headers[0]).toContain('Path=/');
+    expect(headers[0]).not.toContain('Domain=');
+  });
+});
+
+describe('clearSessionCookieHeaders', () => {
+  const headers = clearSessionCookieHeaders();
+
+  it('clears both legacy and host-prefixed cookie names', () => {
+    expect(headers).toHaveLength(2);
+    expect(headers[0]).toContain('__Host-mindpulse_session=');
+    expect(headers[1]).toContain('mindpulse_session=');
+    for (const header of headers) expect(header).toContain('Max-Age=0');
+  });
+});
+
+describe('readTokenFromRequest', () => {
+  it('prefers the host-prefixed session cookie', () => {
+    const request = new Request('https://mindpulse.test/api/auth/me', {
+      headers: {
+        Cookie:
+          'mindpulse_session=legacy-token; __Host-mindpulse_session=host-token',
+      },
+    });
+
+    expect(readTokenFromRequest(request)).toBe('host-token');
+  });
+
+  it('falls back to the legacy session cookie', () => {
+    const request = new Request('https://mindpulse.test/api/auth/me', {
+      headers: { Cookie: 'mindpulse_session=legacy-token' },
+    });
+
+    expect(readTokenFromRequest(request)).toBe('legacy-token');
+  });
+});
+
+describe('authSuccessHtmlResponse', () => {
+  it('returns a 200 HTML response and appends Set-Cookie headers', () => {
+    const response = authSuccessHtmlResponse(
+      ['__Host-mindpulse_session=abc; Path=/', 'mindpulse_session=abc; Path=/'],
+      '/app',
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Content-Type')).toContain('text/html');
+    expect(response.headers.get('Cache-Control')).toBe('no-store');
+    expect(response.headers.get('Location')).toBeNull();
+    const setCookie = response.headers.get('Set-Cookie');
+    expect(setCookie).toContain('__Host-mindpulse_session=abc');
+    expect(setCookie).toContain('mindpulse_session=abc');
   });
 });

@@ -1,6 +1,6 @@
 import {
   clearSessionCookie,
-  clearSessionCookieHeader,
+  clearSessionCookieHeaders,
   invalidateSessionToken,
   json,
   readSessionTokenFromCookie,
@@ -27,6 +27,7 @@ export async function POST(request: Request) {
   await clearSessionCookie().catch(() => undefined);
 
   const response = json({ ok: true });
-  response.headers.append('Set-Cookie', clearSessionCookieHeader());
+  for (const cookie of clearSessionCookieHeaders())
+    response.headers.append('Set-Cookie', cookie);
   return response;
 }
