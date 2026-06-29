@@ -8,7 +8,6 @@ import {
   Loader2,
   LogIn,
   LogOut,
-  MessageSquareText,
   ShieldCheck,
   Target,
   UserPlus,
@@ -31,6 +30,7 @@ import {
 } from '@/lib/mindpulse/tools';
 import { ChatPanel, type ChatPanelCopy } from './mindpulse/chat-panel';
 import { FeedbackModal } from './mindpulse/feedback-modal';
+import { SiteFooter } from './mindpulse/site-footer';
 import { ToolCard } from './mindpulse/tool-card';
 import { SafeMarkdown } from './safe-markdown';
 
@@ -489,30 +489,7 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
           </p>
         </section>
 
-        <footer className="mt-8 flex flex-col gap-4 rounded-mp bg-surface p-5 text-sm text-muted shadow-soft lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-wrap gap-4">
-            <Link href="/app" className="font-semibold hover:text-ink">
-              Dashboard
-            </Link>
-            <Link href="/why" className="font-semibold hover:text-ink">
-              Why I built this
-            </Link>
-            {isGuest && (
-              <>
-                <Link href="/login" className="font-semibold hover:text-ink">
-                  Login
-                </Link>
-                <Link href="/signup" className="font-semibold hover:text-ink">
-                  Sign up
-                </Link>
-              </>
-            )}
-          </div>
-          <p className="flex items-center gap-2">
-            <MessageSquareText size={16} className="text-sage" />
-            Privacy note: MindPulse is not therapy or emergency help.
-          </p>
-        </footer>
+        <SiteFooter />
       </main>
     </div>
   );

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { ArrowLeft, Brain, MessageSquareText, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { FeedbackModal } from '@/components/mindpulse/feedback-modal';
+import { SiteFooter } from '@/components/mindpulse/site-footer';
 import { mindPulseTools } from '@/lib/mindpulse/tools';
 
 export const metadata: Metadata = { title: 'Why I built this' };
@@ -140,26 +141,7 @@ export default function WhyPage() {
           </div>
         </section>
 
-        <footer className="mt-8 flex flex-col gap-3 rounded-mp bg-ink p-6 text-canvas shadow-soft sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm leading-6 text-canvas/70">
-            MindPulse is not therapy or emergency help. It is practical study
-            support, built carefully and improved through feedback.
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href="/app"
-              className="rounded-full bg-canvas px-4 py-2 text-sm font-semibold text-ink"
-            >
-              Dashboard
-            </Link>
-            <Link
-              href="/signup"
-              className="rounded-full bg-sage px-4 py-2 text-sm font-semibold text-canvas"
-            >
-              Sign up
-            </Link>
-          </div>
-        </footer>
+        <SiteFooter note="MindPulse is practical study support, built carefully and improved through feedback." />
       </main>
     </div>
   );

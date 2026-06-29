@@ -1,44 +1,32 @@
 'use client';
 
-import { MessageSquareText, X } from 'lucide-react';
-import { useState, type FormEvent } from 'react';
+import { ExternalLink, MessageSquareText, X } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { FEEDBACK_KEY, readJson, writeJson } from '@/lib/mindpulse/local-store';
 
-type FeedbackEntry = {
-  usedFor: string;
-  helpful: 'Yes' | 'Somewhat' | 'No';
-  improve: string;
-  useAgain: 'Yes' | 'Maybe' | 'No';
-  testimonial: 'Yes' | 'No';
+type FeedbackOpenEntry = {
+  action: 'opened_external_feedback';
+  feedbackUrlConfigured: boolean;
   createdAt: string;
 };
 
-export function FeedbackModal() {
+const feedbackUrl = process.env.NEXT_PUBLIC_FEEDBACK_URL?.trim() ?? '';
+
+export function FeedbackModal({ compact = false }: { compact?: boolean }) {
   const [open, setOpen] = useState(false);
   const [done, setDone] = useState(false);
-  const [usedFor, setUsedFor] = useState('');
-  const [helpful, setHelpful] = useState<FeedbackEntry['helpful']>('Yes');
-  const [improve, setImprove] = useState('');
-  const [useAgain, setUseAgain] = useState<FeedbackEntry['useAgain']>('Yes');
-  const [testimonial, setTestimonial] =
-    useState<FeedbackEntry['testimonial']>('No');
+  const hasFeedbackUrl = useMemo(() => /^https?:\/\//.test(feedbackUrl), []);
 
-  function submit(event: FormEvent) {
-    event.preventDefault();
-    const entries = readJson<FeedbackEntry[]>(FEEDBACK_KEY, []);
-    writeJson<FeedbackEntry[]>(
+  function markFeedbackOpened() {
+    const entries = readJson<FeedbackOpenEntry[]>(FEEDBACK_KEY, []);
+    const entry: FeedbackOpenEntry = {
+      action: 'opened_external_feedback',
+      feedbackUrlConfigured: hasFeedbackUrl,
+      createdAt: new Date().toISOString(),
+    };
+    writeJson<FeedbackOpenEntry[]>(
       FEEDBACK_KEY,
-      [
-        {
-          usedFor: usedFor.slice(0, 400),
-          helpful,
-          improve: improve.slice(0, 800),
-          useAgain,
-          testimonial,
-          createdAt: new Date().toISOString(),
-        },
-        ...entries,
-      ].slice(0, 20),
+      [entry, ...entries].slice(0, 20),
     );
     setDone(true);
   }
@@ -50,9 +38,19 @@ export function FeedbackModal() {
           setOpen(true);
           setDone(false);
         }}
-        className="inline-flex min-h-11 items-center gap-2 rounded-full bg-surface px-5 text-sm font-semibold text-ink shadow-soft hover:bg-sage-soft"
+        className={
+          compact
+            ? 'font-semibold hover:text-ink'
+            : 'inline-flex min-h-11 items-center gap-2 rounded-full bg-surface px-5 text-sm font-semibold text-ink shadow-soft hover:bg-sage-soft'
+        }
       >
-        <MessageSquareText size={16} /> Feedback
+        {compact ? (
+          'Feedback'
+        ) : (
+          <>
+            <MessageSquareText size={16} /> Feedback
+          </>
+        )}
       </button>
       {open && (
         <div
@@ -79,109 +77,50 @@ export function FeedbackModal() {
                 <X size={18} />
               </button>
             </div>
-            {done ? (
-              <div className="mt-6 rounded-mp bg-sage-soft p-5">
-                <h3 className="font-semibold">Thank you — genuinely.</h3>
-                <p className="mt-2 text-sm leading-6 text-muted">
-                  Your feedback was saved locally on this device for Phase 2. It
-                  does not include your private chat content.
-                </p>
-              </div>
-            ) : (
-              <form onSubmit={submit} className="mt-6 space-y-4">
-                <label className="block text-sm font-semibold">
-                  What did you use MindPulse for?
-                  <input
-                    value={usedFor}
-                    onChange={(event) => setUsedFor(event.target.value)}
-                    className="mt-2 w-full rounded-2xl border border-ink/10 bg-canvas/70 px-4 py-3 outline-none focus:border-sage"
-                    placeholder="Planning, studying, motivation..."
-                  />
-                </label>
-                <RadioGroup
-                  label="Was it helpful?"
-                  value={helpful}
-                  options={['Yes', 'Somewhat', 'No']}
-                  onChange={(value) =>
-                    setHelpful(value as FeedbackEntry['helpful'])
-                  }
-                />
-                <label className="block text-sm font-semibold">
-                  What should be improved?
-                  <textarea
-                    value={improve}
-                    onChange={(event) => setImprove(event.target.value)}
-                    rows={4}
-                    className="mt-2 w-full resize-none rounded-2xl border border-ink/10 bg-canvas/70 px-4 py-3 outline-none focus:border-sage"
-                    placeholder="Please avoid sharing private details."
-                  />
-                </label>
-                <RadioGroup
-                  label="Would you use it again?"
-                  value={useAgain}
-                  options={['Yes', 'Maybe', 'No']}
-                  onChange={(value) =>
-                    setUseAgain(value as FeedbackEntry['useAgain'])
-                  }
-                />
-                <RadioGroup
-                  label="Can this feedback be used anonymously as a testimonial?"
-                  value={testimonial}
-                  options={['Yes', 'No']}
-                  onChange={(value) =>
-                    setTestimonial(value as FeedbackEntry['testimonial'])
-                  }
-                />
-                <p className="rounded-2xl bg-canvas/80 p-3 text-xs leading-5 text-muted">
-                  Feedback is stored only in this browser for now. MindPulse
-                  does not store private chat content in this form.
-                </p>
-                <button className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-ink px-5 font-semibold text-canvas">
-                  Send feedback
-                </button>
-              </form>
-            )}
+
+            <div className="mt-6 space-y-4">
+              <p className="text-sm leading-7 text-muted">
+                Feedback is optional and should not include private chat
+                content, passwords, financial details, private documents, or
+                sensitive personal information.
+              </p>
+
+              {hasFeedbackUrl ? (
+                <a
+                  href={feedbackUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={markFeedbackOpened}
+                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-ink px-5 font-semibold text-canvas"
+                >
+                  Send feedback <ExternalLink size={17} />
+                </a>
+              ) : (
+                <div className="rounded-mp bg-canvas/80 p-4">
+                  <h3 className="font-semibold">Feedback form not connected</h3>
+                  <p className="mt-2 text-sm leading-6 text-muted">
+                    Add a real Google Forms or feedback form URL with
+                    <code className="mx-1 rounded bg-sage-soft px-1.5 py-0.5 text-xs font-bold text-ink">
+                      NEXT_PUBLIC_FEEDBACK_URL
+                    </code>
+                    before launch. No fake feedback URL is hardcoded.
+                  </p>
+                </div>
+              )}
+
+              {done && (
+                <div className="rounded-mp bg-sage-soft p-4">
+                  <h3 className="font-semibold">Thank you — genuinely.</h3>
+                  <p className="mt-2 text-sm leading-6 text-muted">
+                    The feedback form opened in a new tab. MindPulse only saved
+                    a local “feedback opened” marker on this device.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
     </>
-  );
-}
-
-function RadioGroup({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  options: string[];
-  onChange: (value: string) => void;
-}) {
-  return (
-    <fieldset>
-      <legend className="text-sm font-semibold">{label}</legend>
-      <div className="mt-2 flex flex-wrap gap-2">
-        {options.map((option) => (
-          <label
-            key={option}
-            className={`rounded-full px-4 py-2 text-sm font-semibold ${
-              value === option
-                ? 'bg-ink text-canvas'
-                : 'bg-canvas text-muted hover:text-ink'
-            }`}
-          >
-            <input
-              type="radio"
-              checked={value === option}
-              onChange={() => onChange(option)}
-              className="sr-only"
-            />
-            {option}
-          </label>
-        ))}
-      </div>
-    </fieldset>
   );
 }

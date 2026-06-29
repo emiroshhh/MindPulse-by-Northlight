@@ -663,7 +663,7 @@ export function StudentMindPulseApp() {
               </p>
             </div>
             <a
-              href="#"
+              href="/app"
               className="inline-flex min-h-12 items-center gap-2 rounded-full bg-ink px-6 font-semibold text-canvas"
             >
               Share feedback <ArrowRight size={16} />

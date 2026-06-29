@@ -13,6 +13,7 @@ import {
   Zap,
 } from 'lucide-react';
 import Link from 'next/link';
+import { SiteFooter } from '@/components/mindpulse/site-footer';
 
 const features = [
   ['AI Study Help', BookOpen],
@@ -236,6 +237,12 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
+
+        <div className="px-5 pb-10 sm:px-8">
+          <div className="mx-auto max-w-7xl">
+            <SiteFooter />
+          </div>
+        </div>
       </main>
     </div>
   );

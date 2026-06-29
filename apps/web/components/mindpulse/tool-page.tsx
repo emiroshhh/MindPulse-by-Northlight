@@ -22,7 +22,7 @@ import {
   type ChatPanelCopy,
   type MindPulseUser,
 } from './chat-panel';
-import { FeedbackModal } from './feedback-modal';
+import { SiteFooter } from './site-footer';
 
 type AuthMeBody = { user?: MindPulseUser | null };
 
@@ -209,18 +209,7 @@ export function ToolPage({
           className="mt-8"
         />
 
-        <footer className="mt-10 flex flex-col gap-3 rounded-mp bg-surface p-5 text-sm text-muted shadow-soft sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap gap-4">
-            <Link href="/app" className="font-semibold hover:text-ink">
-              Dashboard
-            </Link>
-            <Link href="/why" className="font-semibold hover:text-ink">
-              Why I built this
-            </Link>
-            <span>Privacy note: no therapy, no public chat sharing.</span>
-          </div>
-          <FeedbackModal />
-        </footer>
+        <SiteFooter note="Privacy note: no therapy, no public chat sharing." />
       </main>
     </div>
   );
