@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import { chatCopyFor, copyFor, getToolsForLanguage } from '@/lib/mindpulse/i18n';
 import {
   GUEST_AGENT_KEY,
   GUEST_BANNER_KEY,
@@ -25,10 +26,9 @@ import {
 } from '@/lib/mindpulse/local-store';
 import {
   languages,
-  mindPulseTools,
   type LanguageCode,
 } from '@/lib/mindpulse/tools';
-import { ChatPanel, type ChatPanelCopy } from './mindpulse/chat-panel';
+import { ChatPanel } from './mindpulse/chat-panel';
 import { FeedbackModal } from './mindpulse/feedback-modal';
 import { SiteFooter } from './mindpulse/site-footer';
 import { ToolCard } from './mindpulse/tool-card';
@@ -43,37 +43,6 @@ type AgentPlan = {
   created_at: string;
 };
 
-const agentPrompts = [
-  'Turn my exam panic into a 3-day study plan',
-  'Break my semester project into next actions',
-  'I keep procrastinating. Give me the smallest first step',
-];
-
-function chatCopyFor(language: LanguageCode): ChatPanelCopy {
-  return {
-    chooseMode: 'Choose a mode',
-    emptyGuest:
-      'Your guest conversation will appear here and stay in this browser.',
-    emptyAuth: 'Your saved conversation history will appear here.',
-    guestLimitLabel: '5 free guest messages/day',
-    accountLimitLabel: '20 free messages/day',
-    guestLimitReached:
-      'You’ve reached today’s free guest limit. Create a free account to continue with more messages and save your progress.',
-    accountLimitReached:
-      'You’ve reached today’s free account limit. Come back tomorrow.',
-    signup: 'Create free account',
-    login: 'Log in',
-    send: 'Send',
-    safetyNote: 'AI can make mistakes. MindPulse is not a doctor or therapist.',
-    fallbackError:
-      language === 'ru'
-        ? 'MindPulse сейчас не смог ответить. Попробуй ещё раз.'
-        : language === 'kk'
-          ? 'MindPulse қазір жауап бере алмады. Қайта байқап көр.'
-          : 'MindPulse could not answer right now. Please try again.',
-  };
-}
-
 export function DashboardApp({ user: initialUser }: { user: User | null }) {
   const [user, setUser] = useState<User | null>(initialUser);
   const [language, setLanguage] = useState<LanguageCode>('en');
@@ -84,7 +53,10 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
   const [agentLoading, setAgentLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const isGuest = !user;
+
+  const ui = useMemo(() => copyFor(language), [language]);
   const chatCopy = useMemo(() => chatCopyFor(language), [language]);
+  const localizedTools = useMemo(() => getToolsForLanguage(language), [language]);
 
   useEffect(() => {
     setUser(initialUser);
@@ -151,9 +123,7 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
       const body = (await response.json().catch(() => ({}))) as {
         reply?: string;
       };
-      setAgentOutput(
-        body.reply ?? 'MindPulse Agent could not generate a plan right now.',
-      );
+      setAgentOutput(body.reply ?? ui.agentFallback);
     } finally {
       setAgentLoading(false);
     }
@@ -207,13 +177,13 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
           </Link>
           <div className="hidden gap-6 text-sm font-semibold text-muted lg:flex">
             <Link href="/app" className="hover:text-ink">
-              Dashboard
+              {ui.navDashboard}
             </Link>
             <Link href="/why" className="hover:text-ink">
-              Why I built this
+              {ui.navWhy}
             </Link>
             <a href="#agent" className="hover:text-ink">
-              Agent
+              {ui.navAgent}
             </a>
           </div>
           <div className="flex flex-wrap items-center justify-end gap-2">
@@ -240,7 +210,7 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
                 href="/logout"
                 className="inline-flex min-h-10 items-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-canvas"
               >
-                <LogOut size={15} /> Logout
+                <LogOut size={15} /> {ui.navLogout}
               </Link>
             ) : (
               <>
@@ -248,13 +218,13 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
                   href="/login"
                   className="inline-flex min-h-10 items-center gap-2 rounded-full bg-surface px-4 text-sm font-semibold text-ink shadow-soft"
                 >
-                  <LogIn size={15} /> Log in
+                  <LogIn size={15} /> {ui.navLogin}
                 </Link>
                 <Link
                   href="/signup"
                   className="inline-flex min-h-10 items-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-canvas"
                 >
-                  <UserPlus size={15} /> Sign up
+                  <UserPlus size={15} /> {ui.navSignup}
                 </Link>
               </>
             )}
@@ -267,21 +237,20 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
           <section className="mb-6 rounded-[1.75rem] border border-sage/20 bg-sage-soft/70 p-5 shadow-soft">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <p className="max-w-3xl text-sm leading-6 text-muted">
-                Create a free account to continue with more messages and save
-                your progress. Guest history stays local to this device.
+                {ui.guestBannerText}
               </p>
               <div className="flex flex-wrap gap-2">
                 <Link
                   href="/signup"
                   className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-canvas"
                 >
-                  Create free account
+                  {ui.guestBannerCreate}
                 </Link>
                 <Link
                   href="/login"
                   className="rounded-full bg-canvas px-4 py-2 text-sm font-semibold text-ink"
                 >
-                  Log in
+                  {ui.guestBannerLogin}
                 </Link>
                 <button
                   onClick={() => {
@@ -290,7 +259,7 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
                   }}
                   className="rounded-full bg-canvas/70 px-4 py-2 text-sm font-semibold text-muted"
                 >
-                  Continue as guest
+                  {ui.guestBannerContinue}
                 </button>
               </div>
             </div>
@@ -301,72 +270,60 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
           <div className="overflow-hidden rounded-[2rem] bg-surface p-6 shadow-soft sm:p-8">
             <div className="flex flex-wrap gap-2">
               <span className="rounded-full bg-sage-soft px-4 py-2 text-xs font-bold uppercase tracking-[.18em] text-sage">
-                Beta
+                {ui.heroBeta}
               </span>
               <span className="rounded-full bg-canvas px-4 py-2 text-xs font-bold uppercase tracking-[.18em] text-muted">
-                Built by a student, for students
+                {ui.heroBuiltBy}
               </span>
             </div>
             <h1 className="mt-6 max-w-3xl text-5xl font-semibold leading-tight tracking-[-.045em] sm:text-6xl">
-              A calmer student workspace for messy days.
+              {ui.heroTitle}
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-8 text-muted">
-              MindPulse helps you study, plan, reset motivation, build habits,
-              break down goals, and reflect without guilt. Start as a guest, or
-              create a free account when you want saved progress.
+              {ui.heroSubtitle}
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <a
                 href="#chat"
                 className="inline-flex min-h-12 items-center rounded-full bg-sage px-6 font-semibold text-canvas"
               >
-                Open AI chat
+                {ui.heroOpenChat}
               </a>
               <Link
                 href="/why"
                 className="inline-flex min-h-12 items-center rounded-full bg-canvas px-6 font-semibold text-ink"
               >
-                Why I built this
+                {ui.heroWhy}
               </Link>
               <FeedbackModal />
             </div>
           </div>
           <aside className="rounded-[2rem] bg-ink p-6 text-canvas shadow-soft">
             <Target className="text-sage-soft" />
-            <h2 className="mt-5 text-xl font-semibold">Today’s focus</h2>
+            <h2 className="mt-5 text-xl font-semibold">{ui.focusTitle}</h2>
             <textarea
               value={todayFocus}
               onChange={(event) => setTodayFocus(event.target.value)}
               rows={4}
               className="mt-4 w-full resize-none rounded-2xl border border-canvas/10 bg-canvas/10 px-4 py-3 text-sm text-canvas outline-none placeholder:text-canvas/45 focus:border-sage-soft"
-              placeholder="One useful thing for today..."
+              placeholder={ui.focusPlaceholder}
             />
             <p className="mt-3 text-sm leading-6 text-canvas/70">
-              No shame streaks. Pick one useful return today and let the rest
-              become easier after that.
+              {ui.focusNote}
             </p>
             <div className="mt-5 rounded-2xl bg-canvas/10 p-4">
               <p className="text-xs font-bold uppercase tracking-[.16em] text-sage-soft">
-                {isGuest ? 'Guest plan' : 'Account plan'}
+                {isGuest ? ui.planGuestLabel : ui.planAccountLabel}
               </p>
               <p className="mt-2 text-sm leading-6 text-canvas/75">
-                {isGuest
-                  ? '5 free guest messages/day · local history only'
-                  : '20 free messages/day · D1 chat history enabled'}
+                {isGuest ? ui.planGuestDesc : ui.planAccountDesc}
               </p>
             </div>
           </aside>
         </section>
 
         <section className="mt-8 grid gap-4 sm:grid-cols-3">
-          {[
-            ['Free student beta', 'No payments, subscriptions, or ads.'],
-            ['Guest-first', 'Try MindPulse without a login wall.'],
-            [
-              'Private by design',
-              'API keys and account data stay server-side.',
-            ],
-          ].map(([title, copy]) => (
+          {ui.featureCards.map(([title, copy]) => (
             <article
               key={title}
               className="rounded-mp bg-surface p-5 shadow-soft"
@@ -382,20 +339,19 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-[.2em] text-sage">
-                Six tools
+                {ui.toolsLabel}
               </p>
               <h2 className="mt-2 text-3xl font-semibold">
-                Choose what kind of support you need.
+                {ui.toolsTitle}
               </h2>
             </div>
             <p className="max-w-xl text-sm leading-6 text-muted">
-              Each tool opens a focused chat mode with examples, while
-              preserving the same guest/account limits and language setting.
+              {ui.toolsDesc}
             </p>
           </div>
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {mindPulseTools.map((tool) => (
-              <ToolCard key={tool.id} tool={tool} />
+            {localizedTools.map((tool) => (
+              <ToolCard key={tool.id} tool={tool} openLabel={ui.toolOpenLabel} />
             ))}
           </div>
         </section>
@@ -414,13 +370,13 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
           className="mt-8 rounded-[2rem] bg-surface p-6 shadow-soft"
         >
           <p className="text-xs font-bold uppercase tracking-[.2em] text-sage">
-            AI Agent
+            {ui.agentLabel}
           </p>
           <h2 className="mt-3 text-3xl font-semibold">
-            Turn vague pressure into a plan.
+            {ui.agentTitle}
           </h2>
           <div className="mt-5 flex flex-wrap gap-2">
-            {agentPrompts.map((prompt) => (
+            {ui.agentPrompts.map((prompt) => (
               <button
                 key={prompt}
                 onClick={() => void runAgent(prompt)}
@@ -442,24 +398,20 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
                 onChange={(event) => setAgentInput(event.target.value)}
                 rows={8}
                 className="w-full resize-none rounded-2xl border border-ink/10 bg-canvas/70 px-4 py-3 outline-none focus:border-sage"
-                placeholder="I have a biology exam Friday and I am behind..."
+                placeholder={ui.agentPlaceholder}
               />
               <button className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-full bg-ink px-5 font-semibold text-canvas">
                 {agentLoading && <Loader2 size={16} className="animate-spin" />}
-                Generate next step
+                {ui.agentGenerate}
               </button>
             </form>
             <div className="rounded-mp bg-canvas/70 p-5">
-              <h3 className="font-semibold">Structured output</h3>
+              <h3 className="font-semibold">{ui.agentOutputTitle}</h3>
               <div className="mt-4 min-h-[12rem] text-sm leading-7">
                 {agentOutput ? (
                   <SafeMarkdown>{agentOutput}</SafeMarkdown>
                 ) : (
-                  <p className="text-muted">
-                    Your Agent result will show Goal, Plan, Next 3 actions,
-                    Deadline, Motivation reset, Obstacles, and Smallest first
-                    step.
-                  </p>
+                  <p className="text-muted">{ui.agentOutputEmpty}</p>
                 )}
               </div>
               <button
@@ -467,11 +419,11 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
                 disabled={!agentOutput}
                 className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-full bg-sage px-4 text-sm font-semibold text-canvas disabled:opacity-40"
               >
-                Save plan {saved && <CheckCircle2 size={15} />}
+                {ui.agentSave} {saved && <CheckCircle2 size={15} />}
               </button>
               {saved && isGuest && (
                 <p className="mt-2 text-xs font-semibold text-sage">
-                  Saved locally on this device.
+                  {ui.agentSavedLocal}
                 </p>
               )}
             </div>
@@ -480,16 +432,14 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
 
         <section className="mt-8 rounded-mp bg-surface p-5 shadow-soft">
           <h2 className="flex items-center gap-2 font-semibold">
-            <History size={18} className="text-sage" /> Recent sessions
+            <History size={18} className="text-sage" /> {ui.recentTitle}
           </h2>
           <p className="mt-2 text-sm leading-6 text-muted">
-            {isGuest
-              ? 'Guest conversations stay in this browser. Open the chat above to continue your local session.'
-              : 'Your latest account conversations load inside the chat panel and are saved to D1.'}
+            {isGuest ? ui.recentGuest : ui.recentAccount}
           </p>
         </section>
 
-        <SiteFooter />
+        <SiteFooter language={language} />
       </main>
     </div>
   );

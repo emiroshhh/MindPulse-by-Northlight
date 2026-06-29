@@ -15,12 +15,8 @@ import {
   readJson,
   writeJson,
 } from '@/lib/mindpulse/local-store';
-import {
-  mindPulseTools,
-  toolsByMode,
-  type LanguageCode,
-  type ModeId,
-} from '@/lib/mindpulse/tools';
+import { getToolsForLanguage } from '@/lib/mindpulse/i18n';
+import { toolsByMode, type LanguageCode, type ModeId } from '@/lib/mindpulse/tools';
 import { SafeMarkdown } from '../safe-markdown';
 
 export type MindPulseUser = { id?: string; email: string; name: string };
@@ -91,8 +87,11 @@ export function ChatPanel({
   const [limitAccountRequired, setLimitAccountRequired] = useState(false);
   const isGuest = !user;
 
-  const displayModes = useMemo(() => mindPulseTools, []);
-  const selectedMode = toolsByMode[mode];
+  const displayModes = useMemo(() => getToolsForLanguage(language), [language]);
+  const selectedMode = useMemo(
+    () => displayModes.find((t) => t.id === mode) ?? toolsByMode[mode],
+    [displayModes, mode],
+  );
 
   const loadHistory = useCallback(async () => {
     setHistoryReady(false);

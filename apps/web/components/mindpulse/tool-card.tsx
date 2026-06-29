@@ -21,7 +21,13 @@ const toolIcons: Record<ToolIconId, LucideIcon> = {
   zap: Zap,
 };
 
-export function ToolCard({ tool }: { tool: MindPulseTool }) {
+export function ToolCard({
+  tool,
+  openLabel = 'Open tool →',
+}: {
+  tool: MindPulseTool;
+  openLabel?: string;
+}) {
   const Icon = toolIcons[tool.iconId];
   return (
     <Link
@@ -34,7 +40,7 @@ export function ToolCard({ tool }: { tool: MindPulseTool }) {
       <h2 className="mt-5 text-lg font-semibold">{tool.title}</h2>
       <p className="mt-2 text-sm leading-6 text-muted">{tool.copy}</p>
       <p className="mt-5 text-xs font-bold uppercase tracking-[.16em] text-sage">
-        Open tool →
+        {openLabel}
       </p>
     </Link>
   );

@@ -9,7 +9,8 @@ import {
   UserPlus,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { chatCopyFor, copyFor, getToolsForLanguage } from '@/lib/mindpulse/i18n';
 import { LANGUAGE_KEY, readJson, writeJson } from '@/lib/mindpulse/local-store';
 import {
   isLanguageCode,
@@ -19,7 +20,6 @@ import {
 } from '@/lib/mindpulse/tools';
 import {
   ChatPanel,
-  type ChatPanelCopy,
   type MindPulseUser,
 } from './chat-panel';
 import { SiteFooter } from './site-footer';
@@ -36,24 +36,14 @@ export function ToolPage({
   const [user, setUser] = useState<MindPulseUser | null>(initialUser);
   const [language, setLanguage] = useState<LanguageCode>('en');
   const isGuest = !user;
-  const chatCopy: ChatPanelCopy = {
-    chooseMode: 'Choose a mode',
-    emptyGuest:
-      'Your guest conversation will appear here and stay in this browser.',
-    emptyAuth: 'Your saved conversation history will appear here.',
-    guestLimitLabel: '5 free guest messages/day',
-    accountLimitLabel: '20 free messages/day',
-    guestLimitReached:
-      'You’ve reached today’s free guest limit. Create a free account to continue with more messages and save your progress.',
-    accountLimitReached:
-      'You’ve reached today’s free account limit. Come back tomorrow.',
-    signup: 'Create free account',
-    login: 'Log in',
-    send: 'Send',
-    safetyNote:
-      'MindPulse gives practical support, not perfect answers. Always double-check important information.',
-    fallbackError: 'MindPulse could not answer right now. Please try again.',
-  };
+
+  const ui = useMemo(() => copyFor(language), [language]);
+  const chatCopy = useMemo(() => chatCopyFor(language), [language]);
+  // Overlay tool text (title, explanation, examples) with translations
+  const localizedTool = useMemo<MindPulseTool>(() => {
+    const localized = getToolsForLanguage(language).find((t) => t.id === tool.id);
+    return localized ?? tool;
+  }, [language, tool]);
 
   useEffect(() => {
     setUser(initialUser);
@@ -128,7 +118,7 @@ export function ToolPage({
                 href="/logout"
                 className="inline-flex min-h-10 items-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-canvas"
               >
-                <LogOut size={15} /> Logout
+                <LogOut size={15} /> {ui.navLogout}
               </Link>
             ) : (
               <>
@@ -136,13 +126,13 @@ export function ToolPage({
                   href="/login"
                   className="inline-flex min-h-10 items-center gap-2 rounded-full bg-surface px-4 text-sm font-semibold text-ink shadow-soft"
                 >
-                  <LogIn size={15} /> Log in
+                  <LogIn size={15} /> {ui.navLogin}
                 </Link>
                 <Link
                   href="/signup"
                   className="inline-flex min-h-10 items-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-canvas"
                 >
-                  <UserPlus size={15} /> Sign up
+                  <UserPlus size={15} /> {ui.navSignup}
                 </Link>
               </>
             )}
@@ -154,32 +144,30 @@ export function ToolPage({
           href="/app"
           className="inline-flex min-h-11 items-center gap-2 rounded-full bg-surface px-5 text-sm font-semibold text-ink shadow-soft hover:bg-sage-soft"
         >
-          <ArrowLeft size={16} /> Back to dashboard
+          <ArrowLeft size={16} /> {ui.toolPageBack}
         </Link>
 
         <section className="mt-8 grid gap-6 lg:grid-cols-[.9fr_1.1fr] lg:items-end">
           <div>
             <p className="inline-flex rounded-full bg-sage-soft px-4 py-2 text-xs font-bold uppercase tracking-[.18em] text-sage">
-              Free student beta
+              {ui.toolPageBeta}
             </p>
             <h1 className="mt-5 text-5xl font-semibold tracking-[-.04em] sm:text-6xl">
-              {tool.title}
+              {localizedTool.title}
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-8 text-muted">
-              {tool.explanation}
+              {localizedTool.explanation}
             </p>
           </div>
           <div className="rounded-[2rem] bg-surface p-6 shadow-soft">
             <p className="text-xs font-bold uppercase tracking-[.18em] text-sage">
-              {isGuest ? 'Guest access' : 'Account access'}
+              {isGuest ? ui.toolPageGuestAccess : ui.toolPageAccountAccess}
             </p>
             <h2 className="mt-3 text-2xl font-semibold">
-              {isGuest ? 'Try it without login.' : 'Synced to your account.'}
+              {isGuest ? ui.toolPageGuestSlogan : ui.toolPageAccountSlogan}
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted">
-              {isGuest
-                ? 'Guest chat stays local and has 5 free AI messages per day.'
-                : 'Your account has 20 free AI messages per day and saves chat history in D1.'}
+              {isGuest ? ui.toolPageGuestDesc : ui.toolPageAccountDesc}
             </p>
             {isGuest && (
               <div className="mt-4 flex flex-wrap gap-2">
@@ -187,13 +175,13 @@ export function ToolPage({
                   href="/signup"
                   className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-canvas"
                 >
-                  Create account
+                  {ui.toolPageCreate}
                 </Link>
                 <Link
                   href="/login"
                   className="rounded-full bg-canvas px-4 py-2 text-sm font-semibold text-ink"
                 >
-                  Log in
+                  {ui.toolPageLogin}
                 </Link>
               </div>
             )}
@@ -203,14 +191,14 @@ export function ToolPage({
         <ChatPanel
           user={user}
           language={language}
-          initialMode={tool.id}
+          initialMode={localizedTool.id}
           fixedMode
           copy={chatCopy}
-          examples={tool.examples}
+          examples={localizedTool.examples}
           className="mt-8"
         />
 
-        <SiteFooter note="Privacy note: no therapy, no public chat sharing." />
+        <SiteFooter language={language} />
       </main>
     </div>
   );
