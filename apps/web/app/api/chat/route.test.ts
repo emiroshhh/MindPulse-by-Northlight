@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { buildSystemPrompt } from '../../../lib/server/mindpulse-prompt';
 
 const authMocks = vi.hoisted(() => {
   const usage = new Map<string, number>();
@@ -183,7 +184,7 @@ describe('/api/chat', () => {
       model: 'gemini-3.5-flash',
       system_instruction: expect.stringContaining('MindPulse'),
       input: 'Explain photosynthesis',
-      generation_config: { temperature: 0.7 },
+      generation_config: { temperature: 0.5 },
     });
     expect(authMocks.historyWrites).toBe(1);
   });
@@ -260,5 +261,70 @@ describe('/api/chat', () => {
       error: 'gemini_request_failed',
       status: 400,
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 3 — buildSystemPrompt unit tests
+// These verify prompt content without touching auth, limits, or the API.
+// ---------------------------------------------------------------------------
+describe('buildSystemPrompt', () => {
+  it('study prompt includes active recall instruction', () => {
+    const prompt = buildSystemPrompt('study', 'en');
+    expect(prompt).toContain('active recall');
+  });
+
+  it('planner prompt includes fallback plan instruction', () => {
+    const prompt = buildSystemPrompt('planner', 'en');
+    expect(prompt.toLowerCase()).toContain('fallback');
+  });
+
+  it('motivation prompt contains no-guilt / no-shame instruction', () => {
+    const prompt = buildSystemPrompt('motivation', 'en');
+    expect(prompt).toContain('no pressure, no shame');
+  });
+
+  it('Russian language instruction is applied', () => {
+    const prompt = buildSystemPrompt('study', 'ru');
+    expect(prompt).toContain('русском языке');
+  });
+
+  it('Kazakh language instruction is applied', () => {
+    const prompt = buildSystemPrompt('study', 'kk');
+    expect(prompt).toContain('қазақ тілінде');
+  });
+
+  it('contains instruction not to reveal chain-of-thought or internal reasoning', () => {
+    const prompt = buildSystemPrompt('study', 'en');
+    expect(prompt).toContain('chain-of-thought');
+    expect(prompt).toContain('internal reasoning');
+  });
+
+  it('contains safety / crisis instruction', () => {
+    const prompt = buildSystemPrompt('study', 'en');
+    expect(prompt).toContain('self-harm');
+    expect(prompt).toContain('emergency services');
+  });
+
+  it('system_instruction sent to Gemini contains MindPulse identity and mode content', async () => {
+    mockGemini('A clear answer');
+    const response = await POST(
+      request({ message: 'Help me plan today', mode: 'planner', language: 'en' }),
+    );
+    expect(response.status).toBe(200);
+    const [, init] = vi.mocked(fetch).mock.calls[0]!;
+    const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+    const instruction = body.system_instruction as string;
+    expect(instruction).toContain('MindPulse');
+    expect(instruction).toContain('Daily Planner');
+    expect(instruction).toContain('fallback');
+  });
+
+  it('generation_config uses temperature 0.5', async () => {
+    mockGemini('answer');
+    await POST(request({ message: 'Hello', mode: 'study', language: 'en' }));
+    const [, init] = vi.mocked(fetch).mock.calls[0]!;
+    const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+    expect(body.generation_config).toMatchObject({ temperature: 0.5 });
   });
 });

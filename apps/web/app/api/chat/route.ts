@@ -6,6 +6,7 @@ import {
   json,
   type AuthUser,
 } from '../../../lib/server/auth';
+import { buildSystemPrompt } from '../../../lib/server/mindpulse-prompt';
 
 export const maxDuration = 30;
 
@@ -24,32 +25,6 @@ const MODES = [
 type Mode = (typeof MODES)[number];
 const LANGUAGES = ['en', 'ru', 'kk'] as const;
 type Language = (typeof LANGUAGES)[number];
-
-const MODE_PROMPTS: Record<Mode, string> = {
-  study:
-    'Explain the topic in simple language. Give a concrete example, a short summary, and, when useful, three practice questions.',
-  planner:
-    'Create a realistic plan. Ask about or reasonably infer available time, use time blocks and breaks, and mark one priority task.',
-  motivation:
-    'Be grounded and supportive without toxic positivity. Give a short reset and one action the student can begin within five minutes.',
-  habit:
-    'Identify the habit, make it easier, suggest one small daily action, and offer a simple tracking method.',
-  goal: 'Clarify the goal, create milestones, list the next three actions, and suggest a realistic timeline.',
-  reflection:
-    'Help the student notice what went well, what was hard, one lesson, and one improvement for tomorrow.',
-};
-
-const LANGUAGE_PROMPTS: Record<Language, string> = {
-  en: 'Respond in English unless the student clearly asks for another language.',
-  ru: 'Отвечай на русском языке, если студент явно не просит другой язык.',
-  kk: 'Қазақ тілінде жауап бер, егер оқушы басқа тілді нақты сұрамаса.',
-};
-
-const SYSTEM_PROMPT = `You are MindPulse, an AI study and self-growth assistant for students.
-Help with studying, planning, motivation, discipline, habits, productivity, goal breakdown, and reflection.
-Use friendly, clear, structured language. Give practical steps and avoid filler.
-Never claim to be a doctor or therapist, diagnose a mental health condition, or replace real-world support.
-If the user mentions self-harm, suicide, danger, abuse, or an immediate crisis, tell them to contact local emergency services or a trusted person immediately.`;
 
 const CRISIS_REPLY =
   'I am glad you reached out. You may need immediate real-world support, and MindPulse is not an emergency service. Please contact local emergency services now or tell a trusted person nearby and stay with someone safe. You do not have to handle this alone.';
@@ -197,9 +172,13 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         model,
         store: false,
-        system_instruction: `${SYSTEM_PROMPT}\n\nSelected mode: ${mode}. ${MODE_PROMPTS[mode]}\n\nLanguage: ${LANGUAGE_PROMPTS[language]}`,
+        system_instruction: buildSystemPrompt(mode, language),
         input: message,
-        generation_config: { temperature: 0.7 },
+        // temperature 0.5: more focused than default 0.7, avoids over-verbose Gemini output.
+        // max_output_tokens omitted: the Interactions API field name (/v1beta/interactions)
+        // is unverified — adding an unknown key risks a 400 from Gemini.
+        // Add once the schema is confirmed against the API docs.
+        generation_config: { temperature: 0.5 },
       }),
     });
     console.info('[MindPulse] Gemini response status:', response.status);

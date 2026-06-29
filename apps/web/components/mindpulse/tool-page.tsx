@@ -50,7 +50,8 @@ export function ToolPage({
     signup: 'Create free account',
     login: 'Log in',
     send: 'Send',
-    safetyNote: 'AI can make mistakes. MindPulse is not a doctor or therapist.',
+    safetyNote:
+      'MindPulse gives practical support, not perfect answers. Always double-check important information.',
     fallbackError: 'MindPulse could not answer right now. Please try again.',
   };
 
