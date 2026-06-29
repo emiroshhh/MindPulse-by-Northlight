@@ -15,6 +15,7 @@ import {
   readJson,
   writeJson,
 } from '@/lib/mindpulse/local-store';
+import { authHeaders } from '@/lib/mindpulse/client-auth';
 import { getToolsForLanguage } from '@/lib/mindpulse/i18n';
 import { toolsByMode, type LanguageCode, type ModeId } from '@/lib/mindpulse/tools';
 import { SafeMarkdown } from '../safe-markdown';
@@ -108,6 +109,7 @@ export function ChatPanel({
     }
     const response = await fetch('/api/chat/history', {
       credentials: 'same-origin',
+      headers: authHeaders(),
     });
     if (!response.ok) {
       setHistoryReady(true);
@@ -157,7 +159,7 @@ export function ChatPanel({
       const response = await fetch('/api/chat', {
         method: 'POST',
         credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text, mode, language }),
       });
       const body = (await response.json().catch(() => ({}))) as ChatApiBody;

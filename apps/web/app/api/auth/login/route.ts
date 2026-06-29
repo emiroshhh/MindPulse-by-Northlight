@@ -62,8 +62,11 @@ export async function POST(request: Request) {
     await setSessionCookie(session.token, session.expires).catch(() => undefined);
     const cookieHeaders = sessionCookieHeaders(session.token, session.expires);
     if (!wantsJson)
-      return authSuccessHtmlResponse(cookieHeaders, '/app');
-    const response = json({ user: publicUser(user) });
+      return authSuccessHtmlResponse(cookieHeaders, '/app', session.token);
+    const response = json({
+      user: publicUser(user),
+      sessionToken: session.token,
+    });
     for (const cookie of cookieHeaders)
       response.headers.append('Set-Cookie', cookie);
     return response;

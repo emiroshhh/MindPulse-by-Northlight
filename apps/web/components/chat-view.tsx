@@ -10,7 +10,7 @@ import {
   type Locale,
 } from '@mindpulse/shared';
 import type { LocalState } from '@/lib/storage';
-import { getSupabaseBrowserClient } from '@/lib/supabase';
+import { authHeaders } from '@/lib/mindpulse/client-auth';
 import { uid } from '@/lib/utils';
 import { Badge, Button, Card, Textarea } from './ui';
 import { CrisisPanel } from './crisis-panel';
@@ -127,16 +127,13 @@ export function ChatView({
     let crisisResponse = assessment.flagged;
 
     try {
-      const supabase = getSupabaseBrowserClient();
-      const token = supabase
-        ? (await supabase.auth.getSession()).data.session?.access_token
-        : undefined;
       const response = await fetch('/api/chat', {
         method: 'POST',
         signal: controller.signal,
+        credentials: 'same-origin',
         headers: {
+          ...authHeaders(),
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
           message: content,

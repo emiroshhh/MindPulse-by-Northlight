@@ -30,6 +30,7 @@ import {
   type AgentState,
   type StudyBlock,
 } from '@/lib/agent-store';
+import { authHeaders } from '@/lib/mindpulse/client-auth';
 
 const EMPTY_DEADLINES = `Chemistry homework, Chemistry, tomorrow, 45
 History quiz revision, History, in 3 days, 35`;
@@ -188,7 +189,8 @@ export function MindPulseAgentSpine() {
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mode: 'planner',
           message: `Return strict JSON only: {"lines":["..."]}. Rewrite these MindPulse catch-up lines in a warm, forgiving student-planner tone. Keep 1-3 short lines, no guilt, no emojis unless already present. Structured summary: ${JSON.stringify(

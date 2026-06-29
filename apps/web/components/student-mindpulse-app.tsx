@@ -21,6 +21,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { authHeaders } from '@/lib/mindpulse/client-auth';
 import { MindPulseAgentSpine } from './mindpulse-agent-spine';
 import { SafeMarkdown } from './safe-markdown';
 
@@ -169,7 +170,8 @@ export function StudentMindPulseApp() {
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: text, mode: askMode }),
       });
       const body = (await response.json().catch(() => ({}))) as {

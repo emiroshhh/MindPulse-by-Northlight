@@ -4,6 +4,8 @@ import {
   authSuccessHtmlResponse,
   clearSessionCookieHeader,
   clearSessionCookieHeaders,
+  logoutSuccessHtmlResponse,
+  readSessionTokenFromRequest,
   readTokenFromRequest,
   sessionCookieHeader,
   sessionCookieHeaders,
@@ -106,23 +108,61 @@ describe('clearSessionCookieHeaders', () => {
 });
 
 describe('readTokenFromRequest', () => {
-  it('prefers the host-prefixed session cookie', () => {
+  it('reads a Bearer token', () => {
+    const request = new Request('https://mindpulse.test/api/auth/me', {
+      headers: { Authorization: 'Bearer bearer-token-1234567890' },
+    });
+
+    expect(readSessionTokenFromRequest(request)).toBe(
+      'bearer-token-1234567890',
+    );
+  });
+
+  it('lets a Bearer token win over cookies', () => {
     const request = new Request('https://mindpulse.test/api/auth/me', {
       headers: {
-        Cookie:
-          'mindpulse_session=legacy-token; __Host-mindpulse_session=host-token',
+        Authorization: 'Bearer bearer-token-1234567890',
+        Cookie: '__Host-mindpulse_session=host-token-1234567890',
       },
     });
 
-    expect(readTokenFromRequest(request)).toBe('host-token');
+    expect(readSessionTokenFromRequest(request)).toBe(
+      'bearer-token-1234567890',
+    );
+  });
+
+  it('ignores invalid short Bearer tokens', () => {
+    const request = new Request('https://mindpulse.test/api/auth/me', {
+      headers: {
+        Authorization: 'Bearer short',
+        Cookie: '__Host-mindpulse_session=host-token-1234567890',
+      },
+    });
+
+    expect(readSessionTokenFromRequest(request)).toBe(
+      'host-token-1234567890',
+    );
+  });
+
+  it('prefers the host-prefixed session cookie', () => {
+    const request = new Request('https://mindpulse.test/api/auth/me', {
+      headers: {
+        Cookie: [
+          'mindpulse_session=legacy-token-1234567890',
+          '__Host-mindpulse_session=host-token-1234567890',
+        ].join('; '),
+      },
+    });
+
+    expect(readTokenFromRequest(request)).toBe('host-token-1234567890');
   });
 
   it('falls back to the legacy session cookie', () => {
     const request = new Request('https://mindpulse.test/api/auth/me', {
-      headers: { Cookie: 'mindpulse_session=legacy-token' },
+      headers: { Cookie: 'mindpulse_session=legacy-token-1234567890' },
     });
 
-    expect(readTokenFromRequest(request)).toBe('legacy-token');
+    expect(readTokenFromRequest(request)).toBe('legacy-token-1234567890');
   });
 });
 
@@ -140,5 +180,28 @@ describe('authSuccessHtmlResponse', () => {
     const setCookie = response.headers.get('Set-Cookie');
     expect(setCookie).toContain('__Host-mindpulse_session=abc');
     expect(setCookie).toContain('mindpulse_session=abc');
+  });
+
+  it('can store the fallback token without putting it in a URL', async () => {
+    const response = authSuccessHtmlResponse([], '/app', 'token-1234567890-abc');
+    const html = await response.text();
+
+    expect(html).toContain("localStorage.setItem('mindpulse_session_token'");
+    expect(html).toContain('token-1234567890-abc');
+    expect(html).toContain('window.location.replace("/app")');
+    expect(html).not.toContain('/app?');
+  });
+});
+
+describe('logoutSuccessHtmlResponse', () => {
+  it('clears the localStorage fallback token in the HTML response', async () => {
+    const response = logoutSuccessHtmlResponse(clearSessionCookieHeaders());
+    const html = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(html).toContain(
+      "localStorage.removeItem('mindpulse_session_token')",
+    );
+    expect(html).toContain("window.location.replace('/')");
   });
 });

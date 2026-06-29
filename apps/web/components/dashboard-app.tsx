@@ -15,6 +15,7 @@ import {
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { chatCopyFor, copyFor, getToolsForLanguage } from '@/lib/mindpulse/i18n';
+import { authHeaders } from '@/lib/mindpulse/client-auth';
 import {
   GUEST_AGENT_KEY,
   GUEST_BANNER_KEY,
@@ -73,6 +74,7 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
         const response = await fetch('/api/auth/me', {
           credentials: 'same-origin',
           cache: 'no-store',
+          headers: authHeaders(),
         });
         if (active) {
           if (response.ok) {
@@ -123,7 +125,7 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
       const response = await fetch('/api/chat', {
         method: 'POST',
         credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mode: 'planner',
           language,
@@ -173,7 +175,7 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
     const response = await fetch('/api/agent', {
       method: 'POST',
       credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify({
         title: agentInput.slice(0, 80) || 'MindPulse Agent plan',
         content: agentOutput,

@@ -11,6 +11,7 @@ import {
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { chatCopyFor, copyFor, getToolsForLanguage } from '@/lib/mindpulse/i18n';
+import { authHeaders } from '@/lib/mindpulse/client-auth';
 import { LANGUAGE_KEY, readJson, writeJson } from '@/lib/mindpulse/local-store';
 import {
   isLanguageCode,
@@ -68,6 +69,7 @@ export function ToolPage({
         const response = await fetch('/api/auth/me', {
           credentials: 'same-origin',
           cache: 'no-store',
+          headers: authHeaders(),
         });
         if (active) {
           if (response.ok) {

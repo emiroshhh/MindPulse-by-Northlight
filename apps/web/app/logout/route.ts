@@ -2,6 +2,7 @@ import {
   clearSessionCookie,
   clearSessionCookieHeaders,
   invalidateSessionToken,
+  logoutSuccessHtmlResponse,
   readSessionTokenFromCookie,
   readTokenFromRequest,
   requireDb,
@@ -26,17 +27,5 @@ export async function GET(request: Request) {
   // Belt-and-suspenders: try the Next.js cookies() path too.
   await clearSessionCookie().catch(() => undefined);
 
-  // Return an explicit redirect with a Set-Cookie header that expires the
-  // session cookie. next/navigation redirect() throws before we can add
-  // response headers, so we use a manual Response.
-  const response = new Response(null, {
-    status: 302,
-    headers: {
-      Location: '/',
-      'Cache-Control': 'no-store',
-    },
-  });
-  for (const cookie of clearSessionCookieHeaders())
-    response.headers.append('Set-Cookie', cookie);
-  return response;
+  return logoutSuccessHtmlResponse(clearSessionCookieHeaders());
 }

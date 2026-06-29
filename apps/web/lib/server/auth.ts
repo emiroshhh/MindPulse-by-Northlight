@@ -35,6 +35,7 @@ type WorkerBindings = {
 const SESSION_COOKIE = 'mindpulse_session';
 const HOST_SESSION_COOKIE = '__Host-mindpulse_session';
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30;
+const MIN_SESSION_TOKEN_LENGTH = 20;
 const PASSWORD_MIN_LENGTH = 10;
 // Cloudflare Workers' WebCrypto rejects PBKDF2 iteration counts above 100000
 // in production, so this is the maximum supported value. The count is embedded
@@ -260,9 +261,15 @@ function clearSessionCookieHeaderFor(name: string): string {
 export function authSuccessHtmlResponse(
   cookieHeaders: string[],
   redirectTo = '/app',
+  sessionToken?: string,
 ) {
   const safeRedirect = redirectTo.startsWith('/') ? redirectTo : '/app';
   const safeRedirectAttribute = safeRedirect.replace(/"/g, '%22');
+  const tokenStorageScript = sessionToken
+    ? `  try { localStorage.setItem('mindpulse_session_token', ${JSON.stringify(
+        sessionToken,
+      )}); } catch {}\n`
+    : '';
   const response = new Response(
     `<!doctype html>
 <html>
@@ -273,7 +280,39 @@ export function authSuccessHtmlResponse(
 </head>
 <body>
   <p>Signing you in...</p>
-  <script>window.location.replace(${JSON.stringify(safeRedirect)});</script>
+  <script>
+${tokenStorageScript}  window.location.replace(${JSON.stringify(safeRedirect)});
+  </script>
+</body>
+</html>`,
+    {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-store',
+      },
+    },
+  );
+  for (const cookie of cookieHeaders)
+    response.headers.append('Set-Cookie', cookie);
+  return response;
+}
+
+export function logoutSuccessHtmlResponse(cookieHeaders: string[]) {
+  const response = new Response(
+    `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="refresh" content="0;url=/" />
+  <title>Signing out...</title>
+</head>
+<body>
+  <p>Signing you out...</p>
+  <script>
+    try { localStorage.removeItem('mindpulse_session_token'); } catch {}
+    window.location.replace('/');
+  </script>
 </body>
 </html>`,
     {
@@ -294,7 +333,39 @@ export function authSuccessHtmlResponse(
  * More reliable than cookies() on Cloudflare Workers.
  */
 export function readTokenFromRequest(request: Request): string | null {
-  return readSessionTokenFromHeader(request.headers.get('cookie') ?? '');
+  return readSessionTokenFromRequest(request);
+}
+
+export type SessionTokenSource =
+  | 'authorization'
+  | 'x-header'
+  | 'host-cookie'
+  | 'cookie'
+  | 'none';
+
+export function readSessionTokenFromRequest(request: Request): string | null {
+  return readSessionTokenWithSourceFromRequest(request).token;
+}
+
+export function readSessionTokenWithSourceFromRequest(request: Request): {
+  token: string | null;
+  source: SessionTokenSource;
+} {
+  const authorization = request.headers.get('authorization') ?? '';
+  const bearerPrefix = 'Bearer ';
+  if (authorization.startsWith(bearerPrefix)) {
+    const token = normalizeSessionToken(authorization.slice(bearerPrefix.length));
+    if (token) return { token, source: 'authorization' };
+  }
+
+  const headerToken = normalizeSessionToken(
+    request.headers.get('x-mindpulse-session') ?? '',
+  );
+  if (headerToken) return { token: headerToken, source: 'x-header' };
+
+  return readSessionTokenWithSourceFromHeader(
+    request.headers.get('cookie') ?? '',
+  );
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
@@ -321,7 +392,7 @@ export async function getCurrentUserFromRequest(
     return null;
   }
   const token =
-    readTokenFromRequest(request) ??
+    readSessionTokenFromRequest(request) ??
     (await readSessionTokenFromCookie().catch(() => null));
   if (!token) return null;
   return getUserBySessionToken(db, token);
@@ -360,11 +431,24 @@ export async function readSessionTokenFromCookie() {
   return jar.get(HOST_SESSION_COOKIE)?.value ?? jar.get(SESSION_COOKIE)?.value ?? null;
 }
 
-function readSessionTokenFromHeader(header: string) {
-  return (
-    readCookieValue(header, HOST_SESSION_COOKIE) ??
-    readCookieValue(header, SESSION_COOKIE)
+function readSessionTokenWithSourceFromHeader(header: string): {
+  token: string | null;
+  source: SessionTokenSource;
+} {
+  const hostToken = normalizeSessionToken(
+    readCookieValue(header, HOST_SESSION_COOKIE),
   );
+  if (hostToken) return { token: hostToken, source: 'host-cookie' };
+
+  const cookieToken = normalizeSessionToken(readCookieValue(header, SESSION_COOKIE));
+  if (cookieToken) return { token: cookieToken, source: 'cookie' };
+
+  return { token: null, source: 'none' };
+}
+
+function normalizeSessionToken(value: string | null) {
+  const token = value?.trim();
+  return token && token.length >= MIN_SESSION_TOKEN_LENGTH ? token : null;
 }
 
 function readCookieValue(header: string, name: string) {
