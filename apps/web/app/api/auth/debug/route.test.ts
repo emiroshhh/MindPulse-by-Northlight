@@ -2,7 +2,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const authMocks = vi.hoisted(() => ({
+  debugSessionResolution: vi.fn(),
   getCurrentUserFromRequest: vi.fn(),
+  getAuthDb: vi.fn(),
   json: (body: unknown, status = 200) =>
     Response.json(body, {
       status,
@@ -17,7 +19,9 @@ import { GET } from './route';
 
 afterEach(() => {
   vi.restoreAllMocks();
+  authMocks.debugSessionResolution.mockReset();
   authMocks.getCurrentUserFromRequest.mockReset();
+  authMocks.getAuthDb.mockReset();
   authMocks.readSessionTokenWithSourceFromRequest.mockReset();
 });
 
@@ -26,6 +30,18 @@ describe('/api/auth/debug', () => {
     authMocks.readSessionTokenWithSourceFromRequest.mockReturnValueOnce({
       token: 'secret-session-token-1234567890',
       source: 'authorization',
+    });
+    authMocks.getAuthDb.mockResolvedValueOnce({});
+    authMocks.debugSessionResolution.mockResolvedValueOnce({
+      dbAvailable: true,
+      sessionHashComputed: true,
+      sessionTableChecked: true,
+      sessionRowFound: true,
+      sessionCountForDebugToken: true,
+      sessionNotExpired: true,
+      joinedUserFound: true,
+      userResolved: true,
+      nowIso: '2026-06-29T00:00:00.000Z',
     });
     authMocks.getCurrentUserFromRequest.mockResolvedValueOnce({
       id: 'user-1',
@@ -52,6 +68,14 @@ describe('/api/auth/debug', () => {
       hasHostMindpulseSessionCookie: true,
       resolvedTokenSource: 'authorization',
       userResolved: true,
+      dbAvailable: true,
+      sessionHashComputed: true,
+      sessionRowFound: true,
+      sessionNotExpired: true,
+      joinedUserFound: true,
+      sessionTableChecked: true,
+      sessionCountForDebugToken: true,
+      nowIso: '2026-06-29T00:00:00.000Z',
     });
     expect(serialized).not.toContain('secret-session-token');
     expect(serialized).not.toContain('legacy-token');

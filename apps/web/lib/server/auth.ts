@@ -12,6 +12,7 @@ type D1Result<T = unknown> = {
   results?: T[];
   success: boolean;
   error?: string;
+  meta?: { changes?: number };
 };
 
 type D1PreparedStatement = {
@@ -23,6 +24,18 @@ type D1PreparedStatement = {
 
 export type D1DatabaseLike = {
   prepare(query: string): D1PreparedStatement;
+};
+
+export type SessionDebugResult = {
+  dbAvailable: boolean;
+  sessionHashComputed: boolean;
+  sessionTableChecked: boolean;
+  sessionRowFound: boolean;
+  sessionCountForDebugToken: boolean;
+  sessionNotExpired: boolean;
+  joinedUserFound: boolean;
+  userResolved: boolean;
+  nowIso: string;
 };
 
 type WorkerBindings = {
@@ -162,13 +175,14 @@ export async function createSession(db: D1DatabaseLike, userId: string) {
   const now = new Date();
   const expires = new Date(now.getTime() + SESSION_TTL_SECONDS * 1000);
   const id = secureId('session');
-  await db
+  const result = await db
     .prepare(
       `INSERT INTO sessions (id, user_id, session_hash, created_at, expires_at)
        VALUES (?, ?, ?, ?, ?)`,
     )
     .bind(id, userId, hash, now.toISOString(), expires.toISOString())
     .run();
+  if (!result.success) throw new Error('Session insert failed');
   return { token, expires };
 }
 
@@ -402,7 +416,9 @@ export async function getUserBySessionToken(
   db: D1DatabaseLike,
   token: string,
 ): Promise<AuthUser | null> {
-  const sessionHash = await hashSessionToken(token);
+  const cleanToken = normalizeSessionToken(token);
+  if (!cleanToken) return null;
+  const sessionHash = await hashSessionToken(cleanToken);
   return db
     .prepare(
       `SELECT users.id, users.email, users.name, users.created_at
@@ -431,6 +447,79 @@ export async function readSessionTokenFromCookie() {
   return jar.get(HOST_SESSION_COOKIE)?.value ?? jar.get(SESSION_COOKIE)?.value ?? null;
 }
 
+export async function debugSessionResolution(
+  db: D1DatabaseLike,
+  token: string | null,
+): Promise<SessionDebugResult> {
+  const nowIso = new Date().toISOString();
+  const base: SessionDebugResult = {
+    dbAvailable: true,
+    sessionHashComputed: false,
+    sessionTableChecked: false,
+    sessionRowFound: false,
+    sessionCountForDebugToken: false,
+    sessionNotExpired: false,
+    joinedUserFound: false,
+    userResolved: false,
+    nowIso,
+  };
+
+  const cleanToken = normalizeSessionToken(token);
+  if (!cleanToken) return base;
+
+  let sessionHash: string;
+  try {
+    sessionHash = await hashSessionToken(cleanToken);
+    base.sessionHashComputed = true;
+  } catch {
+    return base;
+  }
+
+  type SessionDebugRow = {
+    user_id: string;
+    expires_at: string;
+    not_expired: number;
+  };
+
+  let session: SessionDebugRow | null = null;
+  try {
+    session = await db
+      .prepare(
+        `SELECT user_id, expires_at, expires_at > ? AS not_expired
+         FROM sessions
+         WHERE session_hash = ?
+         LIMIT 1`,
+      )
+      .bind(nowIso, sessionHash)
+      .first<SessionDebugRow>();
+    base.sessionTableChecked = true;
+  } catch {
+    return base;
+  }
+
+  base.sessionRowFound = Boolean(session);
+  base.sessionCountForDebugToken = Boolean(session);
+  base.sessionNotExpired = Boolean(session?.not_expired);
+  if (!session || !base.sessionNotExpired) return base;
+
+  try {
+    const user = await db
+      .prepare(
+        `SELECT users.id, users.email, users.name, users.created_at
+         FROM users
+         WHERE users.id = ?
+         LIMIT 1`,
+      )
+      .bind(session.user_id)
+      .first<AuthUser>();
+    base.joinedUserFound = Boolean(user);
+    base.userResolved = Boolean(user);
+    return base;
+  } catch {
+    return base;
+  }
+}
+
 function readSessionTokenWithSourceFromHeader(header: string): {
   token: string | null;
   source: SessionTokenSource;
@@ -447,8 +536,17 @@ function readSessionTokenWithSourceFromHeader(header: string): {
 }
 
 function normalizeSessionToken(value: string | null) {
-  const token = value?.trim();
-  return token && token.length >= MIN_SESSION_TOKEN_LENGTH ? token : null;
+  let token = value?.trim();
+  if (!token) return null;
+  if (
+    (token.startsWith('"') && token.endsWith('"')) ||
+    (token.startsWith("'") && token.endsWith("'"))
+  )
+    token = token.slice(1, -1).trim();
+  const lower = token.toLowerCase();
+  if (lower === 'undefined' || lower === 'null') return null;
+  if (token.length < MIN_SESSION_TOKEN_LENGTH || token.length > 512) return null;
+  return token;
 }
 
 function readCookieValue(header: string, name: string) {

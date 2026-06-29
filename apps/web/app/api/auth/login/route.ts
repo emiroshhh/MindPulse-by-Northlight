@@ -3,6 +3,7 @@ import {
   clientIp,
   createSession,
   getAuthDb,
+  getUserBySessionToken,
   json,
   normalizeEmail,
   publicUser,
@@ -57,6 +58,10 @@ export async function POST(request: Request) {
       return json({ error: 'Invalid email or password' }, 401);
     }
     const session = await createSession(db, user.id);
+    const resolved = await getUserBySessionToken(db, session.token);
+    if (!resolved) {
+      console.error('[MindPulse] session created but not resolvable');
+    }
     // Belt-and-suspenders: try the Next.js cookies() path, then attach an
     // explicit Set-Cookie header which is reliable on Cloudflare Workers.
     await setSessionCookie(session.token, session.expires).catch(() => undefined);

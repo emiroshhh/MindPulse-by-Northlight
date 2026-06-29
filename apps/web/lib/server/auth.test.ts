@@ -4,12 +4,97 @@ import {
   authSuccessHtmlResponse,
   clearSessionCookieHeader,
   clearSessionCookieHeaders,
+  createSession,
+  debugSessionResolution,
+  getUserBySessionToken,
   logoutSuccessHtmlResponse,
   readSessionTokenFromRequest,
   readTokenFromRequest,
   sessionCookieHeader,
   sessionCookieHeaders,
+  type AuthUser,
+  type D1DatabaseLike,
 } from './auth';
+
+function makeSessionDb(options: {
+  user?: AuthUser;
+  expiresAt?: string;
+}): D1DatabaseLike {
+  const sessions = new Map<
+    string,
+    { userId: string; sessionHash: string; expiresAt: string }
+  >();
+  const user = options.user ?? {
+    id: 'user-1',
+    email: 'student@example.com',
+    name: 'Student',
+    created_at: '2026-01-01T00:00:00.000Z',
+  };
+  return {
+    prepare(query: string) {
+      const statement = {
+        values: [] as unknown[],
+        bind(...values: unknown[]) {
+          this.values = values;
+          return this;
+        },
+        async first<T>() {
+          if (query.includes('FROM sessions') && query.includes('JOIN users')) {
+            const [sessionHash, nowIso] = this.values as [string, string];
+            const session = sessions.get(sessionHash);
+            if (
+              !session ||
+              session.expiresAt <= nowIso ||
+              session.userId !== user.id ||
+              !options.user
+            )
+              return null;
+            return user as T;
+          }
+          if (
+            query.includes('FROM sessions') &&
+            query.includes('WHERE session_hash')
+          ) {
+            const [nowIso, sessionHash] = this.values as [string, string];
+            const session = sessions.get(sessionHash);
+            if (!session) return null;
+            return {
+              user_id: session.userId,
+              expires_at: session.expiresAt,
+              not_expired: session.expiresAt > nowIso ? 1 : 0,
+            } as T;
+          }
+          if (query.includes('FROM users')) {
+            const [userId] = this.values as [string];
+            return options.user && userId === user.id ? (user as T) : null;
+          }
+          return null;
+        },
+        async all() {
+          return { success: true, results: [] };
+        },
+        async run() {
+          if (query.includes('INSERT INTO sessions')) {
+            const [, userId, sessionHash, , expiresAt] = this.values as [
+              string,
+              string,
+              string,
+              string,
+              string,
+            ];
+            sessions.set(sessionHash, {
+              userId,
+              sessionHash,
+              expiresAt: options.expiresAt ?? expiresAt,
+            });
+          }
+          return { success: true };
+        },
+      };
+      return statement;
+    },
+  };
+}
 
 describe('sessionCookieHeader', () => {
   const token = 'test-token-abc123';
@@ -203,5 +288,97 @@ describe('logoutSuccessHtmlResponse', () => {
       "localStorage.removeItem('mindpulse_session_token')",
     );
     expect(html).toContain("window.location.replace('/')");
+  });
+});
+
+describe('session DB resolution', () => {
+  const previousSecret = process.env.SESSION_SECRET;
+
+  it('resolves a Bearer token when D1 has the matching session hash', async () => {
+    process.env.SESSION_SECRET = 'x'.repeat(40);
+    const db = makeSessionDb({
+      user: {
+        id: 'user-1',
+        email: 'student@example.com',
+        name: 'Student',
+        created_at: '2026-01-01T00:00:00.000Z',
+      },
+    });
+    const session = await createSession(db, 'user-1');
+
+    await expect(getUserBySessionToken(db, session.token)).resolves.toMatchObject({
+      id: 'user-1',
+    });
+
+    process.env.SESSION_SECRET = previousSecret;
+  });
+
+  it('debug helper reports a valid session row and joined user', async () => {
+    process.env.SESSION_SECRET = 'x'.repeat(40);
+    const db = makeSessionDb({
+      user: {
+        id: 'user-1',
+        email: 'student@example.com',
+        name: 'Student',
+        created_at: '2026-01-01T00:00:00.000Z',
+      },
+    });
+    const session = await createSession(db, 'user-1');
+
+    await expect(debugSessionResolution(db, session.token)).resolves.toMatchObject({
+      sessionHashComputed: true,
+      sessionTableChecked: true,
+      sessionRowFound: true,
+      sessionNotExpired: true,
+      joinedUserFound: true,
+      userResolved: true,
+    });
+
+    process.env.SESSION_SECRET = previousSecret;
+  });
+
+  it('debug helper reports expired sessions without resolving a user', async () => {
+    process.env.SESSION_SECRET = 'x'.repeat(40);
+    const db = makeSessionDb({
+      user: {
+        id: 'user-1',
+        email: 'student@example.com',
+        name: 'Student',
+        created_at: '2026-01-01T00:00:00.000Z',
+      },
+      expiresAt: '2020-01-01T00:00:00.000Z',
+    });
+    const session = await createSession(db, 'user-1');
+
+    await expect(debugSessionResolution(db, session.token)).resolves.toMatchObject({
+      sessionRowFound: true,
+      sessionNotExpired: false,
+      userResolved: false,
+    });
+
+    process.env.SESSION_SECRET = previousSecret;
+  });
+
+  it('debug helper reports no row for an invalid token', async () => {
+    process.env.SESSION_SECRET = 'x'.repeat(40);
+    const db = makeSessionDb({
+      user: {
+        id: 'user-1',
+        email: 'student@example.com',
+        name: 'Student',
+        created_at: '2026-01-01T00:00:00.000Z',
+      },
+    });
+
+    await expect(
+      debugSessionResolution(db, 'invalid-token-1234567890'),
+    ).resolves.toMatchObject({
+      sessionHashComputed: true,
+      sessionTableChecked: true,
+      sessionRowFound: false,
+      userResolved: false,
+    });
+
+    process.env.SESSION_SECRET = previousSecret;
   });
 });
