@@ -1,14 +1,11 @@
-import {
-  BookOpen,
-  CalendarDays,
-  Repeat2,
-  Sparkles,
-  Target,
-  Zap,
-  type LucideIcon,
-} from 'lucide-react';
-
 export type LanguageCode = 'en' | 'ru' | 'kk';
+export type ToolIconId =
+  | 'book'
+  | 'calendar'
+  | 'repeat'
+  | 'sparkles'
+  | 'target'
+  | 'zap';
 export type ModeId =
   | 'study'
   | 'planner'
@@ -24,7 +21,7 @@ export type MindPulseTool = {
   shortTitle: string;
   copy: string;
   explanation: string;
-  icon: LucideIcon;
+  iconId: ToolIconId;
   examples: string[];
 };
 
@@ -47,7 +44,7 @@ export const mindPulseTools: MindPulseTool[] = [
     copy: 'Explain topics, create examples, and practice smarter.',
     explanation:
       'Use this when a topic feels blurry and you want a calm explanation, a simple example, or a few practice questions.',
-    icon: BookOpen,
+    iconId: 'book',
     examples: [
       'Explain active recall in two short paragraphs.',
       'Quiz me on photosynthesis with five questions.',
@@ -63,7 +60,7 @@ export const mindPulseTools: MindPulseTool[] = [
     copy: 'Turn a messy day into realistic time blocks.',
     explanation:
       'Use this when your tasks are scattered and you need a plan that respects your real energy, deadlines, and breaks.',
-    icon: CalendarDays,
+    iconId: 'calendar',
     examples: [
       'I have three assignments tonight. Build a realistic plan.',
       'Make a two-hour study schedule with breaks.',
@@ -79,7 +76,7 @@ export const mindPulseTools: MindPulseTool[] = [
     copy: 'Find the smallest useful next step when you feel stuck.',
     explanation:
       'Use this when you are procrastinating, tired, or overwhelmed and need a gentle reset instead of pressure.',
-    icon: Zap,
+    iconId: 'zap',
     examples: [
       'I cannot start studying. Give me the smallest first step.',
       'Help me reset after wasting the afternoon.',
@@ -95,7 +92,7 @@ export const mindPulseTools: MindPulseTool[] = [
     copy: 'Build routines that survive busy student days.',
     explanation:
       'Use this when you want a routine that is forgiving, small enough to repeat, and not based on guilt.',
-    icon: Repeat2,
+    iconId: 'repeat',
     examples: [
       'Help me build a 10-minute study habit.',
       'Design a morning routine for school days.',
@@ -111,7 +108,7 @@ export const mindPulseTools: MindPulseTool[] = [
     copy: 'Break large goals into milestones and next actions.',
     explanation:
       'Use this when a goal is too big to hold in your head and you need it split into visible, doable steps.',
-    icon: Target,
+    iconId: 'target',
     examples: [
       'Break my semester project into weekly milestones.',
       'Turn “improve my grades” into a concrete plan.',
@@ -127,7 +124,7 @@ export const mindPulseTools: MindPulseTool[] = [
     copy: 'Learn from today without turning it into self-blame.',
     explanation:
       'Use this when you want to understand what happened today, keep the useful lesson, and move forward lightly.',
-    icon: Sparkles,
+    iconId: 'sparkles',
     examples: [
       'Help me reflect on today in five minutes.',
       'I did not finish my plan. What can I learn without guilt?',

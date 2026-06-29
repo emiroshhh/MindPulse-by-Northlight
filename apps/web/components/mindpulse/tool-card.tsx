@@ -1,8 +1,28 @@
+'use client';
+
+import {
+  BookOpen,
+  CalendarDays,
+  Repeat2,
+  Sparkles,
+  Target,
+  Zap,
+  type LucideIcon,
+} from 'lucide-react';
 import Link from 'next/link';
-import type { MindPulseTool } from '@/lib/mindpulse/tools';
+import type { MindPulseTool, ToolIconId } from '@/lib/mindpulse/tools';
+
+const toolIcons: Record<ToolIconId, LucideIcon> = {
+  book: BookOpen,
+  calendar: CalendarDays,
+  repeat: Repeat2,
+  sparkles: Sparkles,
+  target: Target,
+  zap: Zap,
+};
 
 export function ToolCard({ tool }: { tool: MindPulseTool }) {
-  const Icon = tool.icon;
+  const Icon = toolIcons[tool.iconId];
   return (
     <Link
       href={tool.route}
