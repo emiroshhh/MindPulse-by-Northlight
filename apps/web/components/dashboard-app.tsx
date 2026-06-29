@@ -7,7 +7,6 @@ import {
   History,
   Loader2,
   LogIn,
-  LogOut,
   ShieldCheck,
   Target,
   UserPlus,
@@ -31,6 +30,7 @@ import {
 } from '@/lib/mindpulse/tools';
 import { ChatPanel } from './mindpulse/chat-panel';
 import { FeedbackModal } from './mindpulse/feedback-modal';
+import { LogoutButton } from './mindpulse/logout-button';
 import { SiteFooter } from './mindpulse/site-footer';
 import { ToolCard } from './mindpulse/tool-card';
 import { SafeMarkdown } from './safe-markdown';
@@ -238,12 +238,10 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
             {/* Hide auth-dependent nav buttons until session is confirmed */}
             {authReady && (
               user ? (
-                <Link
-                  href="/logout"
+                <LogoutButton
+                  label={ui.navLogout}
                   className="inline-flex min-h-10 items-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-canvas"
-                >
-                  <LogOut size={15} /> {ui.navLogout}
-                </Link>
+                />
               ) : (
                 <>
                   <Link

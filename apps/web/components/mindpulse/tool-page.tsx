@@ -5,7 +5,6 @@ import {
   Brain,
   Globe2,
   LogIn,
-  LogOut,
   UserPlus,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -23,6 +22,7 @@ import {
   ChatPanel,
   type MindPulseUser,
 } from './chat-panel';
+import { LogoutButton } from './logout-button';
 import { SiteFooter } from './site-footer';
 
 type AuthMeBody = { user?: MindPulseUser | null };
@@ -123,12 +123,10 @@ export function ToolPage({
             {/* Hide auth-dependent nav buttons until session is confirmed */}
             {authReady && (
               user ? (
-                <Link
-                  href="/logout"
+                <LogoutButton
+                  label={ui.navLogout}
                   className="inline-flex min-h-10 items-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-canvas"
-                >
-                  <LogOut size={15} /> {ui.navLogout}
-                </Link>
+                />
               ) : (
                 <>
                   <Link
