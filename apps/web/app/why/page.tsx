@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { ArrowLeft, Brain, MessageSquareText, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { FeedbackModal } from '@/components/mindpulse/feedback-modal';
+import { mindPulseTools } from '@/lib/mindpulse/tools';
 
 export const metadata: Metadata = { title: 'Why I built this' };
 
@@ -102,6 +103,41 @@ export default function WhyPage() {
             students can try it, find what is missing, and help shape the next
             version.
           </p>
+        </section>
+
+        <section className="mt-6 rounded-[2rem] bg-surface p-7 shadow-soft sm:p-8">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[.18em] text-sage">
+                Explore MindPulse
+              </p>
+              <h2 className="mt-2 text-3xl font-semibold">
+                Open the tool that matches today.
+              </h2>
+            </div>
+            <Link
+              href="/app"
+              className="inline-flex min-h-11 items-center rounded-full bg-ink px-5 text-sm font-semibold text-canvas"
+            >
+              Back to dashboard
+            </Link>
+          </div>
+          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+            {mindPulseTools.map((tool) => (
+              <Link
+                key={tool.id}
+                href={tool.route}
+                className="rounded-2xl border border-ink/5 bg-canvas/70 p-4 transition hover:-translate-y-0.5 hover:bg-sage-soft"
+              >
+                <span className="text-sm font-semibold text-ink">
+                  {tool.title}
+                </span>
+                <span className="mt-1 block text-sm leading-6 text-muted">
+                  {tool.copy}
+                </span>
+              </Link>
+            ))}
+          </div>
         </section>
 
         <footer className="mt-8 flex flex-col gap-3 rounded-mp bg-ink p-6 text-canvas shadow-soft sm:flex-row sm:items-center sm:justify-between">
