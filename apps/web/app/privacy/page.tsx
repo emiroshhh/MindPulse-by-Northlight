@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
-import { ArrowLeft, Brain, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Brain, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
+import { FeedbackModal } from '@/components/mindpulse/feedback-modal';
 import { SiteFooter } from '@/components/mindpulse/site-footer';
 
 export const metadata: Metadata = { title: 'Privacy' };
@@ -35,12 +36,15 @@ export default function PrivacyPage() {
             </span>
             <b>MindPulse</b>
           </Link>
-          <Link
-            href="/app"
-            className="inline-flex min-h-11 items-center rounded-full bg-ink px-5 text-sm font-semibold text-canvas"
-          >
-            Dashboard
-          </Link>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <FeedbackModal compact />
+            <Link
+              href="/app"
+              className="inline-flex min-h-11 items-center rounded-full bg-ink px-5 text-sm font-semibold text-canvas"
+            >
+              Open the app
+            </Link>
+          </div>
         </nav>
       </header>
 
@@ -95,6 +99,28 @@ export default function PrivacyPage() {
             service. If you are in immediate danger or need urgent help, contact
             local emergency services or a trusted person right away.
           </p>
+        </section>
+
+        <section className="mt-6 rounded-[2rem] bg-ink p-7 text-canvas shadow-soft sm:p-8">
+          <h2 className="text-3xl font-semibold">Ready to use it carefully?</h2>
+          <p className="mt-3 max-w-3xl leading-8 text-canvas/70">
+            Start with study support, planning, habits, goals, or reflection —
+            and keep sensitive details out of the chat.
+          </p>
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+            <Link
+              href="/app"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-sage px-6 font-semibold text-canvas"
+            >
+              Start using MindPulse <ArrowRight size={16} />
+            </Link>
+            <Link
+              href="/study"
+              className="inline-flex min-h-12 items-center justify-center rounded-full bg-canvas/10 px-6 font-semibold text-canvas"
+            >
+              Try Study Mode
+            </Link>
+          </div>
         </section>
 
         <SiteFooter />

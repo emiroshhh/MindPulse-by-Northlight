@@ -3,8 +3,10 @@
 import {
   ArrowLeft,
   Brain,
+  CheckCircle2,
   Globe2,
   LogIn,
+  MessageSquareText,
   UserPlus,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -94,14 +96,14 @@ export function ToolPage({
   return (
     <div className="ambient min-h-screen">
       <header className="sticky top-0 z-40 border-b border-ink/5 bg-canvas/85 backdrop-blur-xl">
-        <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
+        <nav className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 py-4 sm:px-8">
           <Link href="/app" className="flex items-center gap-3">
             <span className="grid h-10 w-10 place-items-center rounded-2xl bg-ink text-canvas">
               <Brain size={20} />
             </span>
             <b>MindPulse</b>
           </Link>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <label className="inline-flex min-h-10 items-center gap-2 rounded-full bg-surface px-3 text-sm font-semibold text-muted shadow-soft">
               <Globe2 size={15} />
               <span className="sr-only">Language</span>
@@ -155,16 +157,19 @@ export function ToolPage({
           <ArrowLeft size={16} /> {ui.toolPageBack}
         </Link>
 
-        <section className="mt-8 grid gap-6 lg:grid-cols-[.9fr_1.1fr] lg:items-end">
+        <section className="mt-8 grid gap-6 lg:grid-cols-[.95fr_1.05fr] lg:items-end">
           <div>
             <p className="inline-flex rounded-full bg-sage-soft px-4 py-2 text-xs font-bold uppercase tracking-[.18em] text-sage">
-              {ui.toolPageBeta}
+              {ui.toolPageBeta} · {localizedTool.shortTitle}
             </p>
-            <h1 className="mt-5 text-5xl font-semibold tracking-[-.04em] sm:text-6xl">
-              {localizedTool.title}
+            <h1 className="mt-5 text-4xl font-semibold leading-tight tracking-[-.04em] sm:text-6xl">
+              {localizedTool.headline}
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-8 text-muted">
               {localizedTool.explanation}
+            </p>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-muted">
+              {localizedTool.outcome}
             </p>
           </div>
 
@@ -204,13 +209,53 @@ export function ToolPage({
           </div>
         </section>
 
+        <section className="mt-6 grid gap-4 lg:grid-cols-3">
+          <article className="rounded-mp bg-surface p-5 shadow-soft">
+            <CheckCircle2 className="text-sage" size={20} />
+            <h2 className="mt-4 font-semibold">{ui.toolPageBestFor}</h2>
+            <ul className="mt-3 space-y-2 text-sm leading-6 text-muted">
+              {localizedTool.bestFor.map((item) => (
+                <li key={item} className="flex gap-2">
+                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-sage" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </article>
+
+          <article className="rounded-mp bg-surface p-5 shadow-soft lg:col-span-2">
+            <MessageSquareText className="text-sage" size={20} />
+            <h2 className="mt-4 font-semibold">{ui.toolPagePromptStarters}</h2>
+            <div className="mt-3 grid gap-3 md:grid-cols-3">
+              {localizedTool.examples.slice(0, 3).map((example) => (
+                <p
+                  key={example}
+                  className="rounded-2xl bg-canvas/70 p-4 text-sm leading-6 text-muted"
+                >
+                  &ldquo;{example}&rdquo;
+                </p>
+              ))}
+            </div>
+          </article>
+        </section>
+
+        <section className="mt-6 rounded-[2rem] bg-sage-soft/70 p-5 shadow-soft sm:p-6">
+          <p className="text-xs font-bold uppercase tracking-[.18em] text-sage">
+            {ui.toolPageHowToUse}
+          </p>
+          <p className="mt-2 max-w-4xl text-sm leading-7 text-muted">
+            {localizedTool.emptyHint}
+          </p>
+        </section>
+
         <ChatPanel
           user={user}
           language={language}
           initialMode={localizedTool.id}
           fixedMode
           copy={chatCopy}
-          examples={localizedTool.examples}
+          examples={localizedTool.examples.slice(0, 3)}
+          emptyHint={localizedTool.emptyHint}
           authReady={authReady}
           className="mt-8"
         />

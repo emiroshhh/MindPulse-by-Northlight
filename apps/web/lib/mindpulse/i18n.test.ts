@@ -133,7 +133,7 @@ describe('getToolsForLanguage', () => {
   it('Russian planner has Russian examples', () => {
     const tools = getToolsForLanguage('ru');
     const planner = tools.find((t) => t.id === 'planner');
-    expect(planner?.examples[0]).toContain('задани');
+    expect(planner?.examples[0]).toContain('Распланируй');
   });
 
   it('Kazakh habit tool has Kazakh copy', () => {

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
-import { ArrowLeft, Brain, LineChart, Target } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Brain, LineChart, Target } from 'lucide-react';
 import Link from 'next/link';
+import { FeedbackModal } from '@/components/mindpulse/feedback-modal';
 import { SiteFooter } from '@/components/mindpulse/site-footer';
 
 export const metadata: Metadata = { title: 'Impact' };
@@ -31,12 +32,15 @@ export default function ImpactPage() {
             </span>
             <b>MindPulse</b>
           </Link>
-          <Link
-            href="/app"
-            className="inline-flex min-h-11 items-center rounded-full bg-ink px-5 text-sm font-semibold text-canvas"
-          >
-            Dashboard
-          </Link>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <FeedbackModal compact />
+            <Link
+              href="/app"
+              className="inline-flex min-h-11 items-center rounded-full bg-ink px-5 text-sm font-semibold text-canvas"
+            >
+              Open the app
+            </Link>
+          </div>
         </nav>
       </header>
 
@@ -114,6 +118,34 @@ export default function ImpactPage() {
                 </p>
               </article>
             ))}
+          </div>
+        </section>
+
+        <section className="mt-6 rounded-[2rem] bg-ink p-7 text-canvas shadow-soft sm:p-8">
+          <p className="text-xs font-bold uppercase tracking-[.18em] text-sage-soft">
+            Help shape the beta
+          </p>
+          <h2 className="mt-2 text-3xl font-semibold">
+            Try one tool, then tell me what helped.
+          </h2>
+          <p className="mt-3 max-w-3xl leading-8 text-canvas/70">
+            The next version should be guided by real student use: clearer
+            planning, better prompts, and fewer moments where starting feels
+            impossible.
+          </p>
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+            <Link
+              href="/planner"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-sage px-6 font-semibold text-canvas"
+            >
+              Plan your day <ArrowRight size={16} />
+            </Link>
+            <Link
+              href="/app"
+              className="inline-flex min-h-12 items-center justify-center rounded-full bg-canvas/10 px-6 font-semibold text-canvas"
+            >
+              Open dashboard
+            </Link>
           </div>
         </section>
 

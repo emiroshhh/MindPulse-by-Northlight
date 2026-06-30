@@ -59,6 +59,7 @@ export type ChatPanelCopy = {
   send: string;
   safetyNote: string;
   fallbackError: string;
+  loading: string;
   /** Shown in the empty-messages area while auth check is pending */
   authChecking?: string;
 };
@@ -70,6 +71,7 @@ export function ChatPanel({
   fixedMode = false,
   copy,
   examples = [],
+  emptyHint,
   className = '',
   authReady = true,
 }: {
@@ -79,6 +81,7 @@ export function ChatPanel({
   fixedMode?: boolean;
   copy: ChatPanelCopy;
   examples?: string[];
+  emptyHint?: string;
   className?: string;
   /** Set to false while the parent is still confirming the user session.
    *  ChatPanel will not load history (guest or account) until this is true. */
@@ -204,7 +207,9 @@ export function ChatPanel({
   // Derive the empty-state message shown before any messages exist
   const emptyStateText = !authReady
     ? (copy.authChecking ?? 'Checking your session…')
-    : isGuest
+    : emptyHint
+      ? emptyHint
+      : isGuest
       ? copy.emptyGuest
       : copy.emptyAuth;
 
@@ -233,9 +238,13 @@ export function ChatPanel({
         </div>
       )}
       <div className="rounded-[2rem] bg-surface shadow-soft">
-        <div className="border-b border-ink/5 p-5">
-          <h2 className="text-xl font-semibold">{selectedMode.title}</h2>
-          <p className="text-sm text-muted">{selectedMode.copy}</p>
+        <div className="border-b border-ink/5 p-5 sm:p-6">
+          <h2 className="text-xl font-semibold sm:text-2xl">
+            {selectedMode.title}
+          </h2>
+          <p className="mt-1 text-sm leading-6 text-muted">
+            {selectedMode.copy}
+          </p>
           <p className="mt-2 text-xs font-bold uppercase tracking-[.16em] text-sage">
             {user ? copy.accountLimitLabel : copy.guestLimitLabel}
             {usage ? ` · ${usage.remaining} left today` : ''}
@@ -246,7 +255,7 @@ export function ChatPanel({
                 <button
                   key={example}
                   onClick={() => void sendChat(undefined, example)}
-                  className="rounded-full bg-sage-soft px-4 py-2 text-left text-xs font-semibold text-ink transition hover:bg-sage hover:text-canvas"
+                  className="rounded-full bg-sage-soft px-4 py-2 text-left text-xs font-semibold leading-5 text-ink transition hover:bg-sage hover:text-canvas focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sage"
                 >
                   {example}
                 </button>
@@ -254,9 +263,9 @@ export function ChatPanel({
             </div>
           )}
         </div>
-        <div className="max-h-[32rem] min-h-[24rem] space-y-4 overflow-y-auto bg-canvas/40 p-5">
+        <div className="max-h-[32rem] min-h-[24rem] space-y-4 overflow-y-auto bg-canvas/40 p-4 sm:p-5">
           {!messages.length && (
-            <p className="rounded-mp bg-surface p-4 text-muted">
+            <p className="rounded-mp bg-surface p-4 text-sm leading-7 text-muted">
               {emptyStateText}
             </p>
           )}
@@ -266,7 +275,7 @@ export function ChatPanel({
               className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[85%] rounded-[1.35rem] px-4 py-3 text-sm leading-7 ${
+                className={`max-w-[92%] rounded-[1.35rem] px-4 py-3 text-sm leading-7 sm:max-w-[85%] ${
                   message.role === 'user'
                     ? 'rounded-br-md bg-ink text-canvas'
                     : 'rounded-bl-md bg-surface'
@@ -280,10 +289,15 @@ export function ChatPanel({
               </div>
             </div>
           ))}
-          {chatLoading && <Loader2 className="animate-spin text-sage" />}
+          {chatLoading && (
+            <div className="flex items-center gap-3 rounded-mp bg-surface p-4 text-sm font-medium text-muted">
+              <Loader2 className="animate-spin text-sage" size={18} />
+              <span>{copy.loading}</span>
+            </div>
+          )}
         </div>
         {chatError && (
-          <div className="mx-5 mt-4 rounded-2xl bg-warm/15 p-3 text-sm text-danger">
+          <div className="mx-4 mt-4 rounded-2xl bg-warm/15 p-4 text-sm leading-6 text-danger sm:mx-5">
             <p>{chatError}</p>
             {limitAccountRequired && (
               <div className="mt-3 flex flex-wrap gap-2">
@@ -303,20 +317,20 @@ export function ChatPanel({
             )}
           </div>
         )}
-        <form onSubmit={(event) => void sendChat(event)} className="p-5">
+        <form onSubmit={(event) => void sendChat(event)} className="p-4 sm:p-5">
           <textarea
             value={chatInput}
             onChange={(event) => setChatInput(event.target.value)}
             maxLength={1000}
             rows={3}
             className="w-full resize-none rounded-2xl border border-ink/10 bg-canvas/70 px-4 py-3 outline-none focus:border-sage"
-            placeholder={`Ask ${selectedMode.title}...`}
+            placeholder={selectedMode.examples[0] ?? `Ask ${selectedMode.title}...`}
           />
           <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-muted">{copy.safetyNote}</p>
             <button
               disabled={chatLoading}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-sage px-5 font-semibold text-canvas disabled:opacity-50"
+              className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-sage px-5 font-semibold text-canvas disabled:opacity-50 sm:w-auto"
             >
               {copy.send} <Send size={15} />
             </button>

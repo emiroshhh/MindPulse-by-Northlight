@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  ArrowRight,
   Brain,
   CheckCircle2,
   Globe2,
@@ -308,11 +309,17 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
                 {ui.heroBuiltBy}
               </span>
             </div>
-            <h1 className="mt-6 max-w-3xl text-5xl font-semibold leading-tight tracking-[-.045em] sm:text-6xl">
+            <p className="mt-6 text-xs font-bold uppercase tracking-[.2em] text-sage">
+              {ui.commandLabel}
+            </p>
+            <h1 className="mt-3 max-w-3xl text-4xl font-semibold leading-tight tracking-[-.045em] sm:text-6xl">
               {ui.heroTitle}
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-8 text-muted">
               {ui.heroSubtitle}
+            </p>
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-muted">
+              {ui.commandDesc}
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <a
@@ -360,6 +367,49 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
           </aside>
         </section>
 
+        <section className="mt-8 rounded-[2rem] border border-sage/15 bg-surface/90 p-5 shadow-soft sm:p-7">
+          <div className="grid gap-6 lg:grid-cols-[.8fr_1.2fr] lg:items-center">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[.2em] text-sage">
+                {ui.onboardingLabel}
+              </p>
+              <h2 className="mt-2 text-3xl font-semibold tracking-[-.03em] sm:text-4xl">
+                {ui.onboardingTitle}
+              </h2>
+              <p className="mt-3 text-sm leading-7 text-muted">
+                {ui.onboardingIntro}
+              </p>
+            </div>
+            <div className="grid gap-3 md:grid-cols-3">
+              {ui.onboardingSteps.map(([title, copy], index) => (
+                <article
+                  key={title}
+                  className="rounded-2xl bg-canvas/80 p-4"
+                >
+                  <span className="text-xs font-bold text-sage">
+                    0{index + 1}
+                  </span>
+                  <h3 className="mt-3 font-semibold">{title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-muted">{copy}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+          <div className="mt-5 rounded-[1.5rem] bg-sage-soft/70 p-4">
+            <p className="text-sm font-semibold">{ui.onboardingPromptTitle}</p>
+            <div className="mt-3 grid gap-3 md:grid-cols-2">
+              {ui.onboardingPromptExamples.map((prompt) => (
+                <p
+                  key={prompt}
+                  className="rounded-2xl bg-canvas/80 p-4 text-sm leading-6 text-muted"
+                >
+                  &ldquo;{prompt}&rdquo;
+                </p>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section className="mt-8 grid gap-4 sm:grid-cols-3">
           {ui.featureCards.map(([title, copy]) => (
             <article
@@ -371,6 +421,35 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
               <p className="mt-2 text-sm leading-6 text-muted">{copy}</p>
             </article>
           ))}
+        </section>
+
+        <section className="mt-8 rounded-[2rem] bg-ink p-5 text-canvas shadow-soft sm:p-6">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[.2em] text-sage-soft">
+              {ui.commandTitle}
+            </p>
+            <h2 className="mt-2 text-2xl font-semibold">
+              {ui.nextActionsTitle}
+            </h2>
+          </div>
+          <div className="mt-5 grid gap-3 md:grid-cols-3">
+            {ui.nextActions.map(([title, copy, route]) => (
+              <Link
+                key={route}
+                href={route}
+                className="group rounded-2xl bg-canvas/10 p-4 transition hover:bg-canvas/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sage-soft"
+              >
+                <h3 className="flex items-center justify-between gap-3 font-semibold">
+                  {title}
+                  <ArrowRight
+                    size={16}
+                    className="transition group-hover:translate-x-1"
+                  />
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-canvas/70">{copy}</p>
+              </Link>
+            ))}
+          </div>
         </section>
 
         <section className="mt-8">
@@ -414,6 +493,9 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
           <h2 className="mt-3 text-3xl font-semibold">
             {ui.agentTitle}
           </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-7 text-muted">
+            {ui.agentSubtitle}
+          </p>
           <div className="mt-5 flex flex-wrap gap-2">
             {ui.agentPrompts.map((prompt) => (
               <button
@@ -439,7 +521,7 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
                 className="w-full resize-none rounded-2xl border border-ink/10 bg-canvas/70 px-4 py-3 outline-none focus:border-sage"
                 placeholder={ui.agentPlaceholder}
               />
-              <button className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-full bg-ink px-5 font-semibold text-canvas">
+              <button className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-ink px-5 font-semibold text-canvas sm:w-auto">
                 {agentLoading && <Loader2 size={16} className="animate-spin" />}
                 {ui.agentGenerate}
               </button>

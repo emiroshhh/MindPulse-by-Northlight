@@ -29,7 +29,7 @@ export default function WhyPage() {
               href="/app"
               className="hidden min-h-11 items-center rounded-full bg-ink px-5 text-sm font-semibold text-canvas sm:inline-flex"
             >
-              Dashboard
+              Open the app
             </Link>
           </div>
         </nav>
@@ -120,7 +120,7 @@ export default function WhyPage() {
               href="/app"
               className="inline-flex min-h-11 items-center rounded-full bg-ink px-5 text-sm font-semibold text-canvas"
             >
-              Back to dashboard
+              Start using MindPulse
             </Link>
           </div>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
