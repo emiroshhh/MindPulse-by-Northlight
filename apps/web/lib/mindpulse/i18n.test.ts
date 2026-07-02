@@ -142,6 +142,7 @@ describe('getToolsForLanguage', () => {
       expect(copy.betaJourneySteps).toHaveLength(4);
       expect(copy.retentionItems).toHaveLength(4);
       expect(copy.footerBeta.length).toBeGreaterThan(0);
+      expect(copy.footerCaseStudy.length).toBeGreaterThan(0);
       expect(copy.toolPageFeedbackTitle.length).toBeGreaterThan(0);
       expect(copy.feedback.send.length).toBeGreaterThan(0);
       expect(copy.feedback.intro.length).toBeGreaterThan(20);

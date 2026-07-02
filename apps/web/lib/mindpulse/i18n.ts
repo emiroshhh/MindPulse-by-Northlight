@@ -81,6 +81,7 @@ export type UiCopy = {
   footerDashboard: string;
   footerWhy: string;
   footerBeta: string;
+  footerCaseStudy: string;
   footerImpact: string;
   footerPrivacy: string;
   footerFeedback: string;
@@ -235,6 +236,7 @@ const EN: UiCopy = {
   footerDashboard: 'Dashboard',
   footerWhy: 'Why I built this',
   footerBeta: 'Beta testing',
+  footerCaseStudy: 'Case study',
   footerImpact: 'Impact',
   footerPrivacy: 'Privacy',
   footerFeedback: 'Feedback',
@@ -394,6 +396,7 @@ const RU: UiCopy = {
   footerDashboard: 'Главная',
   footerWhy: 'Почему я создал это',
   footerBeta: 'Бета-тестирование',
+  footerCaseStudy: 'Кейс проекта',
   footerImpact: 'Результаты',
   footerPrivacy: 'Конфиденциальность',
   footerFeedback: 'Обратная связь',
@@ -553,6 +556,7 @@ const KK: UiCopy = {
   footerDashboard: 'Басты бет',
   footerWhy: 'Неге жасадым',
   footerBeta: 'Бета-тест',
+  footerCaseStudy: 'Жоба кейсі',
   footerImpact: 'Нәтиже',
   footerPrivacy: 'Құпиялылық',
   footerFeedback: 'Пікір',

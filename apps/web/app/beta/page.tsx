@@ -152,12 +152,20 @@ export default function BetaPage() {
               Reflection at the end of the day.
             </p>
           </div>
-          <Link
-            href="/app"
-            className="inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-full bg-ink px-6 font-semibold text-canvas"
-          >
-            Start a real task <ArrowRight size={16} />
-          </Link>
+          <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+            <Link
+              href="/case-study"
+              className="inline-flex min-h-12 items-center justify-center rounded-full bg-canvas px-6 font-semibold text-ink"
+            >
+              Read the case study
+            </Link>
+            <Link
+              href="/app"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-ink px-6 font-semibold text-canvas"
+            >
+              Start a real task <ArrowRight size={16} />
+            </Link>
+          </div>
         </section>
 
         <SiteFooter />

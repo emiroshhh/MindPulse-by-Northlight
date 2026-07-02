@@ -1,160 +1,211 @@
 # MindPulse
 
-MindPulse by Northlight is an authenticated AI study and self-growth web app for students. It combines a polished public landing page, secure accounts, AI chat, saved history, and an Agent workspace for turning messy study pressure into clear next actions.
+MindPulse by Northlight is a multilingual AI study and self-growth workspace for students. It combines six focused AI tools, guest-first access, optional accounts, saved progress, and practical safety boundaries in one calm interface.
 
-## Stack
+The project is in public beta. Its current goal is to learn whether students can use MindPulse to turn one real academic or personal-development task into a manageable next action. No proven-impact claim is made yet.
 
-- Next.js 15 / React 19
-- OpenNext Cloudflare adapter
-- Cloudflare Workers + Static Assets
-- Cloudflare D1 for users, sessions, chat history, and saved Agent plans
-- Gemini Interactions API through server-only routes
+## The student problem
+
+Students often balance classes, exams, projects, routines, and personal goals across disconnected tools. The difficult part is frequently not knowing that work matters—it is deciding what to do first, making the task small enough to start, and recovering after a difficult day.
+
+MindPulse is designed for students who want:
+
+- a simple explanation instead of a wall of text;
+- a realistic plan instead of an impossible schedule;
+- a small restart instead of motivational pressure;
+- one workspace instead of several unrelated AI chats.
+
+## Six AI tools
+
+| Tool | Purpose |
+| --- | --- |
+| Study Help | Explains difficult concepts, demonstrates the process, and offers quick practice checks. |
+| Daily Planner | Converts tasks, available time, and energy into a realistic schedule with breaks and fallbacks. |
+| Motivation Reset | Helps a student restart calmly with one tiny action and a short next-ten-minute plan. |
+| Habit Coach | Designs small habits with triggers, fallback versions, lightweight tracking, and restart rules. |
+| Goal Breakdown | Turns ambitious goals into outcomes, milestones, blockers, and ordered next actions. |
+| Quick Reflection | Guides a short, non-clinical reflection around a win, friction, lesson, and tomorrow adjustment. |
+
+MindPulse also includes a structured Agent workflow for turning an unclear situation into a goal, plan, next actions, obstacles, and smallest first step.
+
+## Product model
+
+### Guest access
+
+- No login wall for `/app` or the six tool pages.
+- Five AI messages per day, enforced server-side.
+- Conversation, focus, and saved guest plans remain on the current device.
+- Guest data is not written to account chat history.
+
+### Free account
+
+- Twenty AI messages per day, enforced server-side.
+- Chat history and saved Agent plans are stored in Cloudflare D1.
+- Authentication uses server-created sessions; raw session tokens are not stored in D1.
+
+There are currently no payments, subscriptions, ads, or premium tiers.
+
+## Languages
+
+The interface supports:
+
+- English (`en`)
+- Russian (`ru`)
+- Kazakh (`kk`)
+
+The AI is instructed to follow the language of the student's latest message and use the selected interface language as a fallback.
+
+## Safety and privacy boundaries
+
+MindPulse is a productivity and learning assistant. It is not therapy, medical care, diagnosis, professional mental-health support, or an emergency service.
+
+- Normal school stress and procrastination receive calm, practical support.
+- Serious self-harm, abuse, or immediate-danger language exits ordinary productivity coaching and points toward immediate real-world support.
+- Important academic information should be verified.
+- Gemini and session secrets remain server-side.
+- Passwords are stored as uniquely salted PBKDF2-SHA-256 hashes using Workers WebCrypto.
+- D1 stores a keyed hash of each session token, not the raw token.
+- Feedback is optional and should never contain private chat content or sensitive data.
+
+See the plain-language [privacy page](/apps/web/app/privacy/page.tsx) for the user-facing explanation.
+
+## Technical architecture
+
+```text
+Next.js / React UI
+        |
+        +-- guest local state (localStorage)
+        |
+        +-- server routes on Cloudflare Workers
+                |
+                +-- Gemini Interactions API (server-only key)
+                +-- Cloudflare D1
+                    users / sessions / usage / history / Agent plans
+```
+
+Active production storage is Cloudflare D1. Supabase files in the repository are legacy and are not part of the active web runtime.
+
+## Technology stack
+
+- Next.js 15 and React 19
+- TypeScript
 - Tailwind CSS
+- OpenNext Cloudflare adapter
+- Cloudflare Workers and Static Assets
+- Cloudflare D1
+- Gemini Interactions API
+- Vitest and Testing Library
+- npm workspaces for web, mobile, and shared packages
 
-## App structure
+## Important routes
 
-- `/` — public landing page
-- `/signup` — create account
-- `/login` — log in
-- `/logout` — invalidates the session and redirects home
-- `/app` — protected dashboard with AI Chat, Agent, history, and settings surfaces
-- `/api/auth/signup`
-- `/api/auth/login`
-- `/api/auth/logout`
-- `/api/auth/me`
-- `/api/chat`
-- `/api/chat/history`
-- `/api/agent`
+| Route | Purpose |
+| --- | --- |
+| `/` | Public landing page |
+| `/app` | Guest-first dashboard, chat, Agent, focus, and recent state |
+| `/study`, `/planner`, `/motivation` | Focused learning, planning, and restart tools |
+| `/habits`, `/goals`, `/reflection` | Habit, goal, and reflection tools |
+| `/beta` | Beta tester guide |
+| `/case-study` | Public portfolio case study |
+| `/why`, `/impact`, `/privacy` | Project story, honest beta goals, and privacy boundaries |
 
-## Security model
-
-- Passwords are never stored in plain text.
-- Passwords are stored as salted PBKDF2-SHA-256 hashes using WebCrypto.
-- Argon2id is preferred in general, but a native/wasm Argon2 dependency would make this OpenNext Cloudflare Worker deployment more fragile. PBKDF2-SHA-256 is available in Workers WebCrypto and uses a unique salt per password.
-- Session tokens are stored only in `HttpOnly`, `Secure`, `SameSite=Lax` cookies.
-- D1 stores only an HMAC-SHA-256 hash of each session token.
-- Login errors are generic: `Invalid email or password`.
-- API keys, session tokens, password hashes, and raw passwords are never logged.
-
-## Required secrets
-
-Set these in Cloudflare Workers secrets / environment variables:
+## Repository structure
 
 ```text
-GEMINI_API_KEY=your Gemini key
-SESSION_SECRET=a random string with at least 32 characters
+apps/web/        Next.js web application and Worker routes
+apps/mobile/     Expo mobile workspace (not the active production web app)
+packages/shared/ Shared schemas, exercises, IDs, and safety utilities
+migrations/      Cloudflare D1 migrations
 ```
 
-Optional:
+## Run locally
 
-```text
-GEMINI_MODEL=gemini-3.5-flash
+Prerequisites:
+
+- Node.js 20 or newer
+- npm 11-compatible tooling
+- a Gemini API key for real AI replies
+- Wrangler authentication for D1/Worker preview workflows
+
+Install dependencies:
+
+```powershell
+npm ci
 ```
 
-Never expose the Gemini key as `NEXT_PUBLIC_*`.
+For a quick UI development server:
 
-## Create the D1 database
-
-```bash
-npx wrangler d1 create mindpulse-db
-```
-
-Copy the returned `database_id`, then update `wrangler.jsonc` and `apps/web/wrangler.jsonc` by uncommenting the `d1_databases` block:
-
-```jsonc
-"d1_databases": [
-  {
-    "binding": "DB",
-    "database_name": "mindpulse-db",
-    "database_id": "YOUR_DATABASE_ID"
-  }
-]
-```
-
-## Run migrations
-
-Apply the auth/session/history schema:
-
-```bash
-npx wrangler d1 migrations apply mindpulse-db --local
-npx wrangler d1 migrations apply mindpulse-db --remote
-```
-
-The Wrangler migration file is:
-
-```text
-migrations/0001_mindpulse_auth.sql
-```
-
-If you prefer direct SQL execution:
-
-```bash
-npx wrangler d1 execute mindpulse-db --local --file migrations/0001_mindpulse_auth.sql
-npx wrangler d1 execute mindpulse-db --remote --file migrations/0001_mindpulse_auth.sql
-```
-
-## Local development
-
-Use Node 22:
-
-```bash
-npm install
-```
-
-Create `apps/web/.env.local`:
-
-```text
-GEMINI_API_KEY=your development Gemini key
-SESSION_SECRET=local-dev-secret-at-least-32-characters
-```
-
-For full auth locally, create the D1 database and apply the local migration. Then run:
-
-```bash
+```powershell
 npm run dev
 ```
 
-## Build and deploy
+Server-side AI and authenticated flows require the existing server secrets and D1 binding. Apply local D1 migrations with the app configuration:
 
-```bash
+```powershell
+npx wrangler d1 migrations apply mindpulse-db --local --config apps/web/wrangler.jsonc
+```
+
+Use the Cloudflare preview workflow for the closest local equivalent to production:
+
+```powershell
+npm run preview:cloudflare
+```
+
+Do not commit API keys, session secrets, cookies, password hashes, or local environment files.
+
+## Quality checks
+
+Run the same checks expected before a commit or deployment:
+
+```powershell
 npm run lint
 npm run typecheck
 npm test
 npm run build
-npx wrangler deploy
 ```
 
-Cloudflare Workers Builds settings:
+The production build generates the OpenNext Worker under `apps/web/.open-next`.
 
-- Root directory: `/`
-- Build command: `npm run build`
-- Deploy command: `npx wrangler deploy`
+## Deploy
 
-Before deployment, make sure:
+1. Confirm the `DB` binding in `apps/web/wrangler.jsonc` points to the intended D1 database.
+2. Apply any pending remote migration:
 
-1. `DB` D1 binding is configured.
-2. D1 migrations have been applied remotely.
-3. `GEMINI_API_KEY` is set as a secret.
-4. `SESSION_SECRET` is set as a secret and is at least 32 characters.
-
-## API notes
-
-`POST /api/chat` requires an authenticated session. Messages are saved to `chat_messages` by `user_id`.
-
-Example body:
-
-```json
-{ "message": "Explain cellular respiration simply", "mode": "study" }
+```powershell
+npx wrangler d1 migrations apply mindpulse-db --remote --config apps/web/wrangler.jsonc
 ```
 
-Valid modes:
+3. Confirm required secrets are stored in Cloudflare, never in source control.
+4. Run all quality checks.
+5. Deploy through the repository script:
 
-```text
-study, planner, motivation, habit, goal, reflection
+```powershell
+npm run deploy
 ```
 
-`POST /api/agent` saves structured Agent results for the logged-in user.
+Deployment is intentionally not part of ordinary feature implementation. Production changes should be smoke-tested separately.
 
-## Safety disclaimer
+## Beta and portfolio documentation
 
-MindPulse is an AI study assistant, not a doctor or therapist. It can make mistakes, so students should verify important academic information and seek real-world help for emergencies or serious mental health concerns.
+- [DEMO.md](DEMO.md) — 60-second, two-minute, and five-minute demo scripts
+- [ROADMAP.md](ROADMAP.md) — completed phases and evidence-driven next steps
+- [`/case-study`](apps/web/app/case-study/page.tsx) — public product and engineering case study
+- [`/beta`](apps/web/app/beta/page.tsx) — tester journey and feedback guidance
+
+## Roadmap summary
+
+Near-term priorities are beta feedback, accessibility, reliability, AI-answer quality, and honest outcome measurement. Mood tracking, journals, payments, ads, subscriptions, and advanced analytics are intentionally deferred until real feedback demonstrates a clear need.
+
+## Honest limitations
+
+- MindPulse is an early beta, not a proven educational intervention.
+- Current beta metrics are goals; real results have not been published yet.
+- AI answers may be incomplete or wrong.
+- Guest enforcement uses a conservative server-derived anonymous key and is not a perfect identity system.
+- Account synchronization currently covers chat history and saved Agent plans, not every piece of guest-local state.
+- EN/RU/KZ coverage is actively tested, but translation quality still benefits from native-speaker feedback.
+- The mobile workspace is not the active deployed product.
+
+## Project status
+
+The active web application is deployed on Cloudflare Workers and is ready for small, supervised public-beta testing. Product decisions should continue to be driven by real student use and explicit feedback rather than invented traction.

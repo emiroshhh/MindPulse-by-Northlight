@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { copyFor } from '@/lib/mindpulse/i18n';
-import type { LanguageCode } from '@/lib/mindpulse/tools';
+import React from 'react';
+import { copyFor } from '../../lib/mindpulse/i18n';
+import type { LanguageCode } from '../../lib/mindpulse/tools';
 import { FeedbackModal } from './feedback-modal';
 
 export function SiteFooter({
@@ -30,6 +31,9 @@ export function SiteFooter({
           </Link>
           <Link href="/beta" className="font-semibold hover:text-ink">
             {ui.footerBeta}
+          </Link>
+          <Link href="/case-study" className="font-semibold hover:text-ink">
+            {ui.footerCaseStudy}
           </Link>
           <Link href="/impact" className="font-semibold hover:text-ink">
             {ui.footerImpact}
