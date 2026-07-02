@@ -6,7 +6,10 @@ import {
   json,
   type AuthUser,
 } from '../../../lib/server/auth';
-import { buildSystemPrompt } from '../../../lib/server/mindpulse-prompt';
+import {
+  buildInteractionInput,
+  buildSystemPrompt,
+} from '../../../lib/server/mindpulse-prompt';
 
 export const maxDuration = 30;
 
@@ -173,7 +176,7 @@ export async function POST(request: Request) {
         model,
         store: false,
         system_instruction: buildSystemPrompt(mode, language),
-        input: message,
+        input: buildInteractionInput(message, raw.history),
         // temperature 0.5: more focused than default 0.7, avoids over-verbose Gemini output.
         // max_output_tokens omitted: the Interactions API field name (/v1beta/interactions)
         // is unverified — adding an unknown key risks a 400 from Gemini.

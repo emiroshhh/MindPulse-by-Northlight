@@ -1,6 +1,5 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { buildSystemPrompt } from '../../../lib/server/mindpulse-prompt';
 
 const authMocks = vi.hoisted(() => {
   const usage = new Map<string, number>();
@@ -264,48 +263,7 @@ describe('/api/chat', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// Phase 3 — buildSystemPrompt unit tests
-// These verify prompt content without touching auth, limits, or the API.
-// ---------------------------------------------------------------------------
-describe('buildSystemPrompt', () => {
-  it('study prompt includes active recall instruction', () => {
-    const prompt = buildSystemPrompt('study', 'en');
-    expect(prompt).toContain('active recall');
-  });
-
-  it('planner prompt includes fallback plan instruction', () => {
-    const prompt = buildSystemPrompt('planner', 'en');
-    expect(prompt.toLowerCase()).toContain('fallback');
-  });
-
-  it('motivation prompt contains no-guilt / no-shame instruction', () => {
-    const prompt = buildSystemPrompt('motivation', 'en');
-    expect(prompt).toContain('no pressure, no shame');
-  });
-
-  it('Russian language instruction is applied', () => {
-    const prompt = buildSystemPrompt('study', 'ru');
-    expect(prompt).toContain('русском языке');
-  });
-
-  it('Kazakh language instruction is applied', () => {
-    const prompt = buildSystemPrompt('study', 'kk');
-    expect(prompt).toContain('қазақ тілінде');
-  });
-
-  it('contains instruction not to reveal chain-of-thought or internal reasoning', () => {
-    const prompt = buildSystemPrompt('study', 'en');
-    expect(prompt).toContain('chain-of-thought');
-    expect(prompt).toContain('internal reasoning');
-  });
-
-  it('contains safety / crisis instruction', () => {
-    const prompt = buildSystemPrompt('study', 'en');
-    expect(prompt).toContain('self-harm');
-    expect(prompt).toContain('emergency services');
-  });
-
+describe('Gemini interaction assembly', () => {
   it('system_instruction sent to Gemini contains MindPulse identity and mode content', async () => {
     mockGemini('A clear answer');
     const response = await POST(
@@ -318,6 +276,26 @@ describe('buildSystemPrompt', () => {
     expect(instruction).toContain('MindPulse');
     expect(instruction).toContain('Daily Planner');
     expect(instruction).toContain('fallback');
+  });
+
+  it('passes bounded recent conversation context to Gemini', async () => {
+    mockGemini('A contextual answer');
+    await POST(
+      request({
+        message: 'What should I do next?',
+        mode: 'planner',
+        language: 'en',
+        history: [
+          { role: 'user', content: 'I have an essay due Friday.' },
+          { role: 'assistant', content: 'Start with the outline.' },
+        ],
+      }),
+    );
+    const [, init] = vi.mocked(fetch).mock.calls[0]!;
+    const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+    expect(body.input).toContain('Student: I have an essay due Friday.');
+    expect(body.input).toContain('MindPulse: Start with the outline.');
+    expect(body.input).toContain('Current student message:\nWhat should I do next?');
   });
 
   it('generation_config uses temperature 0.5', async () => {

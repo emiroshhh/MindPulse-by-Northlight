@@ -163,7 +163,15 @@ export function ChatPanel({
         method: 'POST',
         credentials: 'same-origin',
         headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, mode, language }),
+        body: JSON.stringify({
+          message: text,
+          mode,
+          language,
+          history: messages
+            .filter((item) => item.mode === mode)
+            .slice(-6)
+            .map(({ role, content }) => ({ role, content })),
+        }),
       });
       const body = (await response.json().catch(() => ({}))) as ChatApiBody;
       if (response.status === 429 && body.error === 'daily_limit_reached') {
