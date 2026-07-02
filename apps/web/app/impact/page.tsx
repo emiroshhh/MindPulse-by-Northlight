@@ -141,10 +141,10 @@ export default function ImpactPage() {
               Plan your day <ArrowRight size={16} />
             </Link>
             <Link
-              href="/app"
+              href="/beta"
               className="inline-flex min-h-12 items-center justify-center rounded-full bg-canvas/10 px-6 font-semibold text-canvas"
             >
-              Open dashboard
+              Follow the beta guide
             </Link>
           </div>
         </section>

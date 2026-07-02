@@ -13,6 +13,7 @@ import {
   Zap,
 } from 'lucide-react';
 import Link from 'next/link';
+import { FeedbackModal } from '@/components/mindpulse/feedback-modal';
 import { SiteFooter } from '@/components/mindpulse/site-footer';
 
 const features = [
@@ -49,6 +50,9 @@ export default function LandingPage() {
             <a href="#how" className="hover:text-ink">
               How it works
             </a>
+            <Link href="/beta" className="hover:text-ink">
+              Beta testing
+            </Link>
             <Link href="/login" className="hover:text-ink">
               Login
             </Link>
@@ -234,6 +238,33 @@ export default function LandingPage() {
               >
                 Log in
               </Link>
+            </div>
+          </div>
+        </section>
+
+        <section className="px-5 pb-20 sm:px-8">
+          <div className="mx-auto grid max-w-7xl gap-6 rounded-[2rem] bg-ink p-8 text-canvas shadow-soft lg:grid-cols-[1fr_auto] lg:items-center">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[.2em] text-sage-soft">
+                Student beta
+              </p>
+              <h2 className="mt-3 text-3xl font-semibold">
+                Try one tool on one real task.
+              </h2>
+              <p className="mt-3 max-w-3xl leading-7 text-canvas/70">
+                Use MindPulse for something you actually need today, then tell
+                us what helped or felt unclear. No fake impact claims—just a
+                student-focused project improving through honest feedback.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
+              <Link
+                href="/beta"
+                className="inline-flex min-h-12 items-center justify-center rounded-full bg-sage px-6 font-semibold text-canvas"
+              >
+                How to beta test
+              </Link>
+              <FeedbackModal label="Share beta feedback" />
             </div>
           </div>
         </section>

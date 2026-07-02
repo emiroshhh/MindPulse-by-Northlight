@@ -28,13 +28,16 @@ export function SiteFooter({
           <Link href="/why" className="font-semibold hover:text-ink">
             {ui.footerWhy}
           </Link>
+          <Link href="/beta" className="font-semibold hover:text-ink">
+            {ui.footerBeta}
+          </Link>
           <Link href="/impact" className="font-semibold hover:text-ink">
             {ui.footerImpact}
           </Link>
           <Link href="/privacy" className="font-semibold hover:text-ink">
             {ui.footerPrivacy}
           </Link>
-          <FeedbackModal compact />
+          <FeedbackModal compact language={language ?? 'en'} />
         </nav>
         <p className="max-w-xl leading-6">{footerNote}</p>
       </div>

@@ -334,7 +334,7 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
               >
                 {ui.heroWhy}
               </Link>
-              <FeedbackModal />
+              <FeedbackModal language={language} />
             </div>
           </div>
           <aside className="rounded-[2rem] bg-ink p-6 text-canvas shadow-soft">
@@ -471,6 +471,51 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
               <ToolCard key={tool.id} tool={tool} openLabel={ui.toolOpenLabel} />
             ))}
           </div>
+        </section>
+
+        <section className="mt-8 grid gap-5 rounded-[2rem] bg-sage-soft/70 p-5 shadow-soft sm:p-7 lg:grid-cols-[1.25fr_.75fr]">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[.2em] text-sage">
+              {ui.betaJourneyLabel}
+            </p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-[-.03em]">
+              {ui.betaJourneyTitle}
+            </h2>
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-muted">
+              {ui.betaJourneyDesc}
+            </p>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {ui.betaJourneySteps.map(([title, copy], index) => (
+                <article key={title} className="rounded-2xl bg-canvas/80 p-4">
+                  <span className="text-xs font-bold text-sage">
+                    0{index + 1}
+                  </span>
+                  <h3 className="mt-2 font-semibold">{title}</h3>
+                  <p className="mt-1 text-sm leading-6 text-muted">{copy}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+          <aside className="rounded-[1.5rem] bg-ink p-5 text-canvas">
+            <h2 className="text-xl font-semibold">{ui.retentionTitle}</h2>
+            <ul className="mt-4 space-y-3 text-sm leading-6 text-canvas/70">
+              {ui.retentionItems.map((item) => (
+                <li key={item} className="flex gap-3">
+                  <CheckCircle2
+                    className="mt-0.5 shrink-0 text-sage-soft"
+                    size={17}
+                  />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+            <Link
+              href="/beta"
+              className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-canvas/10 px-5 text-sm font-semibold text-canvas"
+            >
+              {ui.footerBeta}
+            </Link>
+          </aside>
         </section>
 
         <section id="chat" className="scroll-mt-24">

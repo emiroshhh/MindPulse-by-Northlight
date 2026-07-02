@@ -136,6 +136,23 @@ describe('getToolsForLanguage', () => {
     expect(planner?.examples[0]).toContain('Распланируй');
   });
 
+  it('beta journey and retention copy is complete in every language', () => {
+    for (const language of ['en', 'ru', 'kk'] as const) {
+      const copy = copyFor(language);
+      expect(copy.betaJourneySteps).toHaveLength(4);
+      expect(copy.retentionItems).toHaveLength(4);
+      expect(copy.footerBeta.length).toBeGreaterThan(0);
+      expect(copy.toolPageFeedbackTitle.length).toBeGreaterThan(0);
+      expect(copy.feedback.send.length).toBeGreaterThan(0);
+      expect(copy.feedback.intro.length).toBeGreaterThan(20);
+    }
+  });
+
+  it('feedback labels are localized in Russian and Kazakh', () => {
+    expect(copyFor('ru').feedback.label).toBe('Оставить отзыв');
+    expect(copyFor('kk').feedback.label).toBe('Пікір қалдыру');
+  });
+
   it('Kazakh habit tool has Kazakh copy', () => {
     const tools = getToolsForLanguage('kk');
     const habit = tools.find((t) => t.id === 'habit');

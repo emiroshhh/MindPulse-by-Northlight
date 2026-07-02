@@ -116,12 +116,20 @@ export default function WhyPage() {
                 Open the tool that matches today.
               </h2>
             </div>
-            <Link
-              href="/app"
-              className="inline-flex min-h-11 items-center rounded-full bg-ink px-5 text-sm font-semibold text-canvas"
-            >
-              Start using MindPulse
-            </Link>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href="/beta"
+                className="inline-flex min-h-11 items-center rounded-full bg-sage-soft px-5 text-sm font-semibold text-ink"
+              >
+                Beta testing guide
+              </Link>
+              <Link
+                href="/app"
+                className="inline-flex min-h-11 items-center rounded-full bg-ink px-5 text-sm font-semibold text-canvas"
+              >
+                Start using MindPulse
+              </Link>
+            </div>
           </div>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             {mindPulseTools.map((tool) => (

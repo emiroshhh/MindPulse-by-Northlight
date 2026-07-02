@@ -24,6 +24,7 @@ import {
   ChatPanel,
   type MindPulseUser,
 } from './chat-panel';
+import { FeedbackModal } from './feedback-modal';
 import { LogoutButton } from './logout-button';
 import { SiteFooter } from './site-footer';
 
@@ -259,6 +260,23 @@ export function ToolPage({
           authReady={authReady}
           className="mt-8"
         />
+
+        <section className="mt-6 flex flex-col gap-4 rounded-[2rem] bg-surface p-5 shadow-soft sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[.18em] text-sage">
+              {ui.toolPageFeedbackLabel}
+            </p>
+            <h2 className="mt-2 text-xl font-semibold">
+              {ui.toolPageFeedbackTitle}
+            </h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted">
+              {ui.toolPageFeedbackDesc}
+            </p>
+          </div>
+          <div className="shrink-0">
+            <FeedbackModal language={language} />
+          </div>
+        </section>
 
         <SiteFooter language={language} />
       </main>

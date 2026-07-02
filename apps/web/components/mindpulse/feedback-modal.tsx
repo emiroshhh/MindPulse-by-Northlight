@@ -1,8 +1,14 @@
 'use client';
 
 import { ExternalLink, MessageSquareText, X } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { FEEDBACK_KEY, readJson, writeJson } from '@/lib/mindpulse/local-store';
+import React, { useMemo, useState } from 'react';
+import { copyFor } from '../../lib/mindpulse/i18n';
+import {
+  FEEDBACK_KEY,
+  readJson,
+  writeJson,
+} from '../../lib/mindpulse/local-store';
+import type { LanguageCode } from '../../lib/mindpulse/tools';
 
 type FeedbackOpenEntry = {
   action: 'opened_external_feedback';
@@ -12,10 +18,20 @@ type FeedbackOpenEntry = {
 
 const feedbackUrl = process.env.NEXT_PUBLIC_FEEDBACK_URL?.trim() ?? '';
 
-export function FeedbackModal({ compact = false }: { compact?: boolean }) {
+export function FeedbackModal({
+  compact = false,
+  language = 'en',
+  label,
+}: {
+  compact?: boolean;
+  language?: LanguageCode;
+  label?: string;
+}) {
   const [open, setOpen] = useState(false);
   const [done, setDone] = useState(false);
   const hasFeedbackUrl = useMemo(() => /^https?:\/\//.test(feedbackUrl), []);
+  const feedback = copyFor(language).feedback;
+  const buttonLabel = label ?? feedback.label;
 
   function markFeedbackOpened() {
     const entries = readJson<FeedbackOpenEntry[]>(FEEDBACK_KEY, []);
@@ -45,10 +61,10 @@ export function FeedbackModal({ compact = false }: { compact?: boolean }) {
         }
       >
         {compact ? (
-          'Feedback'
+          buttonLabel
         ) : (
           <>
-            <MessageSquareText size={16} /> Feedback
+            <MessageSquareText size={16} /> {buttonLabel}
           </>
         )}
       </button>
@@ -63,16 +79,16 @@ export function FeedbackModal({ compact = false }: { compact?: boolean }) {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[.18em] text-sage">
-                  Student feedback
+                  {feedback.eyebrow}
                 </p>
                 <h2 id="feedback-title" className="mt-2 text-2xl font-semibold">
-                  Help shape MindPulse
+                  {feedback.title}
                 </h2>
               </div>
               <button
                 onClick={() => setOpen(false)}
                 className="rounded-full bg-canvas p-2 text-muted hover:text-ink"
-                aria-label="Close feedback"
+                aria-label={feedback.close}
               >
                 <X size={18} />
               </button>
@@ -80,9 +96,7 @@ export function FeedbackModal({ compact = false }: { compact?: boolean }) {
 
             <div className="mt-6 space-y-4">
               <p className="text-sm leading-7 text-muted">
-                Feedback is optional and should not include private chat
-                content, passwords, financial details, private documents, or
-                sensitive personal information.
+                {feedback.intro}
               </p>
 
               {hasFeedbackUrl ? (
@@ -93,27 +107,24 @@ export function FeedbackModal({ compact = false }: { compact?: boolean }) {
                   onClick={markFeedbackOpened}
                   className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-ink px-5 font-semibold text-canvas"
                 >
-                  Send feedback <ExternalLink size={17} />
+                  {feedback.send} <ExternalLink size={17} />
                 </a>
               ) : (
                 <div className="rounded-mp bg-canvas/80 p-4">
-                  <h3 className="font-semibold">Feedback form not connected</h3>
+                  <h3 className="font-semibold">
+                    {feedback.unavailableTitle}
+                  </h3>
                   <p className="mt-2 text-sm leading-6 text-muted">
-                    Add a real Google Forms or feedback form URL with
-                    <code className="mx-1 rounded bg-sage-soft px-1.5 py-0.5 text-xs font-bold text-ink">
-                      NEXT_PUBLIC_FEEDBACK_URL
-                    </code>
-                    before launch. No fake feedback URL is hardcoded.
+                    {feedback.unavailableCopy}
                   </p>
                 </div>
               )}
 
               {done && (
                 <div className="rounded-mp bg-sage-soft p-4">
-                  <h3 className="font-semibold">Thank you — genuinely.</h3>
+                  <h3 className="font-semibold">{feedback.thanksTitle}</h3>
                   <p className="mt-2 text-sm leading-6 text-muted">
-                    The feedback form opened in a new tab. MindPulse only saved
-                    a local “feedback opened” marker on this device.
+                    {feedback.thanksCopy}
                   </p>
                 </div>
               )}

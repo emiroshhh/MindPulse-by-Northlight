@@ -71,9 +71,16 @@ export type UiCopy = {
   recentAccount: string;
   nextActionsTitle: string;
   nextActions: [string, string, string][];
+  betaJourneyLabel: string;
+  betaJourneyTitle: string;
+  betaJourneyDesc: string;
+  betaJourneySteps: [string, string][];
+  retentionTitle: string;
+  retentionItems: string[];
   // Footer
   footerDashboard: string;
   footerWhy: string;
+  footerBeta: string;
   footerImpact: string;
   footerPrivacy: string;
   footerFeedback: string;
@@ -92,6 +99,21 @@ export type UiCopy = {
   toolPageBestFor: string;
   toolPagePromptStarters: string;
   toolPageHowToUse: string;
+  toolPageFeedbackLabel: string;
+  toolPageFeedbackTitle: string;
+  toolPageFeedbackDesc: string;
+  feedback: {
+    label: string;
+    eyebrow: string;
+    title: string;
+    intro: string;
+    send: string;
+    unavailableTitle: string;
+    unavailableCopy: string;
+    thanksTitle: string;
+    thanksCopy: string;
+    close: string;
+  };
   // Auth state
   authChecking: string;
   agentNeedLogin: string;
@@ -192,9 +214,27 @@ const EN: UiCopy = {
     ['Study one topic', 'Use Study when a concept feels foggy.', '/study'],
     ['Reset momentum', 'Use Motivation when starting feels heavy.', '/motivation'],
   ],
+  betaJourneyLabel: 'Beta tester journey',
+  betaJourneyTitle: 'Test MindPulse on one real student task.',
+  betaJourneyDesc:
+    'A useful beta test takes a few minutes. Honest feedback matters more than trying every feature.',
+  betaJourneySteps: [
+    ['Try one tool', 'Choose the mode that matches what you need today.'],
+    ['Use a real task', 'Bring an actual deadline, topic, plan, habit, or goal.'],
+    ['Send feedback', 'Tell us what helped, what felt unclear, and what was missing.'],
+    ['Share if useful', 'If it genuinely helped, invite one other student to try it.'],
+  ],
+  retentionTitle: 'A simple rhythm that works',
+  retentionItems: [
+    'Use Planner before a study session.',
+    'Save one tiny next action for today.',
+    'Use Reflection at the end of the day.',
+    'Come back tomorrow with one real task.',
+  ],
 
   footerDashboard: 'Dashboard',
   footerWhy: 'Why I built this',
+  footerBeta: 'Beta testing',
   footerImpact: 'Impact',
   footerPrivacy: 'Privacy',
   footerFeedback: 'Feedback',
@@ -215,6 +255,25 @@ const EN: UiCopy = {
   toolPageBestFor: 'Best for',
   toolPagePromptStarters: 'Prompt starters',
   toolPageHowToUse: 'How to use this mode',
+  toolPageFeedbackLabel: 'After one real task',
+  toolPageFeedbackTitle: 'Did this tool help you move forward?',
+  toolPageFeedbackDesc:
+    'Send a short note about what worked or what felt unclear. Never include private chat content.',
+  feedback: {
+    label: 'Share feedback',
+    eyebrow: 'Student beta feedback',
+    title: 'Help make MindPulse more useful',
+    intro:
+      'After trying one real task, tell us what helped, what felt unclear, and what you would improve. Do not include private chat content, passwords, documents, or sensitive personal information.',
+    send: 'Open feedback form',
+    unavailableTitle: 'Feedback form not connected',
+    unavailableCopy:
+      'A real feedback form URL must be configured before launch. No fake destination is used.',
+    thanksTitle: 'Thank you — genuinely.',
+    thanksCopy:
+      'The feedback form opened in a new tab. MindPulse saved only a local “feedback opened” marker on this device.',
+    close: 'Close feedback',
+  },
   authChecking: 'Checking your session…',
   agentNeedLogin: 'Sign in to save your plan to your account.',
 };
@@ -314,9 +373,27 @@ const RU: UiCopy = {
     ['Разобрать тему', 'Открой Учёбу, если тема кажется туманной.', '/study'],
     ['Вернуть импульс', 'Открой Мотивацию, если трудно начать.', '/motivation'],
   ],
+  betaJourneyLabel: 'Путь бета-тестера',
+  betaJourneyTitle: 'Проверь MindPulse на одной реальной студенческой задаче.',
+  betaJourneyDesc:
+    'Хороший бета-тест занимает несколько минут. Честный отзыв важнее проверки каждой функции.',
+  betaJourneySteps: [
+    ['Выбери один инструмент', 'Открой режим, который подходит к сегодняшней задаче.'],
+    ['Возьми реальную задачу', 'Используй настоящий дедлайн, тему, план, привычку или цель.'],
+    ['Отправь отзыв', 'Расскажи, что помогло, что было непонятно и чего не хватило.'],
+    ['Поделись, если полезно', 'Если MindPulse действительно помог, предложи попробовать ещё одному студенту.'],
+  ],
+  retentionTitle: 'Простой ритм использования',
+  retentionItems: [
+    'Открой Планировщик перед учебной сессией.',
+    'Сохрани одно маленькое следующее действие.',
+    'Используй Рефлексию в конце дня.',
+    'Вернись завтра с одной реальной задачей.',
+  ],
 
   footerDashboard: 'Главная',
   footerWhy: 'Почему я создал это',
+  footerBeta: 'Бета-тестирование',
   footerImpact: 'Результаты',
   footerPrivacy: 'Конфиденциальность',
   footerFeedback: 'Обратная связь',
@@ -337,6 +414,25 @@ const RU: UiCopy = {
   toolPageBestFor: 'Лучше всего для',
   toolPagePromptStarters: 'Примеры запросов',
   toolPageHowToUse: 'Как использовать этот режим',
+  toolPageFeedbackLabel: 'После одной реальной задачи',
+  toolPageFeedbackTitle: 'Этот инструмент помог продвинуться?',
+  toolPageFeedbackDesc:
+    'Коротко расскажи, что сработало или было непонятно. Не отправляй содержимое приватного чата.',
+  feedback: {
+    label: 'Оставить отзыв',
+    eyebrow: 'Отзыв о студенческой бете',
+    title: 'Помоги сделать MindPulse полезнее',
+    intro:
+      'После одной реальной задачи расскажи, что помогло, что было непонятно и что стоит улучшить. Не отправляй содержимое приватного чата, пароли, документы или чувствительные данные.',
+    send: 'Открыть форму отзыва',
+    unavailableTitle: 'Форма отзыва не подключена',
+    unavailableCopy:
+      'Перед запуском нужно настроить настоящую ссылку на форму. Фальшивый адрес не используется.',
+    thanksTitle: 'Спасибо — правда.',
+    thanksCopy:
+      'Форма открылась в новой вкладке. MindPulse сохранил на этом устройстве только локальную отметку об открытии формы.',
+    close: 'Закрыть форму отзыва',
+  },
   authChecking: 'Проверяем сессию…',
   agentNeedLogin: 'Войдите, чтобы сохранить план в аккаунте.',
 };
@@ -436,9 +532,27 @@ const KK: UiCopy = {
     ['Бір тақырыпты түсін', 'Тақырып түсініксіз болса, Оқуды аш.', '/study'],
     ['Қайта қозғала баста', 'Бастау ауыр болса, Мотивацияны аш.', '/motivation'],
   ],
+  betaJourneyLabel: 'Бета-тестер жолы',
+  betaJourneyTitle: 'MindPulse-ті бір нақты студенттік тапсырмада сына.',
+  betaJourneyDesc:
+    'Пайдалы бета-тест бірнеше минут алады. Барлық функцияны тексеруден гөрі шынайы пікір маңызды.',
+  betaJourneySteps: [
+    ['Бір құралды таңда', 'Бүгінгі қажетіңе сай режимді аш.'],
+    ['Нақты тапсырманы қолдан', 'Шынайы дедлайн, тақырып, жоспар, әдет немесе мақсат жаз.'],
+    ['Пікір жібер', 'Не көмектескенін, не түсініксіз болғанын және не жетіспегенін айт.'],
+    ['Пайдалы болса бөліс', 'Шынымен көмектессе, тағы бір студентке ұсынып көр.'],
+  ],
+  retentionTitle: 'Қарапайым қолдану ырғағы',
+  retentionItems: [
+    'Оқу алдында Жоспарлаушыны қолдан.',
+    'Бүгінге бір кішкентай келесі әрекетті сақта.',
+    'Күн соңында Рефлексияны қолдан.',
+    'Ертең бір нақты тапсырмамен қайта кел.',
+  ],
 
   footerDashboard: 'Басты бет',
   footerWhy: 'Неге жасадым',
+  footerBeta: 'Бета-тест',
   footerImpact: 'Нәтиже',
   footerPrivacy: 'Құпиялылық',
   footerFeedback: 'Пікір',
@@ -460,6 +574,25 @@ const KK: UiCopy = {
   toolPageBestFor: 'Ең пайдалысы',
   toolPagePromptStarters: 'Prompt мысалдары',
   toolPageHowToUse: 'Бұл режимді қалай қолдану керек',
+  toolPageFeedbackLabel: 'Бір нақты тапсырмадан кейін',
+  toolPageFeedbackTitle: 'Бұл құрал алға жылжуға көмектесті ме?',
+  toolPageFeedbackDesc:
+    'Не көмектескенін немесе не түсініксіз болғанын қысқа жаз. Жеке чат мазмұнын жіберме.',
+  feedback: {
+    label: 'Пікір қалдыру',
+    eyebrow: 'Студенттік бета туралы пікір',
+    title: 'MindPulse-ті пайдалырақ етуге көмектес',
+    intro:
+      'Бір нақты тапсырмадан кейін не көмектескенін, не түсініксіз болғанын және нені жақсарту керегін айт. Жеке чат мазмұнын, құпиясөздерді, құжаттарды немесе сезімтал деректерді жіберме.',
+    send: 'Пікір формасын ашу',
+    unavailableTitle: 'Пікір формасы қосылмаған',
+    unavailableCopy:
+      'Іске қосар алдында нақты форма сілтемесін баптау керек. Жалған сілтеме қолданылмайды.',
+    thanksTitle: 'Шын жүректен рақмет.',
+    thanksCopy:
+      'Форма жаңа бетте ашылды. MindPulse бұл құрылғыда тек форманың ашылғаны туралы жергілікті белгі сақтады.',
+    close: 'Пікір формасын жабу',
+  },
   authChecking: 'Сессия тексерілуде…',
   agentNeedLogin: 'Жоспарды аккаунтта сақтау үшін кіріңіз.',
 };
