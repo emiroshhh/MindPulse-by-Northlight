@@ -31,6 +31,8 @@ describe('FeedbackModal', () => {
       'https://forms.example.com/mindpulse-beta',
     );
     expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noreferrer');
+    expect(link).not.toHaveAttribute('href', '#');
 
     fireEvent.click(link);
     expect(screen.getByText('Thank you — genuinely.')).toBeInTheDocument();

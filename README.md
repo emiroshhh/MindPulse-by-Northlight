@@ -1,6 +1,6 @@
 # MindPulse
 
-MindPulse by Northlight is a multilingual AI study and self-growth workspace for students. It combines six focused AI tools, guest-first access, optional accounts, saved progress, and practical safety boundaries in one calm interface.
+MindPulse by Northlight is an AI study and self-growth workspace with English, Russian, and Kazakh interface support. It combines six focused AI tools, guest-first access, optional accounts, saved progress, and practical safety boundaries in one calm interface.
 
 The project is in public beta. Its current goal is to learn whether students can use MindPulse to turn one real academic or personal-development task into a manageable next action. No proven-impact claim is made yet.
 
@@ -54,6 +54,8 @@ The interface supports:
 - Kazakh (`kk`)
 
 The AI is instructed to follow the language of the student's latest message and use the selected interface language as a fallback.
+
+This is an interface and response-language feature, not a claim of equivalent trilingual crisis-safety coverage. Deterministic urgent-language screening is currently strongest in English and Russian; reviewed Kazakh safety coverage remains future work.
 
 ## Safety and privacy boundaries
 

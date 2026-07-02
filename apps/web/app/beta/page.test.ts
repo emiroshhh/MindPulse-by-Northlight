@@ -17,5 +17,6 @@ describe('/beta', () => {
     expect(source).toContain('label="Send beta feedback"');
     expect(source).toContain('by Northlight');
     expect(source).toContain('href="/privacy"');
+    expect(source).toContain('href="/case-study"');
   });
 });

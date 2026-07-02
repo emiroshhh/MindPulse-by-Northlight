@@ -13,15 +13,23 @@ const privacyNotes = [
   },
   {
     title: 'Accounts',
-    copy: 'If you create an account, MindPulse may store your account chat history in its database so it can load again after you log in.',
+    copy: 'If you create an account, MindPulse stores your email, password hash, session records, account chat history, and saved Agent plans in Cloudflare D1 so account features can work.',
   },
   {
     title: 'Usage limits',
-    copy: 'MindPulse tracks daily message usage for guests and accounts to protect Gemini API costs and keep the beta available.',
+    copy: 'MindPulse stores a daily message count linked to an account or a server-derived guest key. This protects API costs and keeps the beta available.',
+  },
+  {
+    title: 'AI processing',
+    copy: 'Messages sent to AI tools are passed through the MindPulse server to Google Gemini to generate a reply. Provider processing and safety handling may apply.',
   },
   {
     title: 'Feedback',
-    copy: 'Feedback is optional. If an external feedback form is connected, it opens in a new tab. Please do not include private chat content.',
+    copy: 'Feedback is optional and opens in an external form. MindPulse stores only a local “feedback opened” marker; do not paste private chat content into the form.',
+  },
+  {
+    title: 'Beta retention',
+    copy: 'Guest data remains until browser storage is cleared. Account and usage records are retained during the beta until removed; no fixed automatic deletion period is currently promised.',
   },
 ];
 
@@ -90,6 +98,28 @@ export default function PrivacyPage() {
             tool to process. AI can make mistakes, so use MindPulse as study and
             planning support, not as a final authority.
           </p>
+        </section>
+
+        <section className="mt-6 rounded-[2rem] bg-surface p-7 shadow-soft sm:p-8">
+          <h2 className="text-3xl font-semibold">Deletion and beta contact</h2>
+          <div className="mt-4 space-y-4 leading-8 text-muted">
+            <p>
+              Guests can remove local MindPulse data by clearing this site’s
+              browser storage. Account deletion is not yet self-service during
+              the beta.
+            </p>
+            <p>
+              To request account-data removal or ask a privacy question, use
+              the configured feedback form and clearly label the message as a
+              deletion or privacy request. Include only the account email
+              needed to identify the account—never a password, session token,
+              or private chat content. If the form is unavailable, the beta
+              contact channel has not yet been configured.
+            </p>
+          </div>
+          <div className="mt-5">
+            <FeedbackModal label="Request account-data help" />
+          </div>
         </section>
 
         <section className="mt-6 rounded-[2rem] bg-surface p-7 shadow-soft sm:p-8">

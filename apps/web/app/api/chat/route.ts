@@ -186,10 +186,8 @@ export async function POST(request: Request) {
     });
     console.info('[MindPulse] Gemini response status:', response.status);
     if (!response.ok) {
-      const errorBody = await response.text();
       console.error('[MindPulse] Gemini request failed:', {
         status: response.status,
-        body: errorBody,
       });
       return json(
         { error: 'gemini_request_failed', status: response.status },
@@ -211,7 +209,6 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('[MindPulse] Gemini unavailable:', {
       name: error instanceof Error ? error.name : 'UnknownError',
-      message: error instanceof Error ? error.message : 'Unknown error',
     });
     return json({ error: 'gemini_unavailable' }, 502);
   } finally {

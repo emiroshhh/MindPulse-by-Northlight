@@ -113,7 +113,7 @@ Open `/case-study` and `/impact`. Mention:
 
 ### What did you build?
 
-> I built a guest-first multilingual AI workspace for students. It has six mode-specific tools, optional accounts, D1-backed history, server-enforced usage limits, a structured planning Agent, and public beta/privacy/case-study pages. The production app runs on Cloudflare Workers through OpenNext.
+> I built a guest-first AI workspace with English, Russian, and Kazakh interface support. It has six mode-specific tools, optional accounts, D1-backed history, server-enforced usage limits, a structured planning Agent, and public beta/privacy/case-study pages. The production app runs on Cloudflare Workers through OpenNext.
 
 ### What problem does it solve?
 
