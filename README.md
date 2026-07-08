@@ -64,7 +64,7 @@ MindPulse is a productivity and learning assistant. It is not therapy, medical c
 - Normal school stress and procrastination receive calm, practical support.
 - Serious self-harm, abuse, or immediate-danger language exits ordinary productivity coaching and points toward immediate real-world support.
 - Important academic information should be verified.
-- Gemini and session secrets remain server-side.
+- Gemini, optional DeepSeek, and session secrets remain server-side.
 - Passwords are stored as uniquely salted PBKDF2-SHA-256 hashes using Workers WebCrypto.
 - D1 stores a keyed hash of each session token, not the raw token.
 - Feedback is optional and should never contain private chat content or sensitive data.
@@ -80,7 +80,9 @@ Next.js / React UI
         |
         +-- server routes on Cloudflare Workers
                 |
-                +-- Gemini Interactions API (server-only key)
+                +-- AI provider layer
+                |   +-- Gemini Interactions API by default
+                |   +-- optional DeepSeek chat completions
                 +-- Cloudflare D1
                     users / sessions / usage / history / Agent plans
 ```
@@ -95,7 +97,7 @@ Active production storage is Cloudflare D1. Supabase files in the repository are
 - OpenNext Cloudflare adapter
 - Cloudflare Workers and Static Assets
 - Cloudflare D1
-- Gemini Interactions API
+- Gemini Interactions API by default, with optional DeepSeek provider support
 - Vitest and Testing Library
 - npm workspaces for web, mobile, and shared packages
 
@@ -127,6 +129,7 @@ Prerequisites:
 - Node.js 20 or newer
 - npm 11-compatible tooling
 - a Gemini API key for real AI replies
+- optionally, a DeepSeek API key if `AI_PROVIDER=deepseek` is enabled
 - Wrangler authentication for D1/Worker preview workflows
 
 Install dependencies:
@@ -154,6 +157,18 @@ npm run preview:cloudflare
 ```
 
 Do not commit API keys, session secrets, cookies, password hashes, or local environment files.
+
+### Optional DeepSeek provider
+
+Gemini remains the default AI provider. To test DeepSeek instead, configure the secret server-side and switch the provider with environment variables:
+
+```powershell
+AI_PROVIDER=deepseek
+DEEPSEEK_API_KEY=your-server-side-secret
+DEEPSEEK_MODEL=deepseek-chat # optional override
+```
+
+Do not prefix DeepSeek or Gemini keys with `NEXT_PUBLIC_`, and do not commit API keys to the repository.
 
 ## Quality checks
 

@@ -1,4 +1,3 @@
-import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { assessModelOutput, assessUserInput } from '@mindpulse/shared';
 import {
   getAuthDb,
@@ -6,6 +5,7 @@ import {
   json,
   type AuthUser,
 } from '../../../lib/server/auth';
+import { generateMindPulseReply } from '../../../lib/server/ai-provider';
 import {
   buildInteractionInput,
   buildSystemPrompt,
@@ -13,8 +13,6 @@ import {
 
 export const maxDuration = 30;
 
-const GEMINI_URL =
-  'https://generativelanguage.googleapis.com/v1beta/interactions';
 const GUEST_DAILY_LIMIT = 5;
 const ACCOUNT_DAILY_LIMIT = 20;
 const MODES = [
@@ -33,91 +31,6 @@ const CRISIS_REPLY =
   'I am glad you reached out. You may need immediate real-world support, and MindPulse is not an emergency service. Please contact local emergency services now or tell a trusted person nearby and stay with someone safe. You do not have to handle this alone.';
 const SAFE_FALLBACK =
   'I cannot provide that answer safely. I can still help you make a safe study plan, break down a goal, or find a trusted person to support you.';
-
-async function geminiConfig() {
-  if (process.env.GEMINI_API_KEY)
-    return {
-      key: process.env.GEMINI_API_KEY,
-      model: process.env.GEMINI_MODEL ?? 'gemini-3.5-flash',
-    };
-  try {
-    const { env } = await getCloudflareContext({ async: true });
-    const bindings = env as CloudflareEnv & {
-      GEMINI_API_KEY?: string;
-      GEMINI_MODEL?: string;
-    };
-    return {
-      key: bindings.GEMINI_API_KEY,
-      model: bindings.GEMINI_MODEL ?? 'gemini-3.5-flash',
-    };
-  } catch {
-    return {
-      key: undefined,
-      model: process.env.GEMINI_MODEL ?? 'gemini-3.5-flash',
-    };
-  }
-}
-
-function extractReply(value: unknown): string | null {
-  if (!value || typeof value !== 'object') return null;
-  const body = value as Record<string, unknown>;
-  if (typeof body.output_text === 'string') return body.output_text;
-  if (typeof body.text === 'string') return body.text;
-
-  const textFromContent = (content: unknown) =>
-    Array.isArray(content)
-      ? content
-          .flatMap((part) =>
-            part &&
-            typeof part === 'object' &&
-            typeof (part as Record<string, unknown>).text === 'string'
-              ? [(part as Record<string, unknown>).text as string]
-              : [],
-          )
-          .join('\n')
-          .trim()
-      : '';
-
-  const textFromItems = (items: unknown) =>
-    Array.isArray(items)
-      ? items
-          .flatMap((item) => {
-            if (!item || typeof item !== 'object') return [];
-            const record = item as Record<string, unknown>;
-            if (typeof record.text === 'string') return [record.text];
-            const text = textFromContent(record.content);
-            return text ? [text] : [];
-          })
-          .join('\n')
-          .trim()
-      : '';
-
-  const stepText = textFromItems(body.steps);
-  if (stepText) return stepText;
-
-  const outputs = Array.isArray(body.outputs)
-    ? body.outputs
-    : Array.isArray(body.output)
-      ? body.output
-      : [];
-  const outputText = textFromItems(outputs);
-  if (outputText) return outputText;
-  const candidates = Array.isArray(body.candidates) ? body.candidates : [];
-  return (
-    candidates
-      .flatMap((candidate) => {
-        if (!candidate || typeof candidate !== 'object') return [];
-        const content = (candidate as Record<string, unknown>).content;
-        if (!content || typeof content !== 'object') return [];
-        const text = textFromContent(
-          (content as Record<string, unknown>).parts,
-        );
-        return text ? [text] : [];
-      })
-      .join('\n')
-      .trim() || null
-  );
-}
 
 export async function POST(request: Request) {
   const user = await getCurrentUserFromRequest(request);
@@ -161,59 +74,24 @@ export async function POST(request: Request) {
     );
   }
 
-  const { key, model } = await geminiConfig();
-  console.info('[MindPulse] GEMINI_API_KEY configured:', Boolean(key));
-  if (!key) return json({ error: 'missing_key' }, 503);
+  const aiResult = await generateMindPulseReply({
+    systemPrompt: buildSystemPrompt(mode, language),
+    interactionInput: buildInteractionInput(message, raw.history),
+  });
+  if (!aiResult.ok) return json(aiResult.body, aiResult.status);
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 25_000);
-  try {
-    const response = await fetch(GEMINI_URL, {
-      method: 'POST',
-      signal: controller.signal,
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-      body: JSON.stringify({
-        model,
-        store: false,
-        system_instruction: buildSystemPrompt(mode, language),
-        input: buildInteractionInput(message, raw.history),
-        // temperature 0.5: more focused than default 0.7, avoids over-verbose Gemini output.
-        // max_output_tokens omitted: the Interactions API field name (/v1beta/interactions)
-        // is unverified — adding an unknown key risks a 400 from Gemini.
-        // Add once the schema is confirmed against the API docs.
-        generation_config: { temperature: 0.5 },
-      }),
+  const safeReply = assessModelOutput(aiResult.reply).flagged
+    ? SAFE_FALLBACK
+    : aiResult.reply;
+  if (user) {
+    await saveChatExchange({
+      userId: user.id,
+      message,
+      reply: safeReply,
+      mode,
     });
-    console.info('[MindPulse] Gemini response status:', response.status);
-    if (!response.ok) {
-      console.error('[MindPulse] Gemini request failed:', {
-        status: response.status,
-      });
-      return json(
-        { error: 'gemini_request_failed', status: response.status },
-        502,
-      );
-    }
-    const reply = extractReply(await response.json());
-    if (!reply) return json({ error: 'gemini_empty_response' }, 502);
-    const safeReply = assessModelOutput(reply).flagged ? SAFE_FALLBACK : reply;
-    if (user) {
-      await saveChatExchange({
-        userId: user.id,
-        message,
-        reply: safeReply,
-        mode,
-      });
-    }
-    return json({ reply: safeReply, usage });
-  } catch (error) {
-    console.error('[MindPulse] Gemini unavailable:', {
-      name: error instanceof Error ? error.name : 'UnknownError',
-    });
-    return json({ error: 'gemini_unavailable' }, 502);
-  } finally {
-    clearTimeout(timeout);
   }
+  return json({ reply: safeReply, usage });
 }
 
 async function reserveDailyUsage({
