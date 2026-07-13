@@ -55,9 +55,11 @@ function mockSignupDb() {
   return {
     prepare: vi.fn((query: string) => ({
       bind: vi.fn().mockReturnThis(),
-      first: vi.fn().mockResolvedValue(
-        query.includes('SELECT id FROM users') ? null : undefined,
-      ),
+      first: vi
+        .fn()
+        .mockResolvedValue(
+          query.includes('SELECT id FROM users') ? null : undefined,
+        ),
       run: vi.fn().mockResolvedValue({ success: true }),
     })),
   };

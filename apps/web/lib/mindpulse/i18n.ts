@@ -150,9 +150,18 @@ const EN: UiCopy = {
   onboardingIntro:
     'MindPulse works best when you choose a tool, describe the real situation, and turn the answer into one next action.',
   onboardingSteps: [
-    ['Choose a tool', 'Pick Study, Planner, Motivation, Habits, Goals, or Reflection based on what feels stuck.'],
-    ['Ask clearly', 'Mention the deadline, your energy, and what kind of help you want.'],
-    ['Turn it into action', 'Copy one next step into today’s focus and start small.'],
+    [
+      'Choose a tool',
+      'Pick Study, Planner, Motivation, Habits, Goals, or Reflection based on what feels stuck.',
+    ],
+    [
+      'Ask clearly',
+      'Mention the deadline, your energy, and what kind of help you want.',
+    ],
+    [
+      'Turn it into action',
+      'Copy one next step into today’s focus and start small.',
+    ],
   ],
   onboardingPromptTitle: 'A strong first prompt sounds like:',
   onboardingPromptExamples: [
@@ -164,7 +173,7 @@ const EN: UiCopy = {
   commandDesc:
     'Set today’s focus, pick a tool, chat with MindPulse, or ask the Agent to turn a messy situation into a structured plan.',
 
-  focusTitle: "Today’s focus",
+  focusTitle: 'Today’s focus',
   focusPlaceholder: 'One useful thing for today…',
   focusNote:
     'No shame streaks. Pick one useful thing today and let the rest become easier after that.',
@@ -213,7 +222,11 @@ const EN: UiCopy = {
   nextActions: [
     ['Plan your day', 'Use Planner if your tasks are scattered.', '/planner'],
     ['Study one topic', 'Use Study when a concept feels foggy.', '/study'],
-    ['Reset momentum', 'Use Motivation when starting feels heavy.', '/motivation'],
+    [
+      'Reset momentum',
+      'Use Motivation when starting feels heavy.',
+      '/motivation',
+    ],
   ],
   betaJourneyLabel: 'Beta tester journey',
   betaJourneyTitle: 'Test MindPulse on one real student task.',
@@ -221,9 +234,18 @@ const EN: UiCopy = {
     'A useful beta test takes a few minutes. Honest feedback matters more than trying every feature.',
   betaJourneySteps: [
     ['Try one tool', 'Choose the mode that matches what you need today.'],
-    ['Use a real task', 'Bring an actual deadline, topic, plan, habit, or goal.'],
-    ['Send feedback', 'Tell us what helped, what felt unclear, and what was missing.'],
-    ['Share if useful', 'If it genuinely helped, invite one other student to try it.'],
+    [
+      'Use a real task',
+      'Bring an actual deadline, topic, plan, habit, or goal.',
+    ],
+    [
+      'Send feedback',
+      'Tell us what helped, what felt unclear, and what was missing.',
+    ],
+    [
+      'Share if useful',
+      'If it genuinely helped, invite one other student to try it.',
+    ],
   ],
   retentionTitle: 'A simple rhythm that works',
   retentionItems: [
@@ -249,7 +271,8 @@ const EN: UiCopy = {
   toolPageAccountAccess: 'Account access',
   toolPageGuestSlogan: 'Try it without login.',
   toolPageAccountSlogan: 'Synced to your account.',
-  toolPageGuestDesc: 'Guest chat stays local and has 5 free AI messages per day.',
+  toolPageGuestDesc:
+    'Guest chat stays local and has 5 free AI messages per day.',
   toolPageAccountDesc:
     'Your account has 20 free AI messages per day and saves chat history in D1.',
   toolPageCreate: 'Create account',
@@ -310,9 +333,15 @@ const RU: UiCopy = {
   onboardingIntro:
     'MindPulse лучше всего работает, когда ты выбираешь инструмент, описываешь реальную ситуацию и превращаешь ответ в одно следующее действие.',
   onboardingSteps: [
-    ['Выбери инструмент', 'Открой Учёбу, Планировщик, Мотивацию, Привычки, Цели или Рефлексию — по тому, где ты застрял.'],
+    [
+      'Выбери инструмент',
+      'Открой Учёбу, Планировщик, Мотивацию, Привычки, Цели или Рефлексию — по тому, где ты застрял.',
+    ],
     ['Спроси конкретно', 'Укажи дедлайн, энергию и какой формат помощи нужен.'],
-    ['Сделай действие', 'Перенеси один следующий шаг в фокус дня и начни с малого.'],
+    [
+      'Сделай действие',
+      'Перенеси один следующий шаг в фокус дня и начни с малого.',
+    ],
   ],
   onboardingPromptTitle: 'Хороший первый запрос звучит так:',
   onboardingPromptExamples: [
@@ -371,7 +400,11 @@ const RU: UiCopy = {
     'Последние разговоры загружаются в панели чата и сохраняются в D1.',
   nextActionsTitle: 'Что попробовать дальше',
   nextActions: [
-    ['Распланировать день', 'Открой Планировщик, если задачи разбросаны.', '/planner'],
+    [
+      'Распланировать день',
+      'Открой Планировщик, если задачи разбросаны.',
+      '/planner',
+    ],
     ['Разобрать тему', 'Открой Учёбу, если тема кажется туманной.', '/study'],
     ['Вернуть импульс', 'Открой Мотивацию, если трудно начать.', '/motivation'],
   ],
@@ -380,10 +413,22 @@ const RU: UiCopy = {
   betaJourneyDesc:
     'Хороший бета-тест занимает несколько минут. Честный отзыв важнее проверки каждой функции.',
   betaJourneySteps: [
-    ['Выбери один инструмент', 'Открой режим, который подходит к сегодняшней задаче.'],
-    ['Возьми реальную задачу', 'Используй настоящий дедлайн, тему, план, привычку или цель.'],
-    ['Отправь отзыв', 'Расскажи, что помогло, что было непонятно и чего не хватило.'],
-    ['Поделись, если полезно', 'Если MindPulse действительно помог, предложи попробовать ещё одному студенту.'],
+    [
+      'Выбери один инструмент',
+      'Открой режим, который подходит к сегодняшней задаче.',
+    ],
+    [
+      'Возьми реальную задачу',
+      'Используй настоящий дедлайн, тему, план, привычку или цель.',
+    ],
+    [
+      'Отправь отзыв',
+      'Расскажи, что помогло, что было непонятно и чего не хватило.',
+    ],
+    [
+      'Поделись, если полезно',
+      'Если MindPulse действительно помог, предложи попробовать ещё одному студенту.',
+    ],
   ],
   retentionTitle: 'Простой ритм использования',
   retentionItems: [
@@ -409,7 +454,8 @@ const RU: UiCopy = {
   toolPageAccountAccess: 'Доступ к аккаунту',
   toolPageGuestSlogan: 'Попробуй без регистрации.',
   toolPageAccountSlogan: 'Синхронизировано с аккаунтом.',
-  toolPageGuestDesc: 'Гостевой чат сохраняется локально. 5 бесплатных AI-сообщений в день.',
+  toolPageGuestDesc:
+    'Гостевой чат сохраняется локально. 5 бесплатных AI-сообщений в день.',
   toolPageAccountDesc:
     '20 бесплатных AI-сообщений в день. История чата сохраняется в D1.',
   toolPageCreate: 'Создать аккаунт',
@@ -470,9 +516,18 @@ const KK: UiCopy = {
   onboardingIntro:
     'MindPulse жақсы жұмыс істеуі үшін құралды таңда, нақты жағдайды жаз және жауапты бір келесі әрекетке айналдыр.',
   onboardingSteps: [
-    ['Құрал таңда', 'Оқу, Жоспарлаушы, Мотивация, Әдеттер, Мақсаттар немесе Рефлексияны қай жерде тұрып қалғаныңа қарай таңда.'],
-    ['Нақты сұра', 'Дедлайнды, энергия деңгейін және қандай көмек керегін жаз.'],
-    ['Әрекетке айналдыр', 'Бір келесі қадамды бүгінгі фокусқа жазып, кішкентайдан баста.'],
+    [
+      'Құрал таңда',
+      'Оқу, Жоспарлаушы, Мотивация, Әдеттер, Мақсаттар немесе Рефлексияны қай жерде тұрып қалғаныңа қарай таңда.',
+    ],
+    [
+      'Нақты сұра',
+      'Дедлайнды, энергия деңгейін және қандай көмек керегін жаз.',
+    ],
+    [
+      'Әрекетке айналдыр',
+      'Бір келесі қадамды бүгінгі фокусқа жазып, кішкентайдан баста.',
+    ],
   ],
   onboardingPromptTitle: 'Жақсы бірінші prompt осылай естіледі:',
   onboardingPromptExamples: [
@@ -497,7 +552,10 @@ const KK: UiCopy = {
   featureCards: [
     ['Тегін студенттік бета', 'Төлемдер, жазылымдар мен жарнамасыз.'],
     ['Қонақтар алдымен', 'Тіркелместен MindPulse-ті сынаңыз.'],
-    ['Деректер қорғалған', 'API кілттері мен аккаунт деректері серверде сақталады.'],
+    [
+      'Деректер қорғалған',
+      'API кілттері мен аккаунт деректері серверде сақталады.',
+    ],
   ],
 
   toolsLabel: 'Алты құрал',
@@ -531,9 +589,17 @@ const KK: UiCopy = {
     'Ең соңғы сөйлесулеріңіз чат панелінде жүктеледі және D1-де сақталады.',
   nextActionsTitle: 'Келесі не көруге болады',
   nextActions: [
-    ['Күніңді жоспарла', 'Тапсырмалар шашыраңқы болса, Жоспарлаушыны аш.', '/planner'],
+    [
+      'Күніңді жоспарла',
+      'Тапсырмалар шашыраңқы болса, Жоспарлаушыны аш.',
+      '/planner',
+    ],
     ['Бір тақырыпты түсін', 'Тақырып түсініксіз болса, Оқуды аш.', '/study'],
-    ['Қайта қозғала баста', 'Бастау ауыр болса, Мотивацияны аш.', '/motivation'],
+    [
+      'Қайта қозғала баста',
+      'Бастау ауыр болса, Мотивацияны аш.',
+      '/motivation',
+    ],
   ],
   betaJourneyLabel: 'Бета-тестер жолы',
   betaJourneyTitle: 'MindPulse-ті бір нақты студенттік тапсырмада сына.',
@@ -541,9 +607,18 @@ const KK: UiCopy = {
     'Пайдалы бета-тест бірнеше минут алады. Барлық функцияны тексеруден гөрі шынайы пікір маңызды.',
   betaJourneySteps: [
     ['Бір құралды таңда', 'Бүгінгі қажетіңе сай режимді аш.'],
-    ['Нақты тапсырманы қолдан', 'Шынайы дедлайн, тақырып, жоспар, әдет немесе мақсат жаз.'],
-    ['Пікір жібер', 'Не көмектескенін, не түсініксіз болғанын және не жетіспегенін айт.'],
-    ['Пайдалы болса бөліс', 'Шынымен көмектессе, тағы бір студентке ұсынып көр.'],
+    [
+      'Нақты тапсырманы қолдан',
+      'Шынайы дедлайн, тақырып, жоспар, әдет немесе мақсат жаз.',
+    ],
+    [
+      'Пікір жібер',
+      'Не көмектескенін, не түсініксіз болғанын және не жетіспегенін айт.',
+    ],
+    [
+      'Пайдалы болса бөліс',
+      'Шынымен көмектессе, тағы бір студентке ұсынып көр.',
+    ],
   ],
   retentionTitle: 'Қарапайым қолдану ырғағы',
   retentionItems: [
@@ -635,8 +710,7 @@ export function chatCopyFor(language: string) {
       send: 'Отправить',
       safetyNote:
         'MindPulse даёт практическую поддержку, но не идеальные ответы. Проверяйте важную информацию.',
-      fallbackError:
-        'MindPulse сейчас не смог ответить. Попробуй ещё раз.',
+      fallbackError: 'MindPulse сейчас не смог ответить. Попробуй ещё раз.',
       loading: 'MindPulse продумывает твои следующие шаги…',
       authChecking: 'Проверяем сессию…',
     };
@@ -651,8 +725,7 @@ export function chatCopyFor(language: string) {
       accountLimitLabel: 'Күніне 20 тегін хабарлама',
       guestLimitReached:
         'Бүгінгі қонақ лимитіне жеттіңіз. Жалғастыру және прогресті сақтау үшін аккаунт ашыңыз.',
-      accountLimitReached:
-        'Бүгінгі аккаунт лимитіне жеттіңіз. Ертең қайтыңыз.',
+      accountLimitReached: 'Бүгінгі аккаунт лимитіне жеттіңіз. Ертең қайтыңыз.',
       signup: 'Тегін тіркелу',
       login: 'Кіру',
       send: 'Жіберу',
@@ -806,7 +879,11 @@ const TOOL_TRANSLATIONS: Partial<
         'Используй это, когда хочешь понять, что произошло сегодня, сохранить полезный урок и двигаться дальше налегке.',
       outcome:
         'Расскажи, что произошло, что было трудным и чему хочешь научиться. MindPulse поможет найти спокойный вывод.',
-      bestFor: ['Самопонимание', 'Недельная рефлексия', 'Эмоциональная ясность'],
+      bestFor: [
+        'Самопонимание',
+        'Недельная рефлексия',
+        'Эмоциональная ясность',
+      ],
       emptyHint:
         'Начни с одного честного предложения о сегодняшнем дне. MindPulse задаст лучшие вопросы и поможет найти полезный урок.',
       examples: [
@@ -936,8 +1013,7 @@ const TOOL_TRANSLATIONS: Partial<
  * Falls back to the English source tools for any unknown language.
  */
 export function getToolsForLanguage(language: string): MindPulseTool[] {
-  const translations =
-    TOOL_TRANSLATIONS[language as LanguageCode] ?? null;
+  const translations = TOOL_TRANSLATIONS[language as LanguageCode] ?? null;
   if (!translations) return mindPulseTools;
   return mindPulseTools.map((tool) => {
     const t = translations[tool.id];

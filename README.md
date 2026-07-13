@@ -17,13 +17,13 @@ MindPulse is designed for students who want:
 
 ## Six AI tools
 
-| Tool | Purpose |
-| --- | --- |
-| Study Help | Explains difficult concepts, demonstrates the process, and offers quick practice checks. |
-| Daily Planner | Converts tasks, available time, and energy into a realistic schedule with breaks and fallbacks. |
-| Motivation Reset | Helps a student restart calmly with one tiny action and a short next-ten-minute plan. |
-| Habit Coach | Designs small habits with triggers, fallback versions, lightweight tracking, and restart rules. |
-| Goal Breakdown | Turns ambitious goals into outcomes, milestones, blockers, and ordered next actions. |
+| Tool             | Purpose                                                                                          |
+| ---------------- | ------------------------------------------------------------------------------------------------ |
+| Study Help       | Explains difficult concepts, demonstrates the process, and offers quick practice checks.         |
+| Daily Planner    | Converts tasks, available time, and energy into a realistic schedule with breaks and fallbacks.  |
+| Motivation Reset | Helps a student restart calmly with one tiny action and a short next-ten-minute plan.            |
+| Habit Coach      | Designs small habits with triggers, fallback versions, lightweight tracking, and restart rules.  |
+| Goal Breakdown   | Turns ambitious goals into outcomes, milestones, blockers, and ordered next actions.             |
 | Quick Reflection | Guides a short, non-clinical reflection around a win, friction, lesson, and tomorrow adjustment. |
 
 MindPulse also includes a structured Agent workflow for turning an unclear situation into a goal, plan, next actions, obstacles, and smallest first step.
@@ -103,15 +103,15 @@ Active production storage is Cloudflare D1. Supabase files in the repository are
 
 ## Important routes
 
-| Route | Purpose |
-| --- | --- |
-| `/` | Public landing page |
-| `/app` | Guest-first dashboard, chat, Agent, focus, and recent state |
-| `/study`, `/planner`, `/motivation` | Focused learning, planning, and restart tools |
-| `/habits`, `/goals`, `/reflection` | Habit, goal, and reflection tools |
-| `/beta` | Beta tester guide |
-| `/case-study` | Public portfolio case study |
-| `/why`, `/impact`, `/privacy` | Project story, honest beta goals, and privacy boundaries |
+| Route                               | Purpose                                                     |
+| ----------------------------------- | ----------------------------------------------------------- |
+| `/`                                 | Public landing page                                         |
+| `/app`                              | Guest-first dashboard, chat, Agent, focus, and recent state |
+| `/study`, `/planner`, `/motivation` | Focused learning, planning, and restart tools               |
+| `/habits`, `/goals`, `/reflection`  | Habit, goal, and reflection tools                           |
+| `/beta`                             | Beta tester guide                                           |
+| `/case-study`                       | Public portfolio case study                                 |
+| `/why`, `/impact`, `/privacy`       | Project story, honest beta goals, and privacy boundaries    |
 
 ## Repository structure
 

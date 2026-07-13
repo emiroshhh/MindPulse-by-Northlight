@@ -46,7 +46,9 @@ describe('FeedbackModal', () => {
     render(<FeedbackModal language="ru" />);
     fireEvent.click(screen.getByRole('button', { name: 'Оставить отзыв' }));
     expect(
-      screen.getByRole('heading', { name: 'Помоги сделать MindPulse полезнее' }),
+      screen.getByRole('heading', {
+        name: 'Помоги сделать MindPulse полезнее',
+      }),
     ).toBeInTheDocument();
   });
 });

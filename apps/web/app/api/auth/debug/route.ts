@@ -7,9 +7,7 @@ import {
 } from '@/lib/server/auth';
 
 function hasCookie(header: string, name: string) {
-  return header
-    .split(';')
-    .some((part) => part.trim().startsWith(`${name}=`));
+  return header.split(';').some((part) => part.trim().startsWith(`${name}=`));
 }
 
 export async function GET(request: Request) {

@@ -380,7 +380,9 @@ export function readSessionTokenWithSourceFromRequest(request: Request): {
   const authorization = request.headers.get('authorization') ?? '';
   const bearerPrefix = 'Bearer ';
   if (authorization.startsWith(bearerPrefix)) {
-    const token = normalizeSessionToken(authorization.slice(bearerPrefix.length));
+    const token = normalizeSessionToken(
+      authorization.slice(bearerPrefix.length),
+    );
     if (token) return { token, source: 'authorization' };
   }
 
@@ -456,7 +458,11 @@ export async function invalidateSessionToken(
 
 export async function readSessionTokenFromCookie() {
   const jar = await cookies();
-  return jar.get(HOST_SESSION_COOKIE)?.value ?? jar.get(SESSION_COOKIE)?.value ?? null;
+  return (
+    jar.get(HOST_SESSION_COOKIE)?.value ??
+    jar.get(SESSION_COOKIE)?.value ??
+    null
+  );
 }
 
 export async function debugSessionResolution(
@@ -541,7 +547,9 @@ function readSessionTokenWithSourceFromHeader(header: string): {
   );
   if (hostToken) return { token: hostToken, source: 'host-cookie' };
 
-  const cookieToken = normalizeSessionToken(readCookieValue(header, SESSION_COOKIE));
+  const cookieToken = normalizeSessionToken(
+    readCookieValue(header, SESSION_COOKIE),
+  );
   if (cookieToken) return { token: cookieToken, source: 'cookie' };
 
   return { token: null, source: 'none' };
@@ -557,7 +565,8 @@ function normalizeSessionToken(value: string | null) {
     token = token.slice(1, -1).trim();
   const lower = token.toLowerCase();
   if (lower === 'undefined' || lower === 'null') return null;
-  if (token.length < MIN_SESSION_TOKEN_LENGTH || token.length > 512) return null;
+  if (token.length < MIN_SESSION_TOKEN_LENGTH || token.length > 512)
+    return null;
   return token;
 }
 

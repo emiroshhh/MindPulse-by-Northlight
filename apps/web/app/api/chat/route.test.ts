@@ -284,10 +284,9 @@ describe('/api/chat', () => {
       request({ message: 'Help me plan', mode: 'planner' }),
     );
     expect(response.status).toBe(502);
-    expect(errorSpy).toHaveBeenCalledWith(
-      '[MindPulse] Gemini unavailable:',
-      { name: 'Error' },
-    );
+    expect(errorSpy).toHaveBeenCalledWith('[MindPulse] Gemini unavailable:', {
+      name: 'Error',
+    });
     expect(JSON.stringify(errorSpy.mock.calls)).not.toContain(
       'provider body must stay private',
     );
@@ -298,7 +297,11 @@ describe('Gemini interaction assembly', () => {
   it('system_instruction sent to Gemini contains MindPulse identity and mode content', async () => {
     mockGemini('A clear answer');
     const response = await POST(
-      request({ message: 'Help me plan today', mode: 'planner', language: 'en' }),
+      request({
+        message: 'Help me plan today',
+        mode: 'planner',
+        language: 'en',
+      }),
     );
     expect(response.status).toBe(200);
     const [, init] = vi.mocked(fetch).mock.calls[0]!;
@@ -326,7 +329,9 @@ describe('Gemini interaction assembly', () => {
     const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
     expect(body.input).toContain('Student: I have an essay due Friday.');
     expect(body.input).toContain('MindPulse: Start with the outline.');
-    expect(body.input).toContain('Current student message:\nWhat should I do next?');
+    expect(body.input).toContain(
+      'Current student message:\nWhat should I do next?',
+    );
   });
 
   it('generation_config uses temperature 0.5', async () => {

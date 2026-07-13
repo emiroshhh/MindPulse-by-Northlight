@@ -14,10 +14,22 @@ import { mindPulseTools } from '@/lib/mindpulse/tools';
 export const metadata: Metadata = { title: 'Beta testing' };
 
 const testerSteps = [
-  ['Try one tool', 'Choose the mode that matches something you genuinely need today.'],
-  ['Use one real task', 'Bring an actual topic, deadline, plan, habit, goal, or reflection.'],
-  ['Send feedback', 'Say what helped, what felt unclear, and what you expected instead.'],
-  ['Share if useful', 'If it genuinely helped, invite one other student to try the beta.'],
+  [
+    'Try one tool',
+    'Choose the mode that matches something you genuinely need today.',
+  ],
+  [
+    'Use one real task',
+    'Bring an actual topic, deadline, plan, habit, goal, or reflection.',
+  ],
+  [
+    'Send feedback',
+    'Say what helped, what felt unclear, and what you expected instead.',
+  ],
+  [
+    'Share if useful',
+    'If it genuinely helped, invite one other student to try the beta.',
+  ],
 ] as const;
 
 export default function BetaPage() {
@@ -72,9 +84,9 @@ export default function BetaPage() {
           <article className="rounded-mp bg-sage-soft p-6 shadow-soft">
             <h2 className="text-2xl font-semibold">What it helps with</h2>
             <p className="mt-3 leading-8 text-muted">
-              Understanding a topic, planning a realistic day, restarting
-              after procrastination, building forgiving habits, breaking down
-              goals, and reflecting without self-blame.
+              Understanding a topic, planning a realistic day, restarting after
+              procrastination, building forgiving habits, breaking down goals,
+              and reflecting without self-blame.
             </p>
           </article>
           <article className="rounded-mp bg-surface p-6 shadow-soft">

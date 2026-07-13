@@ -109,12 +109,12 @@ export default function PrivacyPage() {
               the beta.
             </p>
             <p>
-              To request account-data removal or ask a privacy question, use
-              the configured feedback form and clearly label the message as a
-              deletion or privacy request. Include only the account email
-              needed to identify the account—never a password, session token,
-              or private chat content. If the form is unavailable, the beta
-              contact channel has not yet been configured.
+              To request account-data removal or ask a privacy question, use the
+              configured feedback form and clearly label the message as a
+              deletion or privacy request. Include only the account email needed
+              to identify the account—never a password, session token, or
+              private chat content. If the form is unavailable, the beta contact
+              channel has not yet been configured.
             </p>
           </div>
           <div className="mt-5">

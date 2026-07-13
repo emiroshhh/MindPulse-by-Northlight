@@ -4,16 +4,16 @@ Audit refreshed: 2026-07-03. Scope: active Next.js/OpenNext web app on Cloudflar
 
 ## Current architecture findings
 
-| Area | Current state | Audit conclusion |
-| --- | --- | --- |
-| Production storage | Cloudflare D1 | Active auth, sessions, daily usage, account chat history, and Agent plans use D1. Supabase is legacy and unused by active web routes. |
-| Guest access | Working | `/app` and six tools are guest-first. Guest state stays local; five daily AI messages are enforced server-side. |
-| Accounts | Working | Accounts receive twenty daily messages and D1-backed chat/Agent history. Auth/session/logout code was not changed in this hardening pass. |
-| AI transport | Buffered JSON | Gemini output is fully received and screened before the API returns JSON. There is no production SSE/token stream claim. |
-| AI modes | Six distinct modes | Study, Planner, Motivation, Habits, Goals, and Reflection have distinct system guidance and bounded context. |
-| Languages | EN/RU/KZ interface | UI localization exists in three languages. Deterministic safety coverage is primarily English/Russian; equivalent KZ crisis coverage is not claimed. |
-| Feedback | External and optional | The configured external form opens in a new tab with `noreferrer`. MindPulse stores only a local opened marker and has no feedback database. |
-| Metrics | Goals only | Impact numbers are explicitly beta targets/placeholders, not observed outcomes. |
+| Area               | Current state         | Audit conclusion                                                                                                                                     |
+| ------------------ | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Production storage | Cloudflare D1         | Active auth, sessions, daily usage, account chat history, and Agent plans use D1. Supabase is legacy and unused by active web routes.                |
+| Guest access       | Working               | `/app` and six tools are guest-first. Guest state stays local; five daily AI messages are enforced server-side.                                      |
+| Accounts           | Working               | Accounts receive twenty daily messages and D1-backed chat/Agent history. Auth/session/logout code was not changed in this hardening pass.            |
+| AI transport       | Buffered JSON         | Gemini output is fully received and screened before the API returns JSON. There is no production SSE/token stream claim.                             |
+| AI modes           | Six distinct modes    | Study, Planner, Motivation, Habits, Goals, and Reflection have distinct system guidance and bounded context.                                         |
+| Languages          | EN/RU/KZ interface    | UI localization exists in three languages. Deterministic safety coverage is primarily English/Russian; equivalent KZ crisis coverage is not claimed. |
+| Feedback           | External and optional | The configured external form opens in a new tab with `noreferrer`. MindPulse stores only a local opened marker and has no feedback database.         |
+| Metrics            | Goals only            | Impact numbers are explicitly beta targets/placeholders, not observed outcomes.                                                                      |
 
 ## Stage 7.5 hardening results
 

@@ -103,7 +103,14 @@ describe('getToolsForLanguage', () => {
   });
 
   it('preserves tool id, route, and iconId regardless of language', () => {
-    const ids = ['study', 'planner', 'motivation', 'habit', 'goal', 'reflection'];
+    const ids = [
+      'study',
+      'planner',
+      'motivation',
+      'habit',
+      'goal',
+      'reflection',
+    ];
     for (const lang of ['en', 'ru', 'kk']) {
       const tools = getToolsForLanguage(lang);
       expect(tools.map((t) => t.id)).toEqual(ids);

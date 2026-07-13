@@ -228,9 +228,7 @@ describe('readTokenFromRequest', () => {
       },
     });
 
-    expect(readSessionTokenFromRequest(request)).toBe(
-      'host-token-1234567890',
-    );
+    expect(readSessionTokenFromRequest(request)).toBe('host-token-1234567890');
   });
 
   it('prefers the host-prefixed session cookie', () => {
@@ -272,7 +270,11 @@ describe('authSuccessHtmlResponse', () => {
   });
 
   it('can store the fallback token without putting it in a URL', async () => {
-    const response = authSuccessHtmlResponse([], '/app', 'token-1234567890-abc');
+    const response = authSuccessHtmlResponse(
+      [],
+      '/app',
+      'token-1234567890-abc',
+    );
     const html = await response.text();
 
     expect(html).toContain("localStorage.setItem('mindpulse_session_token'");
@@ -310,7 +312,9 @@ describe('session DB resolution', () => {
     });
     const session = await createSession(db, 'user-1');
 
-    await expect(getUserBySessionToken(db, session.token)).resolves.toMatchObject({
+    await expect(
+      getUserBySessionToken(db, session.token),
+    ).resolves.toMatchObject({
       id: 'user-1',
     });
 
@@ -329,7 +333,9 @@ describe('session DB resolution', () => {
     });
     const session = await createSession(db, 'user-1');
 
-    await expect(debugSessionResolution(db, session.token)).resolves.toMatchObject({
+    await expect(
+      debugSessionResolution(db, session.token),
+    ).resolves.toMatchObject({
       sessionHashComputed: true,
       sessionTableChecked: true,
       sessionRowFound: true,
@@ -354,7 +360,9 @@ describe('session DB resolution', () => {
     });
     const session = await createSession(db, 'user-1');
 
-    await expect(debugSessionResolution(db, session.token)).resolves.toMatchObject({
+    await expect(
+      debugSessionResolution(db, session.token),
+    ).resolves.toMatchObject({
       sessionRowFound: true,
       sessionNotExpired: false,
       userResolved: false,

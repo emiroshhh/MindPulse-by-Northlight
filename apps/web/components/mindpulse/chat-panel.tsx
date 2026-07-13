@@ -17,7 +17,11 @@ import {
 } from '@/lib/mindpulse/local-store';
 import { authHeaders } from '@/lib/mindpulse/client-auth';
 import { getToolsForLanguage } from '@/lib/mindpulse/i18n';
-import { toolsByMode, type LanguageCode, type ModeId } from '@/lib/mindpulse/tools';
+import {
+  toolsByMode,
+  type LanguageCode,
+  type ModeId,
+} from '@/lib/mindpulse/tools';
 import { SafeMarkdown } from '../safe-markdown';
 
 export type MindPulseUser = { id?: string; email: string; name: string };
@@ -218,8 +222,8 @@ export function ChatPanel({
     : emptyHint
       ? emptyHint
       : isGuest
-      ? copy.emptyGuest
-      : copy.emptyAuth;
+        ? copy.emptyGuest
+        : copy.emptyAuth;
 
   return (
     <section
@@ -332,7 +336,9 @@ export function ChatPanel({
             maxLength={1000}
             rows={3}
             className="w-full resize-none rounded-2xl border border-ink/10 bg-canvas/70 px-4 py-3 outline-none focus:border-sage"
-            placeholder={selectedMode.examples[0] ?? `Ask ${selectedMode.title}...`}
+            placeholder={
+              selectedMode.examples[0] ?? `Ask ${selectedMode.title}...`
+            }
           />
           <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-muted">{copy.safetyNote}</p>

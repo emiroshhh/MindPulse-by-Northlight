@@ -70,7 +70,9 @@ export async function POST(request: Request) {
     });
     // Belt-and-suspenders: try the Next.js cookies() path, then attach an
     // explicit Set-Cookie header which is reliable on Cloudflare Workers.
-    await setSessionCookie(session.token, session.expires).catch(() => undefined);
+    await setSessionCookie(session.token, session.expires).catch(
+      () => undefined,
+    );
     const cookieHeaders = sessionCookieHeaders(session.token, session.expires);
     if (!wantsJson)
       return authSuccessHtmlResponse(cookieHeaders, '/app', session.token);
@@ -98,10 +100,12 @@ export async function POST(request: Request) {
 }
 
 function isJsonRequest(request: Request) {
-  return Boolean(request.headers
-    .get('content-type')
-    ?.toLowerCase()
-    .includes('application/json'));
+  return Boolean(
+    request.headers
+      .get('content-type')
+      ?.toLowerCase()
+      .includes('application/json'),
+  );
 }
 
 async function readAuthInput(request: Request, wantsJson: boolean) {

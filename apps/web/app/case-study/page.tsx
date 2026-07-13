@@ -19,10 +19,22 @@ import { mindPulseTools } from '@/lib/mindpulse/tools';
 export const metadata: Metadata = { title: 'Case study' };
 
 const architecture = [
-  ['Interface', 'Next.js and React provide the guest-first dashboard, six tool pages, and EN/RU/KZ UI.'],
-  ['AI layer', 'A server-only chat route assembles mode-specific instructions and calls Gemini without exposing the API key.'],
-  ['Data layer', 'Cloudflare D1 stores account, session-hash, usage, chat-history, and saved Agent-plan data.'],
-  ['Runtime', 'OpenNext packages the application for Cloudflare Workers and Static Assets.'],
+  [
+    'Interface',
+    'Next.js and React provide the guest-first dashboard, six tool pages, and EN/RU/KZ UI.',
+  ],
+  [
+    'AI layer',
+    'A server-only chat route assembles mode-specific instructions and calls Gemini without exposing the API key.',
+  ],
+  [
+    'Data layer',
+    'Cloudflare D1 stores account, session-hash, usage, chat-history, and saved Agent-plan data.',
+  ],
+  [
+    'Runtime',
+    'OpenNext packages the application for Cloudflare Workers and Static Assets.',
+  ],
 ] as const;
 
 const built = [
@@ -84,9 +96,9 @@ export default function CaseStudyPage() {
           </h1>
           <p className="mt-6 max-w-3xl text-lg leading-9 text-muted">
             MindPulse is a student-focused project by Northlight. It explores
-            how one practical AI workspace can help students move from
-            overwhelm to a clear next action—without pretending that AI is a
-            teacher, therapist, or proven solution to every problem.
+            how one practical AI workspace can help students move from overwhelm
+            to a clear next action—without pretending that AI is a teacher,
+            therapist, or proven solution to every problem.
           </p>
         </section>
 
@@ -95,10 +107,10 @@ export default function CaseStudyPage() {
             <Users className="text-sage-soft" />
             <h2 className="mt-5 text-2xl font-semibold">Problem and users</h2>
             <p className="mt-3 leading-8 text-canvas/70">
-              The target users are students balancing classes, exams,
-              projects, routines, and personal goals. The problem is often not
-              a lack of ambition—it is unclear priorities, oversized tasks,
-              scattered tools, and difficulty taking the first step.
+              The target users are students balancing classes, exams, projects,
+              routines, and personal goals. The problem is often not a lack of
+              ambition—it is unclear priorities, oversized tasks, scattered
+              tools, and difficulty taking the first step.
             </p>
           </article>
           <article className="rounded-mp bg-sage-soft p-6 shadow-soft">
@@ -107,8 +119,8 @@ export default function CaseStudyPage() {
             <p className="mt-3 leading-8 text-muted">
               Give students one guest-first workspace with focused tools for
               learning, planning, motivation, habits, goals, and reflection.
-              Each mode should produce a useful action today rather than a
-              long generic speech.
+              Each mode should produce a useful action today rather than a long
+              generic speech.
             </p>
           </article>
         </section>
@@ -147,8 +159,8 @@ export default function CaseStudyPage() {
             <LockKeyhole className="text-sage" />
             <h2 className="mt-4 text-xl font-semibold">Safety and privacy</h2>
             <p className="mt-3 text-sm leading-7 text-muted">
-              Keys remain server-side, session tokens are not stored raw in
-              D1, guest history stays local, and serious-risk language exits
+              Keys remain server-side, session tokens are not stored raw in D1,
+              guest history stays local, and serious-risk language exits
               ordinary productivity coaching. MindPulse makes no clinical or
               emergency-service claim.
             </p>
@@ -196,7 +208,9 @@ export default function CaseStudyPage() {
             </ul>
           </article>
           <article className="rounded-[2rem] bg-surface p-7 shadow-soft sm:p-8">
-            <h2 className="text-2xl font-semibold">What will be measured next</h2>
+            <h2 className="text-2xl font-semibold">
+              What will be measured next
+            </h2>
             <p className="mt-3 text-sm leading-7 text-muted">
               These are measurement goals, not current impact claims.
             </p>

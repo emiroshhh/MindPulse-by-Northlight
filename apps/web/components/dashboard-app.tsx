@@ -14,7 +14,11 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { chatCopyFor, copyFor, getToolsForLanguage } from '@/lib/mindpulse/i18n';
+import {
+  chatCopyFor,
+  copyFor,
+  getToolsForLanguage,
+} from '@/lib/mindpulse/i18n';
 import { authHeaders } from '@/lib/mindpulse/client-auth';
 import {
   GUEST_AGENT_KEY,
@@ -25,10 +29,7 @@ import {
   readJson,
   writeJson,
 } from '@/lib/mindpulse/local-store';
-import {
-  languages,
-  type LanguageCode,
-} from '@/lib/mindpulse/tools';
+import { languages, type LanguageCode } from '@/lib/mindpulse/tools';
 import { ChatPanel } from './mindpulse/chat-panel';
 import { FeedbackModal } from './mindpulse/feedback-modal';
 import { LogoutButton } from './mindpulse/logout-button';
@@ -62,7 +63,10 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
 
   const ui = useMemo(() => copyFor(language), [language]);
   const chatCopy = useMemo(() => chatCopyFor(language), [language]);
-  const localizedTools = useMemo(() => getToolsForLanguage(language), [language]);
+  const localizedTools = useMemo(
+    () => getToolsForLanguage(language),
+    [language],
+  );
 
   useEffect(() => {
     setUser(initialUser);
@@ -79,7 +83,9 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
         });
         if (active) {
           if (response.ok) {
-            const body = (await response.json().catch(() => ({}))) as AuthMeBody;
+            const body = (await response
+              .json()
+              .catch(() => ({}))) as AuthMeBody;
             setUser(body.user ?? null);
           } else if (response.status === 401) {
             setUser(null);
@@ -237,8 +243,8 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
               </select>
             </label>
             {/* Hide auth-dependent nav buttons until session is confirmed */}
-            {authReady && (
-              user ? (
+            {authReady &&
+              (user ? (
                 <LogoutButton
                   label={ui.navLogout}
                   className="inline-flex min-h-10 items-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-canvas"
@@ -258,8 +264,7 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
                     <UserPlus size={15} /> {ui.navSignup}
                   </Link>
                 </>
-              )
-            )}
+              ))}
           </div>
         </nav>
       </header>
@@ -382,10 +387,7 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
             </div>
             <div className="grid gap-3 md:grid-cols-3">
               {ui.onboardingSteps.map(([title, copy], index) => (
-                <article
-                  key={title}
-                  className="rounded-2xl bg-canvas/80 p-4"
-                >
+                <article key={title} className="rounded-2xl bg-canvas/80 p-4">
                   <span className="text-xs font-bold text-sage">
                     0{index + 1}
                   </span>
@@ -458,9 +460,7 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
               <p className="text-xs font-bold uppercase tracking-[.2em] text-sage">
                 {ui.toolsLabel}
               </p>
-              <h2 className="mt-2 text-3xl font-semibold">
-                {ui.toolsTitle}
-              </h2>
+              <h2 className="mt-2 text-3xl font-semibold">{ui.toolsTitle}</h2>
             </div>
             <p className="max-w-xl text-sm leading-6 text-muted">
               {ui.toolsDesc}
@@ -468,7 +468,11 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
           </div>
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {localizedTools.map((tool) => (
-              <ToolCard key={tool.id} tool={tool} openLabel={ui.toolOpenLabel} />
+              <ToolCard
+                key={tool.id}
+                tool={tool}
+                openLabel={ui.toolOpenLabel}
+              />
             ))}
           </div>
         </section>
@@ -535,9 +539,7 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
           <p className="text-xs font-bold uppercase tracking-[.2em] text-sage">
             {ui.agentLabel}
           </p>
-          <h2 className="mt-3 text-3xl font-semibold">
-            {ui.agentTitle}
-          </h2>
+          <h2 className="mt-3 text-3xl font-semibold">{ui.agentTitle}</h2>
           <p className="mt-2 max-w-2xl text-sm leading-7 text-muted">
             {ui.agentSubtitle}
           </p>

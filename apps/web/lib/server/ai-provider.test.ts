@@ -119,7 +119,11 @@ describe('AI provider selection', () => {
     vi.stubEnv('DEEPSEEK_API_KEY', 'deepseek-secret');
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue(new Response('provider unavailable', { status: 401 })),
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response('provider unavailable', { status: 401 }),
+        ),
     );
 
     const result = await generate();

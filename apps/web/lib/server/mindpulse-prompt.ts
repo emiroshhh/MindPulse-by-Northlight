@@ -119,8 +119,7 @@ type PromptHistoryMessage = {
 export function buildSystemPrompt(mode: string, language: string): string {
   const languagePreference =
     LANGUAGE_PREFERENCES[language] ?? LANGUAGE_PREFERENCES.en!;
-  const modeInstruction =
-    MODE_INSTRUCTIONS[mode] ?? MODE_INSTRUCTIONS.study!;
+  const modeInstruction = MODE_INSTRUCTIONS[mode] ?? MODE_INSTRUCTIONS.study!;
 
   return [
     IDENTITY,

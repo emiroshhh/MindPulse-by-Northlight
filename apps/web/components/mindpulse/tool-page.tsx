@@ -11,7 +11,11 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { chatCopyFor, copyFor, getToolsForLanguage } from '@/lib/mindpulse/i18n';
+import {
+  chatCopyFor,
+  copyFor,
+  getToolsForLanguage,
+} from '@/lib/mindpulse/i18n';
 import { authHeaders } from '@/lib/mindpulse/client-auth';
 import { LANGUAGE_KEY, readJson, writeJson } from '@/lib/mindpulse/local-store';
 import {
@@ -20,10 +24,7 @@ import {
   type LanguageCode,
   type MindPulseTool,
 } from '@/lib/mindpulse/tools';
-import {
-  ChatPanel,
-  type MindPulseUser,
-} from './chat-panel';
+import { ChatPanel, type MindPulseUser } from './chat-panel';
 import { FeedbackModal } from './feedback-modal';
 import { LogoutButton } from './logout-button';
 import { SiteFooter } from './site-footer';
@@ -47,7 +48,9 @@ export function ToolPage({
   const ui = useMemo(() => copyFor(language), [language]);
   const chatCopy = useMemo(() => chatCopyFor(language), [language]);
   const localizedTool = useMemo<MindPulseTool>(() => {
-    const localized = getToolsForLanguage(language).find((t) => t.id === tool.id);
+    const localized = getToolsForLanguage(language).find(
+      (t) => t.id === tool.id,
+    );
     return localized ?? tool;
   }, [language, tool]);
 
@@ -76,7 +79,9 @@ export function ToolPage({
         });
         if (active) {
           if (response.ok) {
-            const body = (await response.json().catch(() => ({}))) as AuthMeBody;
+            const body = (await response
+              .json()
+              .catch(() => ({}))) as AuthMeBody;
             setUser(body.user ?? null);
           } else if (response.status === 401) {
             setUser(null);
@@ -124,8 +129,8 @@ export function ToolPage({
               </select>
             </label>
             {/* Hide auth-dependent nav buttons until session is confirmed */}
-            {authReady && (
-              user ? (
+            {authReady &&
+              (user ? (
                 <LogoutButton
                   label={ui.navLogout}
                   className="inline-flex min-h-10 items-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-canvas"
@@ -145,8 +150,7 @@ export function ToolPage({
                     <UserPlus size={15} /> {ui.navSignup}
                   </Link>
                 </>
-              )
-            )}
+              ))}
           </div>
         </nav>
       </header>

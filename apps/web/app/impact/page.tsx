@@ -70,9 +70,9 @@ export default function ImpactPage() {
           <article className="rounded-mp bg-surface p-6 shadow-soft">
             <h2 className="text-2xl font-semibold">The problem</h2>
             <p className="mt-3 leading-8 text-muted">
-              Students often feel overwhelmed and lack structure. Even when
-              they know what matters, the first step can feel unclear, too big,
-              or emotionally heavy.
+              Students often feel overwhelmed and lack structure. Even when they
+              know what matters, the first step can feel unclear, too big, or
+              emotionally heavy.
             </p>
           </article>
           <article className="rounded-mp bg-surface p-6 shadow-soft">

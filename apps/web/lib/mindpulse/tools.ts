@@ -93,7 +93,11 @@ export const mindPulseTools: MindPulseTool[] = [
       'Use this when you are procrastinating, tired, or overwhelmed and need a gentle reset instead of pressure.',
     outcome:
       'Tell MindPulse what you are avoiding and how much energy you have. It will help you restart with one small move.',
-    bestFor: ['Getting unstuck', 'Confidence resets', 'Discipline without guilt'],
+    bestFor: [
+      'Getting unstuck',
+      'Confidence resets',
+      'Discipline without guilt',
+    ],
     emptyHint:
       'Describe what you are avoiding and why it feels heavy. MindPulse will find the smallest useful first step.',
     iconId: 'zap',

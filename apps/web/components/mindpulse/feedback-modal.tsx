@@ -95,9 +95,7 @@ export function FeedbackModal({
             </div>
 
             <div className="mt-6 space-y-4">
-              <p className="text-sm leading-7 text-muted">
-                {feedback.intro}
-              </p>
+              <p className="text-sm leading-7 text-muted">{feedback.intro}</p>
 
               {hasFeedbackUrl ? (
                 <a
@@ -111,9 +109,7 @@ export function FeedbackModal({
                 </a>
               ) : (
                 <div className="rounded-mp bg-canvas/80 p-4">
-                  <h3 className="font-semibold">
-                    {feedback.unavailableTitle}
-                  </h3>
+                  <h3 className="font-semibold">{feedback.unavailableTitle}</h3>
                   <p className="mt-2 text-sm leading-6 text-muted">
                     {feedback.unavailableCopy}
                   </p>
