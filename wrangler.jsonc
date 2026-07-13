@@ -8,14 +8,6 @@
     "directory": "apps/web/.open-next/assets",
     "binding": "ASSETS",
   },
-  // After creating the D1 database, uncomment and replace database_id.
-  // "d1_databases": [
-  //   {
-  //     "binding": "DB",
-  //     "database_name": "mindpulse-db",
-  //     "database_id": "REPLACE_WITH_D1_DATABASE_ID",
-  //   },
-  // ],
   "observability": {
     "enabled": true,
   },
