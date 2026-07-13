@@ -1021,6 +1021,13 @@ export function chatCopyFor(language: string) {
       loading: 'MindPulse продумывает твои следующие шаги…',
       authChecking: 'Проверяем сессию…',
       crisisResourcesLabel: 'Куда обратиться за поддержкой',
+      intakeTitle: 'Направляемый старт',
+      intakeStart: 'Получить первый ответ',
+      intakeSkip: 'Или просто напиши сообщение ниже',
+      saveResult: 'Сохранить результат',
+      resultSavedAccount: 'Сохранено в аккаунте ✓',
+      resultSavedLocal: 'Сохранено на этом устройстве ✓',
+      saveFailed: 'Не получилось сохранить. Попробуй ещё раз.',
     };
   }
   if (language === 'kk') {
@@ -1043,6 +1050,13 @@ export function chatCopyFor(language: string) {
       loading: 'MindPulse келесі қадамдарыңды ойластырып жатыр…',
       authChecking: 'Сессия тексерілуде…',
       crisisResourcesLabel: 'Қолдау алу нұсқалары',
+      intakeTitle: 'Бағытталған бастау',
+      intakeStart: 'Бірінші жауапты алу',
+      intakeSkip: 'Немесе төменде хабарлама жаз',
+      saveResult: 'Нәтижені сақтау',
+      resultSavedAccount: 'Аккаунтқа сақталды ✓',
+      resultSavedLocal: 'Осы құрылғыда сақталды ✓',
+      saveFailed: 'Сақтау мүмкін болмады. Қайта байқап көр.',
     };
   }
   // English (default)
@@ -1066,6 +1080,13 @@ export function chatCopyFor(language: string) {
     loading: 'MindPulse is thinking through your next steps…',
     authChecking: 'Checking your session…',
     crisisResourcesLabel: 'Support options',
+    intakeTitle: 'Guided start',
+    intakeStart: 'Get my first answer',
+    intakeSkip: 'Or just type a message below',
+    saveResult: 'Save this result',
+    resultSavedAccount: 'Saved to your account ✓',
+    resultSavedLocal: 'Saved on this device ✓',
+    saveFailed: 'Could not save. Please try again.',
   };
 }
 
@@ -1084,6 +1105,7 @@ type LocalizedToolText = Pick<
   | 'bestFor'
   | 'emptyHint'
   | 'examples'
+  | 'intake'
 >;
 
 const TOOL_TRANSLATIONS: Partial<
@@ -1107,6 +1129,27 @@ const TOOL_TRANSLATIONS: Partial<
         'Объясни квадратичные функции шаг за шагом, а потом проверь меня 5 вопросами.',
         'Преврати эти черновые заметки в одностраничный конспект с терминами и типичными ошибками.',
       ],
+      intake: [
+        {
+          id: 'subject',
+          label: 'Предмет или тема',
+          placeholder: 'напр. Квадратичные функции',
+          maxLength: 120,
+        },
+        {
+          id: 'deadline',
+          label: 'Экзамен или дедлайн (необязательно)',
+          placeholder: 'напр. пятница',
+          maxLength: 60,
+        },
+        {
+          id: 'struggle',
+          label: 'Что именно непонятно?',
+          placeholder: 'напр. Путаю шаги формулы…',
+          multiline: true,
+          maxLength: 300,
+        },
+      ],
     },
     planner: {
       title: 'Ежедневный планировщик',
@@ -1124,6 +1167,21 @@ const TOOL_TRANSLATIONS: Partial<
         'Распланируй мой день с 16:00 до 22:00: домашка, ужин и один настоящий перерыв.',
         'Отсортируй эти задачи по срочности и важности, затем скажи, что делать первым: математика, эссе, карточки, стирка.',
         'Собери недельный план подготовки к экзамену без выгорания.',
+      ],
+      intake: [
+        {
+          id: 'tasks',
+          label: 'Задачи на сегодня',
+          placeholder: 'напр. Математика, черновик эссе, карточки…',
+          multiline: true,
+          maxLength: 300,
+        },
+        {
+          id: 'time',
+          label: 'Сколько времени реально есть',
+          placeholder: 'напр. с 16:00 до 21:00 с ужином посередине',
+          maxLength: 120,
+        },
       ],
     },
     motivation: {
@@ -1143,6 +1201,21 @@ const TOOL_TRANSLATIONS: Partial<
         'Я не могу начать эссе, потому что оно слишком большое. Сделай первый шаг крошечным и конкретным.',
         'Помоги восстановить уверенность после плохой контрольной без фразы "всё нормально".',
       ],
+      intake: [
+        {
+          id: 'avoiding',
+          label: 'Чего ты избегаешь?',
+          placeholder: 'напр. Начать эссе — оно кажется слишком большим…',
+          multiline: true,
+          maxLength: 300,
+        },
+        {
+          id: 'energy',
+          label: 'Энергия сейчас',
+          placeholder: 'напр. Довольно низкая, устал(а) после школы',
+          maxLength: 120,
+        },
+      ],
     },
     habit: {
       title: 'Коуч по привычкам',
@@ -1161,6 +1234,21 @@ const TOOL_TRANSLATIONS: Partial<
         'Сделай утреннюю рутину для учебных дней, которая не развалится, если я проснусь поздно.',
         'Я бросаю привычки через 3 дня. Составь мягкий план перезапуска с запасной версией.',
       ],
+      intake: [
+        {
+          id: 'habit',
+          label: 'Привычка, которую хочешь выработать',
+          placeholder: 'напр. 10 минут повторения после ужина',
+          maxLength: 120,
+        },
+        {
+          id: 'obstacle',
+          label: 'Что обычно её ломает?',
+          placeholder: 'напр. Отвлекаюсь на телефон…',
+          multiline: true,
+          maxLength: 300,
+        },
+      ],
     },
     goal: {
       title: 'Разбивка цели',
@@ -1178,6 +1266,21 @@ const TOOL_TRANSLATIONS: Partial<
         'Разбей мой семестровый проект на недельные этапы, риски и первые 3 действия.',
         'Преврати «улучшить оценки» в конкретный 30-дневный план с измеримыми checkpoint-ами.',
         'Помоги создать цель для портфолио, которую реально закончить за месяц вместе с учёбой.',
+      ],
+      intake: [
+        {
+          id: 'goal',
+          label: 'Большая цель',
+          placeholder: 'напр. Закончить семестровый проект',
+          multiline: true,
+          maxLength: 300,
+        },
+        {
+          id: 'timeframe',
+          label: 'Примерный дедлайн',
+          placeholder: 'напр. до конца месяца',
+          maxLength: 60,
+        },
       ],
     },
     reflection: {
@@ -1201,6 +1304,15 @@ const TOOL_TRANSLATIONS: Partial<
         'Я не выполнил план. Помоги извлечь урок без чувства вины.',
         'Преврати сегодняшние беспорядочные мысли в один спокойный вывод и одно следующее действие.',
       ],
+      intake: [
+        {
+          id: 'happened',
+          label: 'Одно честное предложение о сегодняшнем дне',
+          placeholder: 'напр. Запланировал(а) пять задач, сделал(а) одну…',
+          multiline: true,
+          maxLength: 300,
+        },
+      ],
     },
   },
 
@@ -1222,6 +1334,27 @@ const TOOL_TRANSLATIONS: Partial<
         'Квадраттық функцияларды қадам-қадаммен түсіндір, кейін 5 сұрақпен тексер.',
         'Осы шикі конспектілерді негізгі терминдер мен жиі қателер бар бір беттік оқу нұсқаулығына айналдыр.',
       ],
+      intake: [
+        {
+          id: 'subject',
+          label: 'Пән немесе тақырып',
+          placeholder: 'мыс. Квадраттық функциялар',
+          maxLength: 120,
+        },
+        {
+          id: 'deadline',
+          label: 'Емтихан немесе дедлайн (міндетті емес)',
+          placeholder: 'мыс. жұма',
+          maxLength: 60,
+        },
+        {
+          id: 'struggle',
+          label: 'Нақты не түсініксіз?',
+          placeholder: 'мыс. Формула қадамдарын шатастырамын…',
+          multiline: true,
+          maxLength: 300,
+        },
+      ],
     },
     planner: {
       title: 'Күнделікті жоспарлаушы',
@@ -1239,6 +1372,21 @@ const TOOL_TRANSLATIONS: Partial<
         'Күнімді 16:00-ден 22:00-ге дейін жоспарла: үй жұмысы, кешкі ас және бір нақты үзіліс.',
         'Мына тапсырмаларды срочность пен маңыздылық бойынша сұрыптап, бірінші не істеу керегін айт: математика, эссе, карточкалар, кір жуу.',
         'Күйіп кетпейтіндей емтиханға дайындықтың апталық жоспарын құр.',
+      ],
+      intake: [
+        {
+          id: 'tasks',
+          label: 'Бүгінгі тапсырмалар',
+          placeholder: 'мыс. Математика, эссе жобасы, карточкалар…',
+          multiline: true,
+          maxLength: 300,
+        },
+        {
+          id: 'time',
+          label: 'Шынымен бар уақыт',
+          placeholder: 'мыс. 16:00-ден 21:00-ге дейін, арасында кешкі ас',
+          maxLength: 120,
+        },
       ],
     },
     motivation: {
@@ -1258,6 +1406,21 @@ const TOOL_TRANSLATIONS: Partial<
         'Эссені бастай алмаймын, себебі тым үлкен көрінеді. Бірінші қадамды өте кішкентай және нақты ет.',
         'Нашар тесттен кейін сенімділікті қайта құруға көмектес, бірақ "бәрі жақсы" деп жеңілдетпе.',
       ],
+      intake: [
+        {
+          id: 'avoiding',
+          label: 'Неден қашып жүрсің?',
+          placeholder: 'мыс. Эссені бастаудан — тым үлкен көрінеді…',
+          multiline: true,
+          maxLength: 300,
+        },
+        {
+          id: 'energy',
+          label: 'Қазіргі энергия',
+          placeholder: 'мыс. Төмендеу, мектептен кейін шаршадым',
+          maxLength: 120,
+        },
+      ],
     },
     habit: {
       title: 'Әдет жаттықтырушысы',
@@ -1275,6 +1438,21 @@ const TOOL_TRANSLATIONS: Partial<
         'Қарбалас оқу күндерінде де істелетін 10 минуттық оқу әдетін қалыптастыруға көмектес.',
         'Кеш тұрсам да құлап қалмайтын оқу күндеріне арналған таңертеңгі routine жаса.',
         'Әдеттерді 3 күннен кейін тастаймын. Жұмсақ reset жоспарын және backup нұсқасын жаса.',
+      ],
+      intake: [
+        {
+          id: 'habit',
+          label: 'Қалыптастырғың келетін әдет',
+          placeholder: 'мыс. Кешкі астан кейін 10 минут қайталау',
+          maxLength: 120,
+        },
+        {
+          id: 'obstacle',
+          label: 'Оны әдетте не бұзады?',
+          placeholder: 'мыс. Телефонға алаңдаймын…',
+          multiline: true,
+          maxLength: 300,
+        },
       ],
     },
     goal: {
@@ -1294,6 +1472,21 @@ const TOOL_TRANSLATIONS: Partial<
         '«Бағаларды жақсарту»-ды өлшенетін checkpoints бар нақты 30 күндік жоспарға айналдыр.',
         'Оқумен қатар бір айда аяқтауға болатын portfolio мақсатын жасауға көмектес.',
       ],
+      intake: [
+        {
+          id: 'goal',
+          label: 'Үлкен мақсат',
+          placeholder: 'мыс. Семестрлік жобаны аяқтау',
+          multiline: true,
+          maxLength: 300,
+        },
+        {
+          id: 'timeframe',
+          label: 'Шамамен дедлайн',
+          placeholder: 'мыс. ай соңына дейін',
+          maxLength: 60,
+        },
+      ],
     },
     reflection: {
       title: 'Жылдам рефлексия',
@@ -1311,6 +1504,15 @@ const TOOL_TRANSLATIONS: Partial<
         'Мені 3 шынайы сұрақпен 5 минуттық апталық рефлексиядан өткіз.',
         'Жоспарымды орындамадым. Кінәсіз сабақ алуға көмектес.',
         'Бүгінгі ретсіз ойларды бір тыныш қорытындыға және бір келесі әрекетке айналдыр.',
+      ],
+      intake: [
+        {
+          id: 'happened',
+          label: 'Бүгін туралы бір шынайы сөйлем',
+          placeholder: 'мыс. Бес тапсырма жоспарлап, біреуін бітірдім…',
+          multiline: true,
+          maxLength: 300,
+        },
       ],
     },
   },

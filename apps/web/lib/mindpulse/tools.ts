@@ -14,6 +14,14 @@ export type ModeId =
   | 'goal'
   | 'reflection';
 
+export type ToolIntakeField = {
+  id: string;
+  label: string;
+  placeholder: string;
+  multiline?: boolean;
+  maxLength: number;
+};
+
 export type MindPulseTool = {
   id: ModeId;
   route: string;
@@ -27,6 +35,8 @@ export type MindPulseTool = {
   emptyHint: string;
   iconId: ToolIconId;
   examples: string[];
+  /** Guided inputs that compose a structured first message. */
+  intake: ToolIntakeField[];
 };
 
 export const languages: Array<{
@@ -60,6 +70,27 @@ export const mindPulseTools: MindPulseTool[] = [
       'Explain quadratic functions step by step, then quiz me with 5 questions.',
       'Turn these rough class notes into a one-page study guide with key terms and mistakes to avoid.',
     ],
+    intake: [
+      {
+        id: 'subject',
+        label: 'Subject or topic',
+        placeholder: 'e.g. Quadratic functions',
+        maxLength: 120,
+      },
+      {
+        id: 'deadline',
+        label: 'Exam or deadline (optional)',
+        placeholder: 'e.g. Friday',
+        maxLength: 60,
+      },
+      {
+        id: 'struggle',
+        label: 'What feels confusing?',
+        placeholder: 'e.g. I mix up the formula steps…',
+        multiline: true,
+        maxLength: 300,
+      },
+    ],
   },
   {
     id: 'planner',
@@ -80,6 +111,21 @@ export const mindPulseTools: MindPulseTool[] = [
       'Plan my day from 4pm to 10pm with homework, dinner, and one real break.',
       'Sort these tasks by urgency and importance, then tell me what to do first: math, essay, flashcards, laundry.',
       'Build a weekly exam-prep plan that leaves room for rest and unexpected homework.',
+    ],
+    intake: [
+      {
+        id: 'tasks',
+        label: 'Tasks on your plate',
+        placeholder: 'e.g. Math homework, essay draft, flashcards…',
+        multiline: true,
+        maxLength: 300,
+      },
+      {
+        id: 'time',
+        label: 'Time you actually have',
+        placeholder: 'e.g. 4pm to 9pm with dinner in between',
+        maxLength: 120,
+      },
     ],
   },
   {
@@ -106,6 +152,21 @@ export const mindPulseTools: MindPulseTool[] = [
       'I cannot start my essay because it feels too big. Make the first step tiny and specific.',
       'Help me rebuild confidence after a bad test without pretending everything is fine.',
     ],
+    intake: [
+      {
+        id: 'avoiding',
+        label: 'What are you avoiding?',
+        placeholder: 'e.g. Starting my essay — it feels too big…',
+        multiline: true,
+        maxLength: 300,
+      },
+      {
+        id: 'energy',
+        label: 'Energy right now',
+        placeholder: 'e.g. Pretty low, tired after school',
+        maxLength: 120,
+      },
+    ],
   },
   {
     id: 'habit',
@@ -126,6 +187,21 @@ export const mindPulseTools: MindPulseTool[] = [
       'Help me build a 10-minute study habit that works even on busy school days.',
       'Design a morning routine for class days that does not collapse if I wake up late.',
       'I keep breaking habits after 3 days. Make a forgiving reset plan with a backup version.',
+    ],
+    intake: [
+      {
+        id: 'habit',
+        label: 'Habit you want to build',
+        placeholder: 'e.g. 10 minutes of review after dinner',
+        maxLength: 120,
+      },
+      {
+        id: 'obstacle',
+        label: 'What usually breaks it?',
+        placeholder: 'e.g. I get distracted by my phone…',
+        multiline: true,
+        maxLength: 300,
+      },
     ],
   },
   {
@@ -148,6 +224,21 @@ export const mindPulseTools: MindPulseTool[] = [
       'Turn "improve my grades" into a concrete 30-day plan with measurable checkpoints.',
       'Help me create a portfolio goal I can finish in one month while studying.',
     ],
+    intake: [
+      {
+        id: 'goal',
+        label: 'The big goal',
+        placeholder: 'e.g. Finish my semester project',
+        multiline: true,
+        maxLength: 300,
+      },
+      {
+        id: 'timeframe',
+        label: 'Rough deadline',
+        placeholder: 'e.g. End of the month',
+        maxLength: 60,
+      },
+    ],
   },
   {
     id: 'reflection',
@@ -168,6 +259,15 @@ export const mindPulseTools: MindPulseTool[] = [
       'Guide me through a 5-minute weekly reflection with 3 honest questions.',
       'I did not finish my plan. Help me learn from it without turning it into guilt.',
       'Turn today\u2019s messy thoughts into one calm takeaway and one next action.',
+    ],
+    intake: [
+      {
+        id: 'happened',
+        label: 'One honest sentence about today',
+        placeholder: 'e.g. I planned five tasks and finished one\u2026',
+        multiline: true,
+        maxLength: 300,
+      },
     ],
   },
 ];

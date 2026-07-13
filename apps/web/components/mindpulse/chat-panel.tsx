@@ -11,6 +11,7 @@ import {
 } from 'react';
 import {
   GUEST_CHAT_KEY,
+  GUEST_TOOL_RESULTS_KEY,
   localId,
   readJson,
   writeJson,
@@ -80,6 +81,13 @@ export type ChatPanelCopy = {
   authChecking?: string;
   /** Heading above crisis support resource links */
   crisisResourcesLabel?: string;
+  intakeTitle?: string;
+  intakeStart?: string;
+  intakeSkip?: string;
+  saveResult?: string;
+  resultSavedAccount?: string;
+  resultSavedLocal?: string;
+  saveFailed?: string;
 };
 
 export function ChatPanel({
@@ -113,6 +121,10 @@ export function ChatPanel({
   const [chatError, setChatError] = useState('');
   const [usage, setUsage] = useState<ChatUsage | null>(null);
   const [limitAccountRequired, setLimitAccountRequired] = useState(false);
+  const [intakeValues, setIntakeValues] = useState<Record<string, string>>({});
+  const [saveState, setSaveState] = useState<
+    'idle' | 'saving' | 'saved' | 'failed'
+  >('idle');
   const isGuest = !user;
 
   const displayModes = useMemo(() => getToolsForLanguage(language), [language]);
@@ -215,6 +227,7 @@ export function ChatPanel({
         return;
       }
       if (body.usage) setUsage(body.usage);
+      setSaveState('idle');
       setMessages((items) => [
         ...items,
         {
@@ -232,6 +245,81 @@ export function ChatPanel({
       setChatLoading(false);
     }
   }
+
+  function submitIntake(event: FormEvent) {
+    event.preventDefault();
+    const fields = selectedMode.intake ?? [];
+    const parts = fields
+      .map((field) => {
+        const value = (intakeValues[field.id] ?? '').trim();
+        return value ? `${field.label}: ${value}` : '';
+      })
+      .filter(Boolean);
+    if (!parts.length) return;
+    void sendChat(undefined, parts.join('\n'));
+  }
+
+  const lastAssistant = [...messages]
+    .reverse()
+    .find((item) => item.role === 'assistant' && !item.crisis);
+
+  async function saveLastResult() {
+    if (!lastAssistant || saveState === 'saving') return;
+    setSaveState('saving');
+    const title = `${selectedMode.title} · ${new Date().toISOString().slice(0, 10)}`;
+    if (!user) {
+      try {
+        const existing = readJson<
+          Array<{
+            id: string;
+            mode: ModeId;
+            title: string;
+            content: string;
+            created_at: string;
+          }>
+        >(GUEST_TOOL_RESULTS_KEY, []);
+        writeJson(
+          GUEST_TOOL_RESULTS_KEY,
+          [
+            {
+              id: localId('tool-result'),
+              mode,
+              title,
+              content: lastAssistant.content,
+              created_at: new Date().toISOString(),
+            },
+            ...existing,
+          ].slice(0, 20),
+        );
+        setSaveState('saved');
+      } catch {
+        setSaveState('failed');
+      }
+      return;
+    }
+    try {
+      const response = await fetch('/api/agent', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          content: lastAssistant.content,
+          kind: 'tool_result',
+        }),
+      });
+      setSaveState(response.ok ? 'saved' : 'failed');
+    } catch {
+      setSaveState('failed');
+    }
+  }
+
+  const showIntake =
+    fixedMode &&
+    authReady &&
+    historyReady &&
+    messages.length === 0 &&
+    (selectedMode.intake?.length ?? 0) > 0;
 
   // Derive the empty-state message shown before any messages exist
   const emptyStateText = !authReady
@@ -292,12 +380,69 @@ export function ChatPanel({
             </div>
           )}
         </div>
-        <div className="max-h-[32rem] min-h-[24rem] space-y-4 overflow-y-auto bg-canvas/40 p-4 sm:p-5">
-          {!messages.length && (
+        <div
+          className="max-h-[32rem] min-h-[24rem] space-y-4 overflow-y-auto bg-canvas/40 p-4 sm:p-5"
+          role="log"
+          aria-live="polite"
+        >
+          {showIntake ? (
+            <form
+              onSubmit={submitIntake}
+              className="rounded-mp bg-surface p-4 sm:p-5"
+            >
+              <p className="text-xs font-bold uppercase tracking-[.16em] text-sage">
+                {copy.intakeTitle ?? 'Guided start'}
+              </p>
+              <div className="mt-3 space-y-3">
+                {(selectedMode.intake ?? []).map((field) => (
+                  <label key={field.id} className="block">
+                    <span className="text-sm font-semibold">{field.label}</span>
+                    {field.multiline ? (
+                      <textarea
+                        value={intakeValues[field.id] ?? ''}
+                        onChange={(event) =>
+                          setIntakeValues((current) => ({
+                            ...current,
+                            [field.id]: event.target.value,
+                          }))
+                        }
+                        maxLength={field.maxLength}
+                        rows={3}
+                        placeholder={field.placeholder}
+                        className="mt-1 w-full resize-none rounded-2xl border border-ink/10 bg-canvas/70 px-4 py-3 text-sm outline-none focus:border-sage"
+                      />
+                    ) : (
+                      <input
+                        value={intakeValues[field.id] ?? ''}
+                        onChange={(event) =>
+                          setIntakeValues((current) => ({
+                            ...current,
+                            [field.id]: event.target.value,
+                          }))
+                        }
+                        maxLength={field.maxLength}
+                        placeholder={field.placeholder}
+                        className="mt-1 w-full rounded-2xl border border-ink/10 bg-canvas/70 px-4 py-3 text-sm outline-none focus:border-sage"
+                      />
+                    )}
+                  </label>
+                ))}
+              </div>
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <button
+                  type="submit"
+                  className="inline-flex min-h-11 items-center justify-center rounded-full bg-sage px-5 text-sm font-semibold text-canvas"
+                >
+                  {copy.intakeStart ?? 'Get my first answer'}
+                </button>
+                <p className="text-xs text-muted">{copy.intakeSkip ?? ''}</p>
+              </div>
+            </form>
+          ) : !messages.length ? (
             <p className="rounded-mp bg-surface p-4 text-sm leading-7 text-muted">
               {emptyStateText}
             </p>
-          )}
+          ) : null}
           {messages.map((message) =>
             message.crisis ? (
               <div
@@ -361,6 +506,34 @@ export function ChatPanel({
             <div className="flex items-center gap-3 rounded-mp bg-surface p-4 text-sm font-medium text-muted">
               <Loader2 className="animate-spin text-sage" size={18} />
               <span>{copy.loading}</span>
+            </div>
+          )}
+          {fixedMode && lastAssistant && !chatLoading && (
+            <div className="flex flex-wrap items-center gap-3">
+              {saveState === 'saved' ? (
+                <p
+                  className="rounded-full bg-sage-soft px-4 py-2 text-xs font-semibold text-ink"
+                  role="status"
+                >
+                  {isGuest
+                    ? (copy.resultSavedLocal ?? 'Saved on this device ✓')
+                    : (copy.resultSavedAccount ?? 'Saved to your account ✓')}
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void saveLastResult()}
+                  disabled={saveState === 'saving'}
+                  className="rounded-full bg-surface px-4 py-2 text-xs font-semibold text-ink shadow-soft hover:bg-sage-soft disabled:opacity-50"
+                >
+                  {copy.saveResult ?? 'Save this result'}
+                </button>
+              )}
+              {saveState === 'failed' && (
+                <p className="text-xs text-danger" role="alert">
+                  {copy.saveFailed ?? 'Could not save. Please try again.'}
+                </p>
+              )}
             </div>
           )}
         </div>
