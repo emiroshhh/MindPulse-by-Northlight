@@ -1,17 +1,16 @@
 import {
   assessModelOutput,
   assessUserInput,
-  crisisRepliesFor,
-  resourcesForRegion,
   safeOutputFallbacksFor,
 } from '@mindpulse/shared';
 import {
   getAuthDb,
   getCurrentUserFromRequest,
   json,
-  type AuthUser,
 } from '../../../lib/server/auth';
 import { generateMindPulseReply } from '../../../lib/server/ai-provider';
+import { crisisPayload } from '../../../lib/server/crisis';
+import { reserveDailyUsage } from '../../../lib/server/usage';
 import {
   buildInteractionInput,
   buildSystemPrompt,
@@ -19,8 +18,6 @@ import {
 
 export const maxDuration = 30;
 
-const GUEST_DAILY_LIMIT = 5;
-const ACCOUNT_DAILY_LIMIT = 20;
 const MODES = [
   'study',
   'planner',
@@ -32,28 +29,6 @@ const MODES = [
 type Mode = (typeof MODES)[number];
 const LANGUAGES = ['en', 'ru', 'kk'] as const;
 type Language = (typeof LANGUAGES)[number];
-
-/**
- * Crisis responses bypass generation entirely and do not consume the daily
- * quota. The reply is localized (kk always ships with ru until native review)
- * and support resources are resolved for the caller's region — never assume
- * every user is in one country.
- */
-function crisisResponse(language: Language, request: Request) {
-  const region = request.headers.get('cf-ipcountry') ?? 'UNKNOWN';
-  const resources = resourcesForRegion(region).map((resource) => ({
-    id: resource.id,
-    name: resource.name[language],
-    description: resource.description[language],
-    url: resource.url,
-    availability: resource.availability[language],
-  }));
-  return json({
-    reply: crisisRepliesFor(language).join('\n\n'),
-    crisis: true,
-    resources,
-  });
-}
 
 export async function POST(request: Request) {
   const user = await getCurrentUserFromRequest(request);
@@ -81,8 +56,9 @@ export async function POST(request: Request) {
       ? (raw.language as Language)
       : 'en';
 
+  // Crisis responses bypass generation entirely and never consume quota.
   const inputSafety = assessUserInput(message);
-  if (inputSafety.flagged) return crisisResponse(language, request);
+  if (inputSafety.flagged) return json(crisisPayload(language, request));
 
   const usage = await reserveDailyUsage({ request, user });
   if (!usage.allowed) {
@@ -115,64 +91,6 @@ export async function POST(request: Request) {
     });
   }
   return json({ reply: safeReply, usage });
-}
-
-async function reserveDailyUsage({
-  request,
-  user,
-}: {
-  request: Request;
-  user: AuthUser | null;
-}) {
-  const db = await getAuthDb();
-  const usageDate = new Date().toISOString().slice(0, 10);
-  const now = new Date().toISOString();
-  const limit = user ? ACCOUNT_DAILY_LIMIT : GUEST_DAILY_LIMIT;
-  const accountRequired = !user;
-  const guestKey = user ? null : await guestUsageKey(request);
-  const id = user
-    ? `user:${user.id}:${usageDate}`
-    : `guest:${guestKey}:${usageDate}`;
-
-  const result = await db
-    .prepare(
-      `INSERT INTO daily_usage (
-        id, user_id, guest_key, usage_date, message_count, created_at, updated_at
-      )
-      VALUES (?, ?, ?, ?, 1, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET
-        message_count = message_count + 1,
-        updated_at = excluded.updated_at
-      WHERE daily_usage.message_count < ?`,
-    )
-    .bind(id, user?.id ?? null, guestKey, usageDate, now, now, limit)
-    .run();
-  const changes =
-    (result as { meta?: { changes?: number } }).meta?.changes ?? 1;
-  const row = await db
-    .prepare('SELECT message_count FROM daily_usage WHERE id = ? LIMIT 1')
-    .bind(id)
-    .first<{ message_count: number }>();
-  const used = Number(row?.message_count ?? limit);
-  const allowed = changes > 0 && used <= limit;
-  return {
-    allowed,
-    limit,
-    used: Math.min(used, limit),
-    remaining: Math.max(limit - used, 0),
-    accountRequired,
-  };
-}
-
-async function guestUsageKey(request: Request) {
-  const ip =
-    request.headers.get('cf-connecting-ip') ??
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-    'unknown-ip';
-  const userAgent = request.headers.get('user-agent') ?? 'unknown-agent';
-  const bytes = new TextEncoder().encode(`${ip}|${userAgent}`);
-  const digest = await crypto.subtle.digest('SHA-256', bytes);
-  return base64Url(new Uint8Array(digest));
 }
 
 async function saveChatExchange({
@@ -220,17 +138,6 @@ function chatId() {
   return typeof crypto.randomUUID === 'function'
     ? crypto.randomUUID()
     : `chat-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
-
-function base64Url(bytes: Uint8Array) {
-  let binary = '';
-  bytes.forEach((byte) => {
-    binary += String.fromCharCode(byte);
-  });
-  return btoa(binary)
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=+$/g, '');
 }
 
 function methodNotAllowed() {

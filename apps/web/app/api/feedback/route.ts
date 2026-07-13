@@ -1,11 +1,6 @@
-import {
-  assessUserInput,
-  crisisRepliesFor,
-  feedbackSubmissionSchema,
-  resourcesForRegion,
-  toSafetyLocale,
-} from '@mindpulse/shared';
+import { assessUserInput, feedbackSubmissionSchema } from '@mindpulse/shared';
 import { clientIp, getAuthDb, json, secureId } from '../../../lib/server/auth';
+import { crisisPayload } from '../../../lib/server/crisis';
 import { recordEvent } from '../../../lib/server/events';
 import {
   checkRateLimitDurable,
@@ -33,19 +28,7 @@ export async function POST(request: Request) {
   if (submission.suggestion) {
     const safety = assessUserInput(submission.suggestion);
     if (safety.flagged) {
-      const locale = toSafetyLocale(submission.locale);
-      const region = request.headers.get('cf-ipcountry') ?? 'UNKNOWN';
-      return json({
-        crisis: true,
-        reply: crisisRepliesFor(locale).join('\n\n'),
-        resources: resourcesForRegion(region).map((resource) => ({
-          id: resource.id,
-          name: resource.name[locale],
-          description: resource.description[locale],
-          url: resource.url,
-          availability: resource.availability[locale],
-        })),
-      });
+      return json(crisisPayload(submission.locale, request));
     }
   }
 

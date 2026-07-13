@@ -143,6 +143,52 @@ export type UiCopy = {
   // Auth state
   authChecking: string;
   agentNeedLogin: string;
+  // Recovery Mode
+  recovery: {
+    eyebrow: string;
+    title: string;
+    intro: string;
+    stepLabel: (step: number, total: number) => string;
+    step1Title: string;
+    step1Placeholder: string;
+    step1Note: string;
+    step2Title: string;
+    step2Note: string;
+    itemTitleLabel: string;
+    itemTitlePlaceholder: string;
+    itemDeadlineLabel: string;
+    itemDeadlinePlaceholder: string;
+    itemFixedLabel: string;
+    addItem: string;
+    removeItem: string;
+    step3Title: string;
+    hoursLabel: string;
+    hoursPlaceholder: string;
+    energyLabel: string;
+    energyLow: string;
+    energyOk: string;
+    back: string;
+    next: string;
+    generate: string;
+    generating: string;
+    errorGeneric: string;
+    limitReachedGuest: string;
+    limitReachedAccount: string;
+    planTitle: string;
+    fallbackNote: string;
+    immediateTitle: string;
+    immediateDoneButton: string;
+    urgentTitle: string;
+    optionalTitle: string;
+    droppedTitle: string;
+    completedTitle: string;
+    completedCopy: string;
+    startOver: string;
+    savedAccount: string;
+    savedLocal: string;
+    validationItems: string;
+    validationContext: string;
+  };
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -353,6 +399,59 @@ const EN: UiCopy = {
   },
   authChecking: 'Checking your session…',
   agentNeedLogin: 'Sign in to save your plan to your account.',
+  recovery: {
+    eyebrow: 'Recovery Mode',
+    title: 'Fell behind? Restart smaller.',
+    intro:
+      'Three short steps: say what got missed, list what is on the table, get one realistic plan with a single next action. No guilt, no lectures.',
+    stepLabel: (step, total) => `Step ${step} of ${total}`,
+    step1Title: 'What got missed?',
+    step1Placeholder:
+      'e.g. I skipped three days of revision and an essay draft is overdue…',
+    step1Note:
+      'Plain words are enough. This is not a confession — it is input.',
+    step2Title: 'What is on the table?',
+    step2Note:
+      'List up to 8 tasks. Mark a deadline as fixed only if it truly cannot move (exam date, submission portal closing).',
+    itemTitleLabel: 'Task',
+    itemTitlePlaceholder: 'e.g. History essay draft',
+    itemDeadlineLabel: 'Deadline (optional)',
+    itemDeadlinePlaceholder: 'e.g. Friday / 21 June',
+    itemFixedLabel: 'Fixed — cannot move',
+    addItem: 'Add another task',
+    removeItem: 'Remove',
+    step3Title: 'What is realistic today?',
+    hoursLabel: 'Hours you can actually give today (optional)',
+    hoursPlaceholder: 'e.g. 2',
+    energyLabel: 'Energy right now',
+    energyLow: 'Low — keep it tiny',
+    energyOk: 'Okay — normal pace',
+    back: 'Back',
+    next: 'Next',
+    generate: 'Build my recovery plan',
+    generating: 'Building a realistic plan…',
+    errorGeneric: 'Could not build the plan right now. Please try again.',
+    limitReachedGuest:
+      "You've reached today's free guest limit. Create a free account to continue.",
+    limitReachedAccount:
+      "You've reached today's free account limit. Come back tomorrow.",
+    planTitle: 'Your revised plan',
+    fallbackNote:
+      'The AI was unavailable, so this plan was built directly from your own list: fixed deadlines first, scope reduced. It contains nothing invented.',
+    immediateTitle: 'Do this first (10 minutes)',
+    immediateDoneButton: 'I did the first step',
+    urgentTitle: 'Urgent — deadlines first',
+    optionalTitle: 'Can wait',
+    droppedTitle: 'Postponed on purpose',
+    completedTitle: 'Restart done.',
+    completedCopy:
+      'You did the hardest part — starting again. The rest of the plan is saved; come back to it whenever you are ready.',
+    startOver: 'Start a new recovery',
+    savedAccount: 'Saved to your account.',
+    savedLocal: 'Saved on this device (guest mode).',
+    validationItems: 'Add at least one task with a name.',
+    validationContext: 'Write one or two sentences about what got missed.',
+  },
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -563,6 +662,57 @@ const RU: UiCopy = {
   },
   authChecking: 'Проверяем сессию…',
   agentNeedLogin: 'Войдите, чтобы сохранить план в аккаунте.',
+  recovery: {
+    eyebrow: 'Режим восстановления',
+    title: 'Отстал(а)? Перезапустись с меньшего.',
+    intro:
+      'Три коротких шага: скажи, что пропущено, перечисли задачи, получи один реалистичный план с одним следующим действием. Без вины и нотаций.',
+    stepLabel: (step, total) => `Шаг ${step} из ${total}`,
+    step1Title: 'Что было пропущено?',
+    step1Placeholder:
+      'напр. Я пропустил(а) три дня повторения, черновик эссе просрочен…',
+    step1Note: 'Простых слов достаточно. Это не исповедь — это входные данные.',
+    step2Title: 'Что сейчас на столе?',
+    step2Note:
+      'Перечисли до 8 задач. Отмечай дедлайн как жёсткий, только если он правда не двигается (дата экзамена, закрытие портала сдачи).',
+    itemTitleLabel: 'Задача',
+    itemTitlePlaceholder: 'напр. Черновик эссе по истории',
+    itemDeadlineLabel: 'Дедлайн (необязательно)',
+    itemDeadlinePlaceholder: 'напр. пятница / 21 июня',
+    itemFixedLabel: 'Жёсткий — не двигается',
+    addItem: 'Добавить задачу',
+    removeItem: 'Убрать',
+    step3Title: 'Что реалистично сегодня?',
+    hoursLabel: 'Сколько часов реально есть сегодня (необязательно)',
+    hoursPlaceholder: 'напр. 2',
+    energyLabel: 'Энергия сейчас',
+    energyLow: 'Низкая — совсем маленькие шаги',
+    energyOk: 'Нормальная — обычный темп',
+    back: 'Назад',
+    next: 'Дальше',
+    generate: 'Собрать план восстановления',
+    generating: 'Собираем реалистичный план…',
+    errorGeneric: 'Не получилось собрать план. Попробуй ещё раз.',
+    limitReachedGuest:
+      'Дневной лимит для гостей исчерпан. Создай бесплатный аккаунт, чтобы продолжить.',
+    limitReachedAccount: 'Дневной лимит аккаунта исчерпан. Возвращайся завтра.',
+    planTitle: 'Твой обновлённый план',
+    fallbackNote:
+      'ИИ был недоступен, поэтому план собран напрямую из твоего списка: сначала жёсткие дедлайны, объём уменьшен. В нём нет ничего выдуманного.',
+    immediateTitle: 'Сделай это первым (10 минут)',
+    immediateDoneButton: 'Я сделал(а) первый шаг',
+    urgentTitle: 'Срочно — сначала дедлайны',
+    optionalTitle: 'Может подождать',
+    droppedTitle: 'Отложено осознанно',
+    completedTitle: 'Перезапуск состоялся.',
+    completedCopy:
+      'Ты сделал(а) самое сложное — начал(а) снова. Остальной план сохранён; вернись к нему, когда будешь готов(а).',
+    startOver: 'Начать новое восстановление',
+    savedAccount: 'Сохранено в аккаунте.',
+    savedLocal: 'Сохранено на этом устройстве (гостевой режим).',
+    validationItems: 'Добавь хотя бы одну задачу с названием.',
+    validationContext: 'Напиши одно-два предложения о том, что было пропущено.',
+  },
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -779,6 +929,58 @@ const KK: UiCopy = {
   },
   authChecking: 'Сессия тексерілуде…',
   agentNeedLogin: 'Жоспарды аккаунтта сақтау үшін кіріңіз.',
+  recovery: {
+    eyebrow: 'Қалпына келу режимі',
+    title: 'Артта қалдың ба? Кішірек қайта баста.',
+    intro:
+      'Үш қысқа қадам: ненің қалып қойғанын айт, тапсырмаларды тізімде, бір нақты келесі әрекеті бар шынайы жоспар ал. Кінәсіз, ақыл айтусыз.',
+    stepLabel: (step, total) => `${total} қадамның ${step}-і`,
+    step1Title: 'Не қалып қойды?',
+    step1Placeholder:
+      'мыс. Үш күн қайталауды өткізіп алдым, эссе жобасы мерзімінен кешікті…',
+    step1Note:
+      'Қарапайым сөздер жеткілікті. Бұл мойындау емес — бастапқы дерек.',
+    step2Title: 'Қазір үстелде не бар?',
+    step2Note:
+      '8-ге дейін тапсырма жаз. Дедлайнды тек шынымен жылжымайтын болса ғана қатаң деп белгіле (емтихан күні, тапсыру порталының жабылуы).',
+    itemTitleLabel: 'Тапсырма',
+    itemTitlePlaceholder: 'мыс. Тарихтан эссе жобасы',
+    itemDeadlineLabel: 'Дедлайн (міндетті емес)',
+    itemDeadlinePlaceholder: 'мыс. жұма / 21 маусым',
+    itemFixedLabel: 'Қатаң — жылжымайды',
+    addItem: 'Тағы тапсырма қосу',
+    removeItem: 'Алып тастау',
+    step3Title: 'Бүгін не шынайы?',
+    hoursLabel: 'Бүгін шынымен бере алатын сағаттар (міндетті емес)',
+    hoursPlaceholder: 'мыс. 2',
+    energyLabel: 'Қазіргі энергия',
+    energyLow: 'Төмен — өте кішкентай қадамдар',
+    energyOk: 'Қалыпты — әдеттегі қарқын',
+    back: 'Артқа',
+    next: 'Келесі',
+    generate: 'Қалпына келу жоспарын құру',
+    generating: 'Шынайы жоспар құрылуда…',
+    errorGeneric: 'Жоспарды қазір құру мүмкін болмады. Қайта байқап көр.',
+    limitReachedGuest:
+      'Бүгінгі қонақ лимитіне жеттің. Жалғастыру үшін тегін аккаунт аш.',
+    limitReachedAccount: 'Бүгінгі аккаунт лимитіне жеттің. Ертең қайта орал.',
+    planTitle: 'Жаңартылған жоспарың',
+    fallbackNote:
+      'ЖИ қолжетімсіз болды, сондықтан жоспар тікелей өз тізіміңнен құрылды: алдымен қатаң дедлайндар, көлем азайтылған. Ойдан қосылған ештеңе жоқ.',
+    immediateTitle: 'Алдымен осыны жаса (10 минут)',
+    immediateDoneButton: 'Бірінші қадамды жасадым',
+    urgentTitle: 'Шұғыл — алдымен дедлайндар',
+    optionalTitle: 'Күте алады',
+    droppedTitle: 'Әдейі кейінге қалдырылды',
+    completedTitle: 'Қайта бастау сәтті өтті.',
+    completedCopy:
+      'Ең қиынын жасадың — қайта бастадың. Қалған жоспар сақталды; дайын болғанда қайта орал.',
+    startOver: 'Жаңа қалпына келуді бастау',
+    savedAccount: 'Аккаунтыңа сақталды.',
+    savedLocal: 'Осы құрылғыда сақталды (қонақ режимі).',
+    validationItems: 'Атауы бар кемінде бір тапсырма қос.',
+    validationContext: 'Ненің қалып қойғаны туралы бір-екі сөйлем жаз.',
+  },
 };
 
 // ─────────────────────────────────────────────────────────────

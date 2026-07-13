@@ -677,6 +677,8 @@ async function ensureAuthSchema(db: D1DatabaseLike) {
       title TEXT NOT NULL,
       content TEXT NOT NULL,
       status TEXT NOT NULL DEFAULT 'saved',
+      kind TEXT DEFAULT 'plan',
+      data TEXT,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -736,6 +738,8 @@ async function ensureAuthSchema(db: D1DatabaseLike) {
     `ALTER TABLE users ADD COLUMN name TEXT DEFAULT ''`,
     `ALTER TABLE users ADD COLUMN created_at TEXT`,
     `ALTER TABLE users ADD COLUMN updated_at TEXT`,
+    `ALTER TABLE agent_tasks ADD COLUMN kind TEXT DEFAULT 'plan'`,
+    `ALTER TABLE agent_tasks ADD COLUMN data TEXT`,
   ]) {
     try {
       await db.prepare(statement).run();
