@@ -6,6 +6,7 @@ import {
   toSafetyLocale,
 } from '@mindpulse/shared';
 import { clientIp, getAuthDb, json, secureId } from '../../../lib/server/auth';
+import { recordEvent } from '../../../lib/server/events';
 import {
   checkRateLimitDurable,
   hashedLimiterKey,
@@ -80,6 +81,12 @@ export async function POST(request: Request) {
         new Date().toISOString(),
       )
       .run();
+
+    await recordEvent(db, 'feedback_submitted');
+    if (submission.helped === true)
+      await recordEvent(db, 'feedback_helped_yes');
+    if (submission.helped === false)
+      await recordEvent(db, 'feedback_helped_no');
 
     return json({ ok: true });
   } catch (error) {

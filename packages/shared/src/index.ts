@@ -1,6 +1,7 @@
 export * from './types';
 export * from './schemas';
 export * from './feedback';
+export * from './events';
 export * from './tokens';
 export * from './i18n';
 export * from './id';

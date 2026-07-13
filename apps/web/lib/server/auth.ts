@@ -713,6 +713,12 @@ async function ensureAuthSchema(db: D1DatabaseLike) {
       device_category TEXT NOT NULL,
       created_at TEXT NOT NULL
     )`,
+    `CREATE TABLE IF NOT EXISTS events (
+      name TEXT NOT NULL,
+      day TEXT NOT NULL,
+      count INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (name, day)
+    )`,
     `CREATE INDEX IF NOT EXISTS idx_sessions_hash ON sessions(session_hash)`,
     `CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id)`,
     `CREATE INDEX IF NOT EXISTS idx_chat_messages_user_created ON chat_messages(user_id, created_at DESC)`,

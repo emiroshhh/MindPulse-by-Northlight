@@ -23,6 +23,7 @@ import {
   authHeaders,
   healSessionTokenFallback,
 } from '@/lib/mindpulse/client-auth';
+import { sendReturningVisitOnce } from '@/lib/mindpulse/beta-events';
 import {
   GUEST_AGENT_KEY,
   GUEST_BANNER_KEY,
@@ -103,6 +104,7 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
       }
     }
     void reconcileSession().then(() => healSessionTokenFallback());
+    sendReturningVisitOnce();
     return () => {
       active = false;
     };
