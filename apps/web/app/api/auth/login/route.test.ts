@@ -26,10 +26,13 @@ const authMocks = vi.hoisted(() => ({
   setSessionCookie: vi.fn(),
   validateEmail: vi.fn(() => true),
   verifyPassword: vi.fn(),
+  hashPassword: vi.fn(async () => 'pbkdf2-sha256$100000$dummysalt$dummyhash'),
 }));
 
 const rateLimitMocks = vi.hoisted(() => ({
   checkRateLimit: vi.fn(() => true),
+  checkRateLimitDurable: vi.fn(async () => true),
+  hashedLimiterKey: vi.fn(async (scope: string) => `${scope}:hashed`),
 }));
 
 vi.mock('@/lib/server/auth', () => authMocks);
@@ -69,6 +72,15 @@ afterEach(() => {
     if (typeof value === 'function' && 'mockReset' in value) value.mockReset();
   }
   rateLimitMocks.checkRateLimit.mockReset();
+  rateLimitMocks.checkRateLimitDurable.mockReset();
+  rateLimitMocks.hashedLimiterKey.mockReset();
+  rateLimitMocks.checkRateLimitDurable.mockResolvedValue(true);
+  rateLimitMocks.hashedLimiterKey.mockImplementation(
+    async (scope: string) => `${scope}:hashed`,
+  );
+  authMocks.hashPassword.mockResolvedValue(
+    'pbkdf2-sha256$100000$dummysalt$dummyhash',
+  );
   authMocks.clientIp.mockResolvedValue('127.0.0.1');
   authMocks.normalizeEmail.mockImplementation((email: string) =>
     email.trim().toLowerCase(),
@@ -129,5 +141,37 @@ describe('/api/auth/login', () => {
       },
       sessionToken: 'session-token-1234567890',
     });
+  });
+
+  it('returns 429 when the durable rate limit is exceeded', async () => {
+    authMocks.getAuthDb.mockResolvedValue(mockDb());
+    rateLimitMocks.checkRateLimitDurable.mockResolvedValue(false);
+
+    const response = await POST(loginRequest());
+    expect(response.status).toBe(429);
+    expect(await response.json()).toEqual({ error: 'rate_limited' });
+    expect(rateLimitMocks.hashedLimiterKey).toHaveBeenCalledWith(
+      'login',
+      '127.0.0.1',
+    );
+  });
+
+  it('burns a dummy password verification for unknown emails (timing oracle)', async () => {
+    const db = mockDb();
+    db.prepare.mockReturnValue({
+      bind: vi.fn().mockReturnThis(),
+      first: vi.fn().mockResolvedValue(null),
+    });
+    authMocks.getAuthDb.mockResolvedValue(db);
+    authMocks.verifyPassword.mockResolvedValue(false);
+
+    const response = await POST(loginRequest());
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({
+      error: 'Invalid email or password',
+    });
+    // The dummy hash is still verified even though no user exists.
+    expect(authMocks.verifyPassword).toHaveBeenCalledTimes(1);
+    expect(authMocks.hashPassword).toHaveBeenCalled();
   });
 });

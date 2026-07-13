@@ -16,7 +16,10 @@ import {
   copyFor,
   getToolsForLanguage,
 } from '@/lib/mindpulse/i18n';
-import { authHeaders } from '@/lib/mindpulse/client-auth';
+import {
+  authHeaders,
+  healSessionTokenFallback,
+} from '@/lib/mindpulse/client-auth';
 import { LANGUAGE_KEY, readJson, writeJson } from '@/lib/mindpulse/local-store';
 import {
   isLanguageCode,
@@ -93,7 +96,7 @@ export function ToolPage({
         if (active) setAuthReady(true);
       }
     }
-    void reconcileSession();
+    void reconcileSession().then(() => healSessionTokenFallback());
     return () => {
       active = false;
     };

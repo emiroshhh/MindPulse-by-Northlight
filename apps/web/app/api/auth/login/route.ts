@@ -4,6 +4,7 @@ import {
   createSession,
   getAuthDb,
   getUserBySessionToken,
+  hashPassword,
   json,
   normalizeEmail,
   publicUser,
@@ -13,17 +14,24 @@ import {
   verifyPassword,
   type AuthUser,
 } from '@/lib/server/auth';
-import { checkRateLimit } from '@/lib/server/rate-limit';
+import {
+  checkRateLimitDurable,
+  hashedLimiterKey,
+} from '@/lib/server/rate-limit';
 
 type UserRow = AuthUser & { password_hash: string };
+
+// Verified against a real hash when the account does not exist so that
+// unknown-email and wrong-password responses take comparable time.
+let timingEqualizerHash: Promise<string> | null = null;
+function dummyPasswordHash() {
+  timingEqualizerHash ??= hashPassword('mindpulse-timing-equalizer');
+  return timingEqualizerHash;
+}
 
 export async function POST(request: Request) {
   const wantsJson = isJsonRequest(request);
   const ip = await clientIp();
-  if (!checkRateLimit(`login:${ip}`, 8, 60_000)) {
-    if (!wantsJson) return formErrorRedirect('/login', 'rate_limited');
-    return json({ error: 'rate_limited' }, 429);
-  }
 
   const input = await readAuthInput(request, wantsJson);
   if (!input) {
@@ -41,6 +49,12 @@ export async function POST(request: Request) {
 
   try {
     const db = await getAuthDb();
+    const limiterKey = await hashedLimiterKey('login', ip);
+    const allowed = await checkRateLimitDurable(db, limiterKey, 8, 60_000);
+    if (!allowed) {
+      if (!wantsJson) return formErrorRedirect('/login', 'rate_limited');
+      return json({ error: 'rate_limited' }, 429);
+    }
     const user = await db
       .prepare(
         `SELECT id, email, password_hash, name, created_at
@@ -49,6 +63,9 @@ export async function POST(request: Request) {
       .bind(email)
       .first<UserRow>();
     if (!user) {
+      // Burn the same PBKDF2 cost as a real verification so response time
+      // does not reveal whether the email exists.
+      await verifyPassword(password, await dummyPasswordHash());
       if (!wantsJson) return formErrorRedirect('/login', 'invalid');
       return json({ error: 'Invalid email or password' }, 401);
     }

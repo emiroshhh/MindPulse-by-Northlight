@@ -19,7 +19,10 @@ import {
   copyFor,
   getToolsForLanguage,
 } from '@/lib/mindpulse/i18n';
-import { authHeaders } from '@/lib/mindpulse/client-auth';
+import {
+  authHeaders,
+  healSessionTokenFallback,
+} from '@/lib/mindpulse/client-auth';
 import {
   GUEST_AGENT_KEY,
   GUEST_BANNER_KEY,
@@ -99,7 +102,7 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
         if (active) setAuthReady(true);
       }
     }
-    void reconcileSession();
+    void reconcileSession().then(() => healSessionTokenFallback());
     return () => {
       active = false;
     };

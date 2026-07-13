@@ -19,6 +19,7 @@ import { GET } from './route';
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
   authMocks.debugSessionResolution.mockReset();
   authMocks.getCurrentUserFromRequest.mockReset();
   authMocks.getAuthDb.mockReset();
@@ -26,7 +27,17 @@ afterEach(() => {
 });
 
 describe('/api/auth/debug', () => {
+  it('is gated off by default (404 without AUTH_DEBUG=true)', async () => {
+    const response = await GET(
+      new Request('https://mindpulse.test/api/auth/debug'),
+    );
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ error: 'not_found' });
+    expect(authMocks.getAuthDb).not.toHaveBeenCalled();
+  });
+
   it('returns safe booleans and never exposes token values', async () => {
+    vi.stubEnv('AUTH_DEBUG', 'true');
     authMocks.readSessionTokenWithSourceFromRequest.mockReturnValueOnce({
       token: 'secret-session-token-1234567890',
       source: 'authorization',

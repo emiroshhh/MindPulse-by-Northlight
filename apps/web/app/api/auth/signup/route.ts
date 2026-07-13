@@ -14,16 +14,15 @@ import {
   validateEmail,
   validatePassword,
 } from '@/lib/server/auth';
-import { checkRateLimit } from '@/lib/server/rate-limit';
+import {
+  checkRateLimitDurable,
+  hashedLimiterKey,
+} from '@/lib/server/rate-limit';
 
 export async function POST(request: Request) {
   let step = 'start';
   const wantsJson = isJsonRequest(request);
   const ip = await clientIp();
-  if (!checkRateLimit(`signup:${ip}`, 5, 60_000)) {
-    if (!wantsJson) return formErrorRedirect('/signup', 'rate_limited');
-    return json({ error: 'rate_limited' }, 429);
-  }
 
   const input = await readAuthInput(request, wantsJson);
   if (!input) {
@@ -51,14 +50,34 @@ export async function POST(request: Request) {
   try {
     step = 'get_auth_db';
     const db = await getAuthDb();
+    step = 'rate_limit';
+    const limiterKey = await hashedLimiterKey('signup', ip);
+    const allowed = await checkRateLimitDurable(db, limiterKey, 5, 60_000);
+    if (!allowed) {
+      if (!wantsJson) return formErrorRedirect('/signup', 'rate_limited');
+      return json({ error: 'rate_limited' }, 429);
+    }
+    // Hash before the existence check so duplicate and fresh emails take
+    // comparable time (reduces the enumeration timing signal).
+    step = 'hash_password';
+    const passwordHash = await hashPassword(password);
     step = 'check_existing_user';
     const existing = await db
       .prepare('SELECT id FROM users WHERE email = ? LIMIT 1')
       .bind(email)
       .first<{ id: string }>();
     if (existing) {
+      // Deliberately generic. Without an email-verification flow the
+      // duplicate case cannot be made fully indistinguishable, but the
+      // response avoids confirming the account outright.
       if (!wantsJson) return formErrorRedirect('/signup', 'invalid');
-      return json({ error: 'An account already exists.' }, 409);
+      return json(
+        {
+          error:
+            'Could not create an account with these details. If you already have an account, log in instead.',
+        },
+        400,
+      );
     }
 
     const now = new Date().toISOString();
@@ -68,8 +87,6 @@ export async function POST(request: Request) {
       name,
       created_at: now,
     };
-    step = 'hash_password';
-    const passwordHash = await hashPassword(password);
     step = 'insert_user';
     await db
       .prepare(

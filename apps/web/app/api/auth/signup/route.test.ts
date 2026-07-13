@@ -32,6 +32,8 @@ const authMocks = vi.hoisted(() => ({
 
 const rateLimitMocks = vi.hoisted(() => ({
   checkRateLimit: vi.fn(() => true),
+  checkRateLimitDurable: vi.fn(async () => true),
+  hashedLimiterKey: vi.fn(async (scope: string) => `${scope}:hashed`),
 }));
 
 vi.mock('@/lib/server/auth', () => authMocks);
@@ -90,6 +92,11 @@ afterEach(() => {
   authMocks.validateEmail.mockReturnValue(true);
   authMocks.validatePassword.mockReturnValue(true);
   rateLimitMocks.checkRateLimit.mockReturnValue(true);
+  rateLimitMocks.checkRateLimitDurable.mockReset();
+  rateLimitMocks.checkRateLimitDurable.mockResolvedValue(true);
+  rateLimitMocks.hashedLimiterKey.mockImplementation(
+    async (scope: string) => `${scope}:hashed`,
+  );
 });
 
 describe('/api/auth/signup', () => {
@@ -134,5 +141,33 @@ describe('/api/auth/signup', () => {
       },
       sessionToken: 'session-token-1234567890',
     });
+  });
+
+  it('responds to duplicate emails with a generic 400 and still hashes the password', async () => {
+    const db = {
+      prepare: vi.fn(() => ({
+        bind: vi.fn().mockReturnThis(),
+        first: vi.fn().mockResolvedValue({ id: 'existing-user' }),
+        run: vi.fn().mockResolvedValue({ success: true }),
+      })),
+    };
+    authMocks.getAuthDb.mockResolvedValue(db);
+
+    const response = await POST(signupRequest());
+    const body = (await response.json()) as { error: string };
+
+    expect(response.status).toBe(400);
+    expect(body.error).not.toMatch(/already exists/i);
+    // Password hashing happens before the existence check to flatten timing.
+    expect(authMocks.hashPassword).toHaveBeenCalled();
+  });
+
+  it('returns 429 when the durable rate limit is exceeded', async () => {
+    authMocks.getAuthDb.mockResolvedValue(mockSignupDb());
+    rateLimitMocks.checkRateLimitDurable.mockResolvedValue(false);
+
+    const response = await POST(signupRequest());
+    expect(response.status).toBe(429);
+    expect(await response.json()).toEqual({ error: 'rate_limited' });
   });
 });

@@ -11,6 +11,11 @@ function hasCookie(header: string, name: string) {
 }
 
 export async function GET(request: Request) {
+  // Diagnostics are boolean-only, but an unauthenticated infrastructure
+  // oracle still doesn't belong in production. Opt in via AUTH_DEBUG=true.
+  if (process.env.AUTH_DEBUG !== 'true') {
+    return json({ error: 'not_found' }, 404);
+  }
   const authorization = request.headers.get('authorization') ?? '';
   const cookieHeader = request.headers.get('cookie') ?? '';
   const resolved = readSessionTokenWithSourceFromRequest(request);
