@@ -26,12 +26,22 @@ import { SafeMarkdown } from '../safe-markdown';
 
 export type MindPulseUser = { id?: string; email: string; name: string };
 
+export type CrisisResourceLink = {
+  id: string;
+  name: string;
+  description: string;
+  url: string;
+  availability: string;
+};
+
 export type ChatMessage = {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   mode: ModeId;
   created_at: string;
+  crisis?: boolean;
+  resources?: CrisisResourceLink[];
 };
 
 type ChatUsage = {
@@ -48,6 +58,8 @@ type ChatApiBody = {
   accountRequired?: boolean;
   remaining?: number;
   usage?: ChatUsage;
+  crisis?: boolean;
+  resources?: CrisisResourceLink[];
 };
 
 export type ChatPanelCopy = {
@@ -66,6 +78,8 @@ export type ChatPanelCopy = {
   loading: string;
   /** Shown in the empty-messages area while auth check is pending */
   authChecking?: string;
+  /** Heading above crisis support resource links */
+  crisisResourcesLabel?: string;
 };
 
 export function ChatPanel({
@@ -209,6 +223,9 @@ export function ChatPanel({
           content: body.reply!,
           mode,
           created_at: new Date().toISOString(),
+          ...(body.crisis
+            ? { crisis: true, resources: body.resources ?? [] }
+            : {}),
         },
       ]);
     } finally {
@@ -281,26 +298,65 @@ export function ChatPanel({
               {emptyStateText}
             </p>
           )}
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
+          {messages.map((message) =>
+            message.crisis ? (
               <div
-                className={`max-w-[92%] rounded-[1.35rem] px-4 py-3 text-sm leading-7 sm:max-w-[85%] ${
-                  message.role === 'user'
-                    ? 'rounded-br-md bg-ink text-canvas'
-                    : 'rounded-bl-md bg-surface'
-                }`}
+                key={message.id}
+                role="alert"
+                className="rounded-[1.35rem] border-2 border-danger/40 bg-surface px-4 py-4 text-sm leading-7"
               >
-                {message.role === 'assistant' ? (
-                  <SafeMarkdown>{message.content}</SafeMarkdown>
-                ) : (
-                  message.content
+                {message.content.split('\n\n').map((paragraph, index) => (
+                  <p key={index} className={index > 0 ? 'mt-3' : ''}>
+                    {paragraph}
+                  </p>
+                ))}
+                {(message.resources?.length ?? 0) > 0 && (
+                  <div className="mt-4 border-t border-ink/10 pt-3">
+                    <p className="text-xs font-bold uppercase tracking-[.14em] text-danger">
+                      {copy.crisisResourcesLabel ?? 'Support options'}
+                    </p>
+                    <ul className="mt-2 space-y-2">
+                      {message.resources!.map((resource) => (
+                        <li key={resource.id}>
+                          <a
+                            href={resource.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-semibold text-ink underline decoration-danger/50 underline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-danger"
+                          >
+                            {resource.name}
+                          </a>
+                          <p className="text-muted">{resource.description}</p>
+                          <p className="text-xs text-muted">
+                            {resource.availability}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 )}
               </div>
-            </div>
-          ))}
+            ) : (
+              <div
+                key={message.id}
+                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-[92%] rounded-[1.35rem] px-4 py-3 text-sm leading-7 sm:max-w-[85%] ${
+                    message.role === 'user'
+                      ? 'rounded-br-md bg-ink text-canvas'
+                      : 'rounded-bl-md bg-surface'
+                  }`}
+                >
+                  {message.role === 'assistant' ? (
+                    <SafeMarkdown>{message.content}</SafeMarkdown>
+                  ) : (
+                    message.content
+                  )}
+                </div>
+              </div>
+            ),
+          )}
           {chatLoading && (
             <div className="flex items-center gap-3 rounded-mp bg-surface p-4 text-sm font-medium text-muted">
               <Loader2 className="animate-spin text-sage" size={18} />

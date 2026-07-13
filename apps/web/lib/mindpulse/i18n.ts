@@ -713,6 +713,7 @@ export function chatCopyFor(language: string) {
       fallbackError: 'MindPulse сейчас не смог ответить. Попробуй ещё раз.',
       loading: 'MindPulse продумывает твои следующие шаги…',
       authChecking: 'Проверяем сессию…',
+      crisisResourcesLabel: 'Куда обратиться за поддержкой',
     };
   }
   if (language === 'kk') {
@@ -734,6 +735,7 @@ export function chatCopyFor(language: string) {
       fallbackError: 'MindPulse қазір жауап бере алмады. Қайта байқап көр.',
       loading: 'MindPulse келесі қадамдарыңды ойластырып жатыр…',
       authChecking: 'Сессия тексерілуде…',
+      crisisResourcesLabel: 'Қолдау алу нұсқалары',
     };
   }
   // English (default)
@@ -756,6 +758,7 @@ export function chatCopyFor(language: string) {
     fallbackError: 'MindPulse could not answer right now. Please try again.',
     loading: 'MindPulse is thinking through your next steps…',
     authChecking: 'Checking your session…',
+    crisisResourcesLabel: 'Support options',
   };
 }
 

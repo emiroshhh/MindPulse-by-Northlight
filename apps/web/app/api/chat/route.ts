@@ -1,4 +1,10 @@
-import { assessModelOutput, assessUserInput } from '@mindpulse/shared';
+import {
+  assessModelOutput,
+  assessUserInput,
+  crisisRepliesFor,
+  resourcesForRegion,
+  safeOutputFallbacksFor,
+} from '@mindpulse/shared';
 import {
   getAuthDb,
   getCurrentUserFromRequest,
@@ -27,10 +33,27 @@ type Mode = (typeof MODES)[number];
 const LANGUAGES = ['en', 'ru', 'kk'] as const;
 type Language = (typeof LANGUAGES)[number];
 
-const CRISIS_REPLY =
-  'I am glad you reached out. You may need immediate real-world support, and MindPulse is not an emergency service. Please contact local emergency services now or tell a trusted person nearby and stay with someone safe. You do not have to handle this alone.';
-const SAFE_FALLBACK =
-  'I cannot provide that answer safely. I can still help you make a safe study plan, break down a goal, or find a trusted person to support you.';
+/**
+ * Crisis responses bypass generation entirely and do not consume the daily
+ * quota. The reply is localized (kk always ships with ru until native review)
+ * and support resources are resolved for the caller's region — never assume
+ * every user is in one country.
+ */
+function crisisResponse(language: Language, request: Request) {
+  const region = request.headers.get('cf-ipcountry') ?? 'UNKNOWN';
+  const resources = resourcesForRegion(region).map((resource) => ({
+    id: resource.id,
+    name: resource.name[language],
+    description: resource.description[language],
+    url: resource.url,
+    availability: resource.availability[language],
+  }));
+  return json({
+    reply: crisisRepliesFor(language).join('\n\n'),
+    crisis: true,
+    resources,
+  });
+}
 
 export async function POST(request: Request) {
   const user = await getCurrentUserFromRequest(request);
@@ -59,7 +82,7 @@ export async function POST(request: Request) {
       : 'en';
 
   const inputSafety = assessUserInput(message);
-  if (inputSafety.flagged) return json({ reply: CRISIS_REPLY });
+  if (inputSafety.flagged) return crisisResponse(language, request);
 
   const usage = await reserveDailyUsage({ request, user });
   if (!usage.allowed) {
@@ -81,7 +104,7 @@ export async function POST(request: Request) {
   if (!aiResult.ok) return json(aiResult.body, aiResult.status);
 
   const safeReply = assessModelOutput(aiResult.reply).flagged
-    ? SAFE_FALLBACK
+    ? safeOutputFallbacksFor(language).join('\n\n')
     : aiResult.reply;
   if (user) {
     await saveChatExchange({

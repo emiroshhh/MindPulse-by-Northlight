@@ -241,6 +241,80 @@ describe('/api/chat', () => {
     expect(authMocks.historyWrites).toBe(20);
   });
 
+  it('returns a localized crisis reply with resources without calling the provider or consuming quota', async () => {
+    mockGemini('should never be sent');
+    const response = await POST(
+      request({ message: 'Я хочу умереть', mode: 'study', language: 'ru' }),
+    );
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      reply: string;
+      crisis: boolean;
+      resources: Array<{ name: string; url: string }>;
+    };
+    expect(body.crisis).toBe(true);
+    expect(body.reply).toContain('MindPulse — не экстренная служба');
+    expect(body.reply).not.toContain('emergency service');
+    expect(body.resources.length).toBeGreaterThan(0);
+    expect(
+      body.resources.every((item) => item.url.startsWith('https://')),
+    ).toBe(true);
+    expect(fetch).not.toHaveBeenCalled();
+    expect(authMocks.usage.size).toBe(0);
+    expect(authMocks.historyWrites).toBe(0);
+  });
+
+  it('pairs Kazakh crisis replies with Russian until native review', async () => {
+    mockGemini('should never be sent');
+    const response = await POST(
+      request({ message: 'өлгім келеді', mode: 'study', language: 'kk' }),
+    );
+    const body = (await response.json()) as { reply: string; crisis: boolean };
+    expect(body.crisis).toBe(true);
+    expect(body.reply).toContain('жедел жәрдем қызметі емес');
+    expect(body.reply).toContain('не экстренная служба');
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('scopes crisis resources to the caller region without assuming Kazakhstan', async () => {
+    mockGemini('should never be sent');
+    const kzRequest = new Request('http://localhost/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'cf-ipcountry': 'KZ',
+      },
+      body: JSON.stringify({
+        message: 'I want to kill myself',
+        mode: 'study',
+        language: 'en',
+      }),
+    });
+    const kzBody = (await (await POST(kzRequest)).json()) as {
+      resources: Array<{ id: string }>;
+    };
+    expect(kzBody.resources.map((item) => item.id)).toContain(
+      'kz-government-emergency',
+    );
+
+    const elsewhereBody = (await (
+      await POST(request({ message: 'I want to kill myself', mode: 'study' }))
+    ).json()) as { resources: Array<{ id: string }> };
+    expect(elsewhereBody.resources.map((item) => item.id)).toEqual([
+      'international-find-a-helpline',
+    ]);
+  });
+
+  it('replaces unsafe model output with a localized fallback', async () => {
+    mockGemini('You definitely have depression.');
+    const response = await POST(
+      request({ message: 'Помоги с планом', mode: 'planner', language: 'ru' }),
+    );
+    const body = (await response.json()) as { reply: string };
+    expect(body.reply).toContain('бережно и безопасно');
+    expect(body.reply).not.toContain('depression');
+  });
+
   it('returns the upstream status without exposing the key', async () => {
     vi.stubEnv('GEMINI_API_KEY', 'test-key');
     const errorSpy = vi
