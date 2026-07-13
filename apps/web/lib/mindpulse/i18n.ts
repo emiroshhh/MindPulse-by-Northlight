@@ -108,11 +108,36 @@ export type UiCopy = {
     eyebrow: string;
     title: string;
     intro: string;
+    flowLabel: string;
+    flowOptions: {
+      landing: string;
+      dashboard: string;
+      study: string;
+      planner: string;
+      motivation: string;
+      habits: string;
+      goals: string;
+      reflection: string;
+      recovery: string;
+      beta: string;
+      other: string;
+    };
+    helpedLabel: string;
+    confusingLabel: string;
+    expectationLabel: string;
+    yes: string;
+    no: string;
+    skip: string;
+    suggestionLabel: string;
+    suggestionPlaceholder: string;
+    consentLabel: string;
+    privacyNote: string;
     send: string;
-    unavailableTitle: string;
-    unavailableCopy: string;
+    sending: string;
     thanksTitle: string;
     thanksCopy: string;
+    errorCopy: string;
+    rateLimited: string;
     close: string;
   };
   // Auth state
@@ -289,14 +314,41 @@ const EN: UiCopy = {
     eyebrow: 'Student beta feedback',
     title: 'Help make MindPulse more useful',
     intro:
-      'After trying one real task, tell us what helped, what felt unclear, and what you would improve. Do not include private chat content, passwords, documents, or sensitive personal information.',
-    send: 'Open feedback form',
-    unavailableTitle: 'Feedback form not connected',
-    unavailableCopy:
-      'A real feedback form URL must be configured before launch. No fake destination is used.',
+      'One minute, anonymous. Do not include private chat content, passwords, or personal details.',
+    flowLabel: 'Which part is this about?',
+    flowOptions: {
+      landing: 'Landing page',
+      dashboard: 'Dashboard',
+      study: 'Study Help',
+      planner: 'Daily Planner',
+      motivation: 'Motivation Reset',
+      habits: 'Habit Coach',
+      goals: 'Goal Breakdown',
+      reflection: 'Quick Reflection',
+      recovery: 'Recovery Mode',
+      beta: 'Beta testing overall',
+      other: 'Something else',
+    },
+    helpedLabel: 'Did it help you move forward?',
+    confusingLabel: 'Was anything confusing?',
+    expectationLabel: 'Did it match what you expected?',
+    yes: 'Yes',
+    no: 'No',
+    skip: 'Skip',
+    suggestionLabel: 'Anything you would improve? (optional)',
+    suggestionPlaceholder: 'Short suggestion, max 500 characters…',
+    consentLabel:
+      'Share this anonymously to help improve MindPulse. No account, chat, or personal data is attached.',
+    privacyNote:
+      'Stored: your answers, interface language, device size category, and a timestamp. Nothing else.',
+    send: 'Send feedback',
+    sending: 'Sending…',
     thanksTitle: 'Thank you — genuinely.',
     thanksCopy:
-      'The feedback form opened in a new tab. MindPulse saved only a local “feedback opened” marker on this device.',
+      'Your anonymous feedback was saved and will directly shape what gets fixed next.',
+    errorCopy: 'Feedback could not be sent right now. Please try again later.',
+    rateLimited:
+      'You have sent several notes today — thank you! Please come back tomorrow.',
     close: 'Close feedback',
   },
   authChecking: 'Checking your session…',
@@ -472,14 +524,41 @@ const RU: UiCopy = {
     eyebrow: 'Отзыв о студенческой бете',
     title: 'Помоги сделать MindPulse полезнее',
     intro:
-      'После одной реальной задачи расскажи, что помогло, что было непонятно и что стоит улучшить. Не отправляй содержимое приватного чата, пароли, документы или чувствительные данные.',
-    send: 'Открыть форму отзыва',
-    unavailableTitle: 'Форма отзыва не подключена',
-    unavailableCopy:
-      'Перед запуском нужно настроить настоящую ссылку на форму. Фальшивый адрес не используется.',
+      'Одна минута, анонимно. Не указывай содержимое приватного чата, пароли или личные данные.',
+    flowLabel: 'О какой части идёт речь?',
+    flowOptions: {
+      landing: 'Главная страница',
+      dashboard: 'Дашборд',
+      study: 'Помощь в учёбе',
+      planner: 'Планировщик дня',
+      motivation: 'Перезапуск мотивации',
+      habits: 'Коуч привычек',
+      goals: 'Разбор целей',
+      reflection: 'Быстрая рефлексия',
+      recovery: 'Режим восстановления',
+      beta: 'Бета-тест в целом',
+      other: 'Другое',
+    },
+    helpedLabel: 'Это помогло продвинуться?',
+    confusingLabel: 'Было ли что-то непонятно?',
+    expectationLabel: 'Совпало ли с ожиданиями?',
+    yes: 'Да',
+    no: 'Нет',
+    skip: 'Пропустить',
+    suggestionLabel: 'Что бы ты улучшил(а)? (необязательно)',
+    suggestionPlaceholder: 'Короткое предложение, до 500 символов…',
+    consentLabel:
+      'Отправить анонимно, чтобы улучшить MindPulse. Аккаунт, чат и личные данные не прикрепляются.',
+    privacyNote:
+      'Сохраняются: твои ответы, язык интерфейса, категория устройства и время. Больше ничего.',
+    send: 'Отправить отзыв',
+    sending: 'Отправляем…',
     thanksTitle: 'Спасибо — правда.',
     thanksCopy:
-      'Форма открылась в новой вкладке. MindPulse сохранил на этом устройстве только локальную отметку об открытии формы.',
+      'Анонимный отзыв сохранён и напрямую повлияет на то, что исправим дальше.',
+    errorCopy: 'Не получилось отправить отзыв. Попробуй позже.',
+    rateLimited:
+      'Сегодня ты уже отправил(а) несколько отзывов — спасибо! Возвращайся завтра.',
     close: 'Закрыть форму отзыва',
   },
   authChecking: 'Проверяем сессию…',
@@ -662,14 +741,40 @@ const KK: UiCopy = {
     eyebrow: 'Студенттік бета туралы пікір',
     title: 'MindPulse-ті пайдалырақ етуге көмектес',
     intro:
-      'Бір нақты тапсырмадан кейін не көмектескенін, не түсініксіз болғанын және нені жақсарту керегін айт. Жеке чат мазмұнын, құпиясөздерді, құжаттарды немесе сезімтал деректерді жіберме.',
-    send: 'Пікір формасын ашу',
-    unavailableTitle: 'Пікір формасы қосылмаған',
-    unavailableCopy:
-      'Іске қосар алдында нақты форма сілтемесін баптау керек. Жалған сілтеме қолданылмайды.',
+      'Бір минут, анонимді. Жеке чат мазмұнын, құпиясөздерді немесе жеке деректерді жазба.',
+    flowLabel: 'Қай бөлім туралы?',
+    flowOptions: {
+      landing: 'Басты бет',
+      dashboard: 'Басқару тақтасы',
+      study: 'Оқу көмегі',
+      planner: 'Күн жоспарлаушы',
+      motivation: 'Мотивация қалпына келтіру',
+      habits: 'Әдет коучы',
+      goals: 'Мақсат талдауы',
+      reflection: 'Жылдам рефлексия',
+      recovery: 'Қалпына келу режимі',
+      beta: 'Жалпы бета-тест',
+      other: 'Басқа',
+    },
+    helpedLabel: 'Бұл алға жылжуға көмектесті ме?',
+    confusingLabel: 'Түсініксіз нәрсе болды ма?',
+    expectationLabel: 'Күткеніңе сай келді ме?',
+    yes: 'Иә',
+    no: 'Жоқ',
+    skip: 'Өткізу',
+    suggestionLabel: 'Нені жақсартар едің? (міндетті емес)',
+    suggestionPlaceholder: 'Қысқа ұсыныс, 500 таңбаға дейін…',
+    consentLabel:
+      'MindPulse-ті жақсарту үшін анонимді жіберу. Аккаунт, чат және жеке деректер тіркелмейді.',
+    privacyNote:
+      'Сақталады: жауаптарың, интерфейс тілі, құрылғы санаты және уақыт. Басқа ештеңе.',
+    send: 'Пікір жіберу',
+    sending: 'Жіберілуде…',
     thanksTitle: 'Шын жүректен рақмет.',
     thanksCopy:
-      'Форма жаңа бетте ашылды. MindPulse бұл құрылғыда тек форманың ашылғаны туралы жергілікті белгі сақтады.',
+      'Анонимді пікірің сақталды және келесі түзетулерге тікелей әсер етеді.',
+    errorCopy: 'Пікірді қазір жіберу мүмкін болмады. Кейінірек қайталап көр.',
+    rateLimited: 'Бүгін бірнеше пікір жібердің — рақмет! Ертең қайта орал.',
     close: 'Пікір формасын жабу',
   },
   authChecking: 'Сессия тексерілуде…',

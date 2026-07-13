@@ -25,7 +25,7 @@ const privacyNotes = [
   },
   {
     title: 'Feedback',
-    copy: 'Feedback is optional and opens in an external form. MindPulse stores only a local “feedback opened” marker; do not paste private chat content into the form.',
+    copy: 'Feedback is optional and anonymous. MindPulse stores only your answers, an optional short suggestion, the interface language, a broad device category (mobile/tablet/desktop), and a timestamp — never your account, chat content, or IP address.',
   },
   {
     title: 'Beta retention',

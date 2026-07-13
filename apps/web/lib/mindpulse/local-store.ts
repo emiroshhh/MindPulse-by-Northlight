@@ -3,7 +3,6 @@ export const GUEST_FOCUS_KEY = 'mindpulse-today-focus-v1';
 export const GUEST_AGENT_KEY = 'mindpulse-guest-agent-plans-v1';
 export const LANGUAGE_KEY = 'mindpulse-language-v1';
 export const GUEST_BANNER_KEY = 'mindpulse-guest-banner-dismissed-v1';
-export const FEEDBACK_KEY = 'mindpulse-feedback-v1';
 
 export function readJson<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback;
