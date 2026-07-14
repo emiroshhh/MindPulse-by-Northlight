@@ -1,3 +1,4 @@
+import { EnglishOnlyNotice } from '@/components/mindpulse/english-only-notice';
 import type { Metadata } from 'next';
 import { ArrowLeft, ArrowRight, Brain, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
@@ -26,6 +27,10 @@ const privacyNotes = [
   {
     title: 'Feedback',
     copy: 'Feedback is optional and anonymous. MindPulse stores only your answers, an optional short suggestion, the interface language, a broad device category (mobile/tablet/desktop), and a timestamp — never your account, chat content, or IP address.',
+  },
+  {
+    title: 'Beta measurement',
+    copy: 'MindPulse counts how often core flows are used (for example "a recovery plan was created today") as anonymous daily totals. These counters contain no user ids, no text, and no device identifiers.',
   },
   {
     title: 'Beta retention',
@@ -57,6 +62,7 @@ export default function PrivacyPage() {
       </header>
 
       <main id="main-content" className="mx-auto max-w-5xl px-5 py-12 sm:px-8">
+        <EnglishOnlyNotice />
         <Link
           href="/app"
           className="inline-flex min-h-11 items-center gap-2 rounded-full bg-surface px-5 text-sm font-semibold text-ink shadow-soft hover:bg-sage-soft"
@@ -105,16 +111,17 @@ export default function PrivacyPage() {
           <div className="mt-4 space-y-4 leading-8 text-muted">
             <p>
               Guests can remove local MindPulse data by clearing this site’s
-              browser storage. Account deletion is not yet self-service during
-              the beta.
+              browser storage. Logged-in users can permanently delete their
+              account and all stored data (email, password hash, sessions, chat
+              history, saved plans, and usage counts) from the Account section
+              of the dashboard — deletion requires the account password and
+              cannot be undone.
             </p>
             <p>
-              To request account-data removal or ask a privacy question, use the
-              configured feedback form and clearly label the message as a
-              deletion or privacy request. Include only the account email needed
-              to identify the account—never a password, session token, or
-              private chat content. If the form is unavailable, the beta contact
-              channel has not yet been configured.
+              For privacy questions, use the in-app feedback form and clearly
+              label the message as a privacy request. Never include a password,
+              session token, or private chat content — feedback is stored
+              without any account link, so it cannot be traced back to you.
             </p>
           </div>
           <div className="mt-5">

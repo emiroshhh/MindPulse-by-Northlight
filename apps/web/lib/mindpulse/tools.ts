@@ -46,7 +46,8 @@ export const languages: Array<{
 }> = [
   { id: 'en', label: 'English', prompt: 'English' },
   { id: 'ru', label: 'Русский', prompt: 'Russian' },
-  { id: 'kk', label: 'Қазақша', prompt: 'Kazakh' },
+  // Kazakh is labeled beta until safety patterns and copy get native review.
+  { id: 'kk', label: 'Қазақша (beta)', prompt: 'Kazakh' },
 ];
 
 export const mindPulseTools: MindPulseTool[] = [

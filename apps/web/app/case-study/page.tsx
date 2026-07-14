@@ -1,3 +1,4 @@
+import { EnglishOnlyNotice } from '@/components/mindpulse/english-only-notice';
 import type { Metadata } from 'next';
 import {
   ArrowLeft,
@@ -80,6 +81,7 @@ export default function CaseStudyPage() {
       </header>
 
       <main id="main-content" className="mx-auto max-w-6xl px-5 py-12 sm:px-8">
+        <EnglishOnlyNotice />
         <Link
           href="/app"
           className="inline-flex min-h-11 items-center gap-2 rounded-full bg-surface px-5 text-sm font-semibold text-ink shadow-soft hover:bg-sage-soft"

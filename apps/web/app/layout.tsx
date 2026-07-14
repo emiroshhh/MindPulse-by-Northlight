@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import { LanguageHtmlSync } from '@/components/language-html-sync';
 import { ServiceWorkerRegister } from '@/components/service-worker-register';
 
 export const metadata: Metadata = {
@@ -29,6 +30,7 @@ export default function RootLayout({
           Skip to content
         </a>
         {children}
+        <LanguageHtmlSync />
         <ServiceWorkerRegister />
       </body>
     </html>

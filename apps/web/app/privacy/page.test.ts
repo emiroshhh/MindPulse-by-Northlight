@@ -15,6 +15,8 @@ describe('/privacy', () => {
     expect(source).toContain('no fixed automatic deletion period');
     expect(source).toContain('Deletion and beta contact');
     expect(source).toContain('Request account-data help');
-    expect(source).toContain('never a password, session token');
+    expect(source).toContain('permanently delete their');
+    expect(source).toContain('Never include a password');
+    expect(source).toContain('Beta measurement');
   });
 });

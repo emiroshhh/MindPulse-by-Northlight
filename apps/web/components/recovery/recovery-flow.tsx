@@ -21,6 +21,7 @@ import { sendBetaEvent } from '@/lib/mindpulse/beta-events';
 import {
   GUEST_RECOVERY_KEY,
   LANGUAGE_KEY,
+  applyDocumentLanguage,
   readJson,
   writeJson,
 } from '@/lib/mindpulse/local-store';
@@ -94,6 +95,7 @@ export function RecoveryFlow({
 
   useEffect(() => {
     writeJson(LANGUAGE_KEY, language);
+    applyDocumentLanguage(language);
   }, [language]);
 
   useEffect(() => {

@@ -25,11 +25,13 @@ import {
   GUEST_AGENT_KEY,
   GUEST_BANNER_KEY,
   LANGUAGE_KEY,
+  applyDocumentLanguage,
   localId,
   readJson,
   writeJson,
 } from '@/lib/mindpulse/local-store';
 import { languages, type LanguageCode } from '@/lib/mindpulse/tools';
+import { AccountSection } from './dashboard/account-section';
 import { NextActionCard } from './dashboard/next-action-card';
 import { InsightsCard } from './dashboard/insights-card';
 import { ChatPanel } from './mindpulse/chat-panel';
@@ -116,6 +118,7 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
 
   useEffect(() => {
     writeJson(LANGUAGE_KEY, language);
+    applyDocumentLanguage(language);
   }, [language]);
 
   async function runAgent(prompt = agentInput) {
@@ -445,6 +448,10 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
             </div>
           </div>
         </section>
+
+        {authReady && user && (
+          <AccountSection email={user.email} copy={ui.account} />
+        )}
 
         <div className="mt-8 flex justify-end">
           <FeedbackModal language={language} flow="dashboard" />

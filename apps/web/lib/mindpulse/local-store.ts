@@ -8,6 +8,14 @@ export const GUEST_TOOL_RESULTS_KEY = 'mindpulse-guest-tool-results-v1';
 export const NEXT_ACTION_KEY = 'mindpulse-next-action-v1';
 export const ONBOARDED_KEY = 'mindpulse-onboarded-v1';
 
+/**
+ * Keep the document language attribute in sync with the selected UI language
+ * so screen readers announce content correctly (WCAG 3.1.1).
+ */
+export function applyDocumentLanguage(language: string) {
+  if (typeof document !== 'undefined') document.documentElement.lang = language;
+}
+
 export function readJson<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback;
   try {

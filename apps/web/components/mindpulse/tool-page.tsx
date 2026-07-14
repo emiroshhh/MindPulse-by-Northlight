@@ -20,7 +20,12 @@ import {
   authHeaders,
   healSessionTokenFallback,
 } from '@/lib/mindpulse/client-auth';
-import { LANGUAGE_KEY, readJson, writeJson } from '@/lib/mindpulse/local-store';
+import {
+  LANGUAGE_KEY,
+  applyDocumentLanguage,
+  readJson,
+  writeJson,
+} from '@/lib/mindpulse/local-store';
 import {
   isLanguageCode,
   languages,
@@ -69,6 +74,7 @@ export function ToolPage({
 
   useEffect(() => {
     writeJson(LANGUAGE_KEY, language);
+    applyDocumentLanguage(language);
   }, [language]);
 
   useEffect(() => {

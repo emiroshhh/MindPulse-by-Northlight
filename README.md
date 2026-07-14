@@ -126,7 +126,7 @@ migrations/      Cloudflare D1 migrations
 
 Prerequisites:
 
-- Node.js 20 or newer
+- Node.js 22 (see `.nvmrc`)
 - npm 11-compatible tooling
 - a Gemini API key for real AI replies
 - optionally, a DeepSeek API key if `AI_PROVIDER=deepseek` is enabled

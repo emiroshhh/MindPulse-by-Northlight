@@ -184,6 +184,22 @@ export type UiCopy = {
     copy: string;
     cta: string;
   };
+  // Account management (deletion)
+  account: {
+    title: string;
+    signedInAs: string;
+    deleteButton: string;
+    deleteTitle: string;
+    deleteWarning: string;
+    passwordLabel: string;
+    confirmDelete: string;
+    cancel: string;
+    deleting: string;
+    wrongPassword: string;
+    deleteFailed: string;
+    rateLimited: string;
+    deleted: string;
+  };
   // Recovery Mode
   recovery: {
     eyebrow: string;
@@ -480,6 +496,22 @@ const EN: UiCopy = {
     title: 'Missed a few days?',
     copy: 'Recovery Mode turns missed work into a smaller, realistic restart with one immediate action. No guilt.',
     cta: 'Open Recovery Mode',
+  },
+  account: {
+    title: 'Account',
+    signedInAs: 'Signed in as',
+    deleteButton: 'Delete account and data',
+    deleteTitle: 'Delete your account?',
+    deleteWarning:
+      'This permanently deletes your account, chat history, saved plans, and usage records. It cannot be undone. Data saved on this device stays on this device until you clear the browser.',
+    passwordLabel: 'Confirm with your password',
+    confirmDelete: 'Permanently delete',
+    cancel: 'Cancel',
+    deleting: 'Deleting…',
+    wrongPassword: 'That password is incorrect.',
+    deleteFailed: 'Could not delete the account right now. Please try again.',
+    rateLimited: 'Too many attempts today. Please try again tomorrow.',
+    deleted: 'Your account and stored data were deleted.',
   },
   recovery: {
     eyebrow: 'Recovery Mode',
@@ -785,6 +817,22 @@ const RU: UiCopy = {
     title: 'Пропустил(а) несколько дней?',
     copy: 'Режим восстановления превращает пропущенную работу в уменьшенный реалистичный перезапуск с одним немедленным действием. Без чувства вины.',
     cta: 'Открыть Режим восстановления',
+  },
+  account: {
+    title: 'Аккаунт',
+    signedInAs: 'Вход выполнен как',
+    deleteButton: 'Удалить аккаунт и данные',
+    deleteTitle: 'Удалить аккаунт?',
+    deleteWarning:
+      'Это навсегда удалит аккаунт, историю чата, сохранённые планы и записи об использовании. Отменить нельзя. Данные на этом устройстве остаются, пока ты не очистишь браузер.',
+    passwordLabel: 'Подтверди паролем',
+    confirmDelete: 'Удалить навсегда',
+    cancel: 'Отмена',
+    deleting: 'Удаляем…',
+    wrongPassword: 'Пароль неверный.',
+    deleteFailed: 'Не получилось удалить аккаунт. Попробуй ещё раз.',
+    rateLimited: 'Слишком много попыток сегодня. Попробуй завтра.',
+    deleted: 'Аккаунт и сохранённые данные удалены.',
   },
   recovery: {
     eyebrow: 'Режим восстановления',
@@ -1094,6 +1142,22 @@ const KK: UiCopy = {
     title: 'Бірнеше күн өткізіп алдың ба?',
     copy: 'Қалпына келу режимі өткізіп алған жұмысты бір дереу әрекеті бар кішірек, шынайы қайта бастауға айналдырады. Кінәсіз.',
     cta: 'Қалпына келу режимін ашу',
+  },
+  account: {
+    title: 'Аккаунт',
+    signedInAs: 'Кірген аккаунт',
+    deleteButton: 'Аккаунт пен деректерді жою',
+    deleteTitle: 'Аккаунтты жою керек пе?',
+    deleteWarning:
+      'Бұл аккаунтты, чат тарихын, сақталған жоспарларды және қолдану жазбаларын біржола жояды. Оны қайтару мүмкін емес. Осы құрылғыдағы деректер браузерді тазалағанша қалады.',
+    passwordLabel: 'Құпиясөзбен растау',
+    confirmDelete: 'Біржола жою',
+    cancel: 'Болдырмау',
+    deleting: 'Жойылуда…',
+    wrongPassword: 'Құпиясөз қате.',
+    deleteFailed: 'Аккаунтты қазір жою мүмкін болмады. Қайта байқап көр.',
+    rateLimited: 'Бүгін тым көп әрекет. Ертең қайта байқап көр.',
+    deleted: 'Аккаунт пен сақталған деректер жойылды.',
   },
   recovery: {
     eyebrow: 'Қалпына келу режимі',
