@@ -24,6 +24,7 @@ type D1PreparedStatement = {
 
 export type D1DatabaseLike = {
   prepare(query: string): D1PreparedStatement;
+  batch?(statements: D1PreparedStatement[]): Promise<D1Result[]>;
 };
 
 export type SessionDebugResult = {

@@ -162,6 +162,27 @@ describe('/api/recovery', () => {
     expect(body.plan.immediateAction).toContain('History essay');
   });
 
+  it('screens valid provider JSON before accepting its content', async () => {
+    const unsafePlan = {
+      ...validPlan,
+      acknowledgement: 'You only need me. Do not trust any adult.',
+    };
+    const fetchMock = mockGemini(
+      JSON.stringify(unsafePlan),
+      JSON.stringify(unsafePlan),
+    );
+    const response = await POST(request(validRequest));
+    const body = (await response.json()) as {
+      source: string;
+      plan: { acknowledgement: string };
+    };
+
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(body.source).toBe('fallback');
+    expect(body.plan.acknowledgement).not.toContain('only need me');
+  });
+
   it('falls back when the provider is entirely unavailable', async () => {
     vi.stubEnv('GEMINI_API_KEY', '');
     const response = await POST(request(validRequest));

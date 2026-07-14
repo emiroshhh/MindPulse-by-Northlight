@@ -68,7 +68,8 @@ not have; never present itself as a counselor; follow the student's language.
 Recovery prompts additionally demand strict JSON matching the zod schema; two
 failed validations produce a deterministic non-AI plan built only from the
 student's own items (nothing invented, at most 3 urgent items, fixed deadlines
-first).
+first). Every schema-valid provider attempt is also screened for unsafe model
+output before it can be accepted.
 
 ## Tests
 
@@ -77,4 +78,4 @@ first).
 - `apps/web/app/api/recovery/route.test.ts` cover: en/ru/kk true positives,
   en/ru/kk idiom false positives, localized reply pairing for kk, region-scoped
   resources, quota not consumed by crisis replies, blocked-output replacement,
-  JSON repair/fallback, and no provider-body logging.
+  JSON repair/fallback, recovery-output screening, and no provider-body logging.

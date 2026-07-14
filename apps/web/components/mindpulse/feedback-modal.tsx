@@ -201,7 +201,7 @@ export function FeedbackModal({
         onClick={openModal}
         className={
           compact
-            ? 'font-semibold hover:text-ink'
+            ? 'inline-flex min-h-10 items-center font-semibold hover:text-ink'
             : 'inline-flex min-h-11 items-center gap-2 rounded-full bg-surface px-5 text-sm font-semibold text-ink shadow-soft hover:bg-sage-soft'
         }
       >

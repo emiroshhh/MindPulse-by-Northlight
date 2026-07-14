@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react';
 import type { UiCopy } from '@/lib/mindpulse/i18n';
 import { authHeaders } from '@/lib/mindpulse/client-auth';
 import {
-  GUEST_CHAT_KEY,
   GUEST_RECOVERY_KEY,
   GUEST_TOOL_RESULTS_KEY,
   readJson,
@@ -37,7 +36,6 @@ export function InsightsCard({
   useEffect(() => {
     if (!authReady) return;
     if (isGuest) {
-      const chat = readJson<unknown[]>(GUEST_CHAT_KEY, []);
       const results = readJson<unknown[]>(GUEST_TOOL_RESULTS_KEY, []);
       const recovery = readJson<{ plan?: unknown } | null>(
         GUEST_RECOVERY_KEY,

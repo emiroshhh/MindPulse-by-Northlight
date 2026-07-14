@@ -26,12 +26,12 @@ export default function ImpactPage() {
   return (
     <div className="ambient min-h-screen">
       <header className="border-b border-ink/5 bg-canvas/85 backdrop-blur-xl">
-        <nav className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 py-4 sm:px-8">
+        <nav className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-8">
           <Link href="/app" className="flex items-center gap-3">
             <span className="grid h-10 w-10 place-items-center rounded-2xl bg-ink text-canvas">
               <Brain size={20} />
             </span>
-            <b>MindPulse</b>
+            <b className="hidden sm:block">MindPulse</b>
           </Link>
           <div className="flex flex-wrap items-center justify-end gap-2">
             <FeedbackModal compact />

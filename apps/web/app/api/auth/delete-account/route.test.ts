@@ -4,9 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => {
   const deletedStatements: string[] = [];
   const prepare = vi.fn((query: string) => ({
-    bind: (..._values: unknown[]) => ({
+    bind: (...values: unknown[]) => ({
+      query,
+      values,
       run: vi.fn(async () => {
-        if (query.startsWith('DELETE')) deletedStatements.push(query);
         return { success: true, meta: { changes: 1 } };
       }),
       first: vi.fn(async () => {
@@ -18,9 +19,16 @@ const mocks = vi.hoisted(() => {
       all: vi.fn(async () => ({ success: true, results: [] })),
     }),
   }));
+  const batch = vi.fn(async (statements: Array<{ query: string }>) => {
+    deletedStatements.push(...statements.map((statement) => statement.query));
+    return statements.map(() => ({
+      success: true,
+      meta: { changes: 1 },
+    }));
+  });
   return {
     getCurrentUserFromRequest: vi.fn(),
-    getAuthDb: vi.fn().mockResolvedValue({ prepare }),
+    getAuthDb: vi.fn().mockResolvedValue({ prepare, batch }),
     verifyPassword: vi.fn(),
     clearSessionCookieHeaders: () => [
       'mindpulse_session=; Max-Age=0; Path=/',
@@ -32,6 +40,7 @@ const mocks = vi.hoisted(() => {
         headers: { 'Cache-Control': 'no-store' },
       }),
     prepare,
+    batch,
     deletedStatements,
   };
 });
@@ -59,10 +68,14 @@ beforeEach(() => {
     name: 'Student',
     created_at: '2026-01-01T00:00:00.000Z',
   });
-  mocks.getAuthDb.mockResolvedValue({ prepare: mocks.prepare });
+  mocks.getAuthDb.mockResolvedValue({
+    prepare: mocks.prepare,
+    batch: mocks.batch,
+  });
   mocks.verifyPassword.mockResolvedValue(true);
   vi.mocked(checkRateLimitDurable).mockResolvedValue(true);
   mocks.deletedStatements.length = 0;
+  mocks.batch.mockClear();
 });
 
 afterEach(() => {
@@ -91,6 +104,7 @@ describe('/api/auth/delete-account', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ ok: true });
     expect(mocks.deletedStatements).toEqual([
+      'DELETE FROM rate_limits WHERE key = ?',
       'DELETE FROM chat_messages WHERE user_id = ?',
       'DELETE FROM agent_tasks WHERE user_id = ?',
       'DELETE FROM user_preferences WHERE user_id = ?',
@@ -101,6 +115,15 @@ describe('/api/auth/delete-account', () => {
     const cookies = response.headers.getSetCookie?.() ?? [];
     expect(cookies.join(';')).toContain('mindpulse_session=');
     expect(cookies.join(';')).toContain('__Host-mindpulse_session=');
+  });
+
+  it('does not clear cookies when the atomic deletion batch fails', async () => {
+    mocks.batch.mockRejectedValueOnce(new Error('D1 batch failed'));
+    const response = await POST(request({ password: 'correct-password' }));
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ error: 'auth_unavailable' });
+    expect(response.headers.getSetCookie?.() ?? []).toHaveLength(0);
   });
 
   it('rejects other methods', () => {

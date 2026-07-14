@@ -200,12 +200,12 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
   return (
     <div className="ambient min-h-screen">
       <header className="sticky top-0 z-40 border-b border-ink/5 bg-canvas/85 backdrop-blur-xl">
-        <nav className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 py-4 sm:px-8">
+        <nav className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-8">
           <Link href="/app" className="flex items-center gap-3">
             <span className="grid h-10 w-10 place-items-center rounded-2xl bg-ink text-canvas">
               <Brain size={20} />
             </span>
-            <span>
+            <span className="hidden sm:block">
               <b className="block text-sm">MindPulse</b>
               <small className="font-semibold uppercase tracking-[.16em] text-muted">
                 by Northlight
@@ -280,13 +280,13 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
               <div className="flex flex-wrap gap-2">
                 <Link
                   href="/signup"
-                  className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-canvas"
+                  className="inline-flex min-h-10 items-center rounded-full bg-ink px-4 py-2 text-sm font-semibold text-canvas"
                 >
                   {ui.guestBannerCreate}
                 </Link>
                 <Link
                   href="/login"
-                  className="rounded-full bg-canvas px-4 py-2 text-sm font-semibold text-ink"
+                  className="inline-flex min-h-10 items-center rounded-full bg-canvas px-4 py-2 text-sm font-semibold text-ink"
                 >
                   {ui.guestBannerLogin}
                 </Link>
@@ -295,7 +295,7 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
                     writeJson(GUEST_BANNER_KEY, true);
                     setShowGuestBanner(false);
                   }}
-                  className="rounded-full bg-canvas/70 px-4 py-2 text-sm font-semibold text-muted"
+                  className="inline-flex min-h-10 items-center rounded-full bg-canvas/70 px-4 py-2 text-sm font-semibold text-muted"
                 >
                   {ui.guestBannerContinue}
                 </button>
@@ -394,7 +394,7 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
               <button
                 key={prompt}
                 onClick={() => void runAgent(prompt)}
-                className="rounded-full bg-sage-soft px-4 py-2 text-sm font-semibold text-ink"
+                className="min-h-10 rounded-full bg-sage-soft px-4 py-2 text-sm font-semibold text-ink"
               >
                 {prompt}
               </button>

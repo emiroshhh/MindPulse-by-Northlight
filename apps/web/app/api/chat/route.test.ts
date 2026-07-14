@@ -276,6 +276,24 @@ describe('/api/chat', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
+  it('routes an explicit Russian suicide phrase around AI and quota', async () => {
+    mockGemini('should never be sent');
+    const response = await POST(
+      request({
+        message: 'Я хочу покончить с собой',
+        mode: 'study',
+        language: 'ru',
+      }),
+    );
+    const body = (await response.json()) as { crisis: boolean };
+
+    expect(response.status).toBe(200);
+    expect(body.crisis).toBe(true);
+    expect(fetch).not.toHaveBeenCalled();
+    expect(authMocks.usage.size).toBe(0);
+    expect(authMocks.historyWrites).toBe(0);
+  });
+
   it('scopes crisis resources to the caller region without assuming Kazakhstan', async () => {
     mockGemini('should never be sent');
     const kzRequest = new Request('http://localhost/api/chat', {

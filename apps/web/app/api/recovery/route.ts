@@ -1,4 +1,5 @@
 import {
+  assessModelOutput,
   assessUserInput,
   buildFallbackRecoveryPlan,
   parseRecoveryPlanText,
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
     systemPrompt,
     interactionInput: input,
   });
-  if (first.ok) {
+  if (first.ok && !assessModelOutput(first.reply).flagged) {
     const attempt = parseRecoveryPlanText(first.reply);
     if (attempt.ok) plan = attempt.plan;
   }
@@ -82,7 +83,7 @@ export async function POST(request: Request) {
       systemPrompt: `${systemPrompt}\n\n${RECOVERY_REPAIR_INSTRUCTION}`,
       interactionInput: input,
     });
-    if (second.ok) {
+    if (second.ok && !assessModelOutput(second.reply).flagged) {
       const attempt = parseRecoveryPlanText(second.reply);
       if (attempt.ok) plan = attempt.plan;
     }

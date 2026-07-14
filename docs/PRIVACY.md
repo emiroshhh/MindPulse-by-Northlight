@@ -11,8 +11,8 @@ in the app; this file documents the implementation behind each claim.
 | Account email, PBKDF2 password hash, name                      | D1 `users`                         | login                         | hash format `pbkdf2-sha256$100000$salt$hash`                                                                                                                                      |
 | Session token hash                                             | D1 `sessions`                      | session validation            | HMAC-SHA-256 keyed by `SESSION_SECRET`; raw token never stored                                                                                                                    |
 | Account chat history, saved plans/results/recovery plans       | D1 `chat_messages` / `agent_tasks` | account sync                  | owner-scoped queries                                                                                                                                                              |
-| Daily message counts                                           | D1 `daily_usage`                   | fair-use limits               | guest key = SHA-256(ip\|user-agent), not reversible to an IP                                                                                                                      |
-| Rate-limit counters                                            | D1 `rate_limits`                   | brute-force protection        | keys are SHA-256 hashes; raw IPs never stored                                                                                                                                     |
+| Daily message counts                                           | D1 `daily_usage`                   | fair-use limits               | guest key = SHA-256(ip\|user-agent); raw IPs are not stored, but this pseudonymous key may be guessable offline if the database is disclosed                                      |
+| Rate-limit counters                                            | D1 `rate_limits`                   | brute-force protection        | pseudonymous SHA-256 keys; raw IPs are not stored, but low-entropy inputs can be guessed offline                                                                                  |
 | Feedback                                                       | D1 `feedback`                      | product improvement           | flow, three yes/no answers, optional suggestion ≤500 chars, locale, device category, timestamp — **no user id, session, IP, or email**; consent required to submit but not stored |
 | Beta counters                                                  | D1 `events`                        | honest usefulness measurement | aggregate (name, day, count) only                                                                                                                                                 |
 
@@ -40,9 +40,9 @@ Infrastructure: Cloudflare Workers + D1.
 - Guest data: on the device until browser storage is cleared.
 - Account data: retained during the beta; **self-service deletion** at the
   dashboard Account section → `POST /api/auth/delete-account` (password
-  re-verification, explicit deletes across all user-owned tables, session
-  cookies cleared). No fixed automatic retention period is promised yet, and
-  the privacy page says so.
+  re-verification, one D1 transactional batch across every user-owned table
+  and the account limiter key, then session cookies cleared). No fixed
+  automatic retention period is promised yet, and the privacy page says so.
 - Feedback and event rows are not linkable to a person and are kept for
   product analysis.
 

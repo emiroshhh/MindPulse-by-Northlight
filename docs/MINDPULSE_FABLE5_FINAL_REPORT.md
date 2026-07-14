@@ -261,3 +261,89 @@ COLUMN`; the runtime schema layer makes them idempotent-safe).
 | University portfolio     | **9** | Real engineering decisions with honest documentation, tests, and a truthful case study.                                            |
 | Competition presentation | **8** | Strong demo path (quick start → recovery fallback works even offline from AI); no real usage numbers yet — present goals as goals. |
 | Production reliability   | **7** | Durable limits, graceful degradation, atomic counters; single-region D1 and no e2e suite temper the score.                         |
+
+## Independent Codex Verification
+
+The complete evidence record is
+[`CODEX_INDEPENDENT_VERIFICATION.md`](CODEX_INDEPENDENT_VERIFICATION.md). This
+section supersedes earlier readiness claims where the two differ.
+
+1. **Exact repository state.** Audited on 2026-07-14 at local commit
+   `bcfbf54452cbcf410df4e2753741da3e097ebbb0`, branch
+   `feature/mindpulse-platform-beta`, initially clean, against remote PR head
+   `6529840db658442f880ab5dcec5283c858cf8c78`. The transformation-only range
+   was 11 commits, 105 files, +7,600/-4,994. No submodules. No remote write.
+2. **Claims confirmed.** Guest-first routes, one-action dashboard, Recovery and
+   provider-independent fallback, consented/minimized feedback, aggregate
+   events, crisis/quota bypass, account persistence/deletion, security headers,
+   responsive layout, 221-test baseline, and production build were reproduced.
+3. **Claims partially confirmed.** Full locale support is limited by documented
+   English-only pages and unreviewed kk safety copy; rate-limit durability was
+   reviewed/tested but not deployed-load-tested; migrations passed locally but
+   production state was not inspected; all tool variants were not manually
+   completed.
+4. **Claims disproven.** “Exactly 221 tests” describes the untouched baseline,
+   not the repaired final state (230 tests). The initial “clean lint/build”
+   claim omitted two lint warnings. The privacy phrase “not reversible” was too
+   strong for unsalted SHA-256 guest/rate-limit keys.
+5. **Defects found.** Missing Recovery output safety screen; non-transactional
+   account deletion; duplicated production security-header values; 320px
+   header overflow; sub-40px compact targets; overly broad safety false
+   positives; two unused bindings.
+6. **Fixes implemented.** Recovery model-output screening, D1 transactional
+   deletion including limiter cleanup, one authoritative Worker-header layer,
+   responsive/touch-target corrections, narrow negation/craft guards, lint
+   cleanup, and matching privacy/architecture/safety/limitations docs.
+7. **Tests added.** Recovery unsafe-valid-JSON fallback, deletion batch failure
+   and no cookie clear, Russian crisis API bypass, five benign safety phrases,
+   and an adversarial test proving the craft guard does not hide “cut myself
+   some more”.
+8. **Exact validation results.** Baseline: shared 42 + web 179 = 221. Final:
+   shared 48 + web 182 = 230, zero failures; lint had no warnings/errors aside
+   from Next lint's own deprecation notice; typecheck exited 0; OpenNext build
+   exited 0 with its documented Windows compatibility warning; production-like
+   root returned single-valued CSP/HSTS/DENY/nosniff/referrer/permissions.
+9. **Migration assessment.** Fresh local 0001-0006 replay passed, second apply
+   was a no-op, integrity was `ok`, foreign-key check was empty, and runtime
+   queries matched schema. Production D1 identity/data/backup were not checked,
+   and 0006 has no down migration.
+10. **Production-only risks.** Unseen schema drift, binding/secrets mistakes,
+    real provider behavior, cookie reliability, multi-isolate load, PR conflict,
+    absent remote CI, and no available public URL comparison.
+11. **Remaining security risks.** CSP `unsafe-inline`, localStorage bearer
+    fallback, partial signup enumeration, PBKDF2 100k Worker cap, pseudonymous
+    hashes that may be guessed offline, D1-failure in-memory limiter fallback,
+    and 16 low/moderate dependency advisories (none high/critical).
+12. **Remaining safety risks.** Regex screening is not exhaustive; quoted,
+    fictional, third-person, or oblique language can route imperfectly; real
+    provider timeout/error behavior still needs production-secret smoke tests.
+13. **Remaining localization risks.** kk safety/patterns need native review;
+    marketing/auth/documentation bodies intentionally remain English-only;
+    safety copy must never silently fall back.
+14. **Remaining accessibility risks.** Audited keyboard/dialog/labels/roles/
+    overflow/touch targets passed representative checks, but this is not a
+    screen-reader or formal contrast certification across every locale/state.
+15. **Remaining product risks.** No password reset/email verification,
+    per-device next action, evadable guest quota, no streaming, simple insights,
+    frozen legacy mobile workspace, and no real usage claims.
+16. **Required human verification.** Native kk review, KZ official-resource
+    recheck, privacy/legal review for student markets, production D1 backup and
+    schema review, supported-browser cookie matrix, provider smoke tests, PR
+    conflict resolution, and CI on the pushed commit.
+17. **Exact pre-deployment checklist.** Use Node 22.22.3/npm 11.4.2; rerun all
+    gates; review/stage only intended files; scan secrets; resolve PR
+    mergeability; record D1 Time Travel bookmark and export; list migrations;
+    inspect integrity/ledger/binding; confirm secrets and `AUTH_DEBUG` unset.
+18. **Exact post-deployment smoke test.** Verify routes and en/ru/kk document
+    language; single-valued headers; guest/account quota; provider success and
+    missing-key fallback; en/ru/kk crisis bypass/resources; two-account owner
+    isolation; session expiry/logout; deletion and rejected relogin; D1
+    integrity, foreign keys, ledger, and row counts.
+19. **Rollback procedure.** Restore the prior Worker first for app-only failure;
+    stop writes before data recovery; restore the recorded pre-migration D1
+    Time Travel bookmark; recheck integrity/foreign keys/ledger/counts; never
+    hand-edit the migration ledger or improvise a production `DROP COLUMN`.
+20. **Final readiness scores.** Private beta 8/10; public beta 6/10;
+    university portfolio 9/10; competition presentation 8/10; production
+    reliability 6/10. Verdict: safe to push for review; migrations not fully
+    verified; private beta only after production smoke test.

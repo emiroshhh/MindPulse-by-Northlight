@@ -51,15 +51,21 @@ export async function POST(request: Request) {
     const ok = await verifyPassword(password, row.password_hash);
     if (!ok) return json({ error: 'invalid_password' }, 401);
 
-    for (const statement of [
-      'DELETE FROM chat_messages WHERE user_id = ?',
-      'DELETE FROM agent_tasks WHERE user_id = ?',
-      'DELETE FROM user_preferences WHERE user_id = ?',
-      'DELETE FROM daily_usage WHERE user_id = ?',
-      'DELETE FROM sessions WHERE user_id = ?',
-      'DELETE FROM users WHERE id = ?',
-    ]) {
-      await db.prepare(statement).bind(user.id).run();
+    if (!db.batch) throw new Error('D1 batch API is unavailable');
+    const deletes = [
+      db.prepare('DELETE FROM rate_limits WHERE key = ?').bind(limiterKey),
+      db.prepare('DELETE FROM chat_messages WHERE user_id = ?').bind(user.id),
+      db.prepare('DELETE FROM agent_tasks WHERE user_id = ?').bind(user.id),
+      db
+        .prepare('DELETE FROM user_preferences WHERE user_id = ?')
+        .bind(user.id),
+      db.prepare('DELETE FROM daily_usage WHERE user_id = ?').bind(user.id),
+      db.prepare('DELETE FROM sessions WHERE user_id = ?').bind(user.id),
+      db.prepare('DELETE FROM users WHERE id = ?').bind(user.id),
+    ];
+    const results = await db.batch(deletes);
+    if (results.some((result) => !result.success)) {
+      throw new Error('Account deletion transaction failed');
     }
 
     // The client is responsible for clearing the localStorage fallback token.

@@ -40,17 +40,28 @@ describe('safety engine', () => {
     'I need to kill time',
     'That test killed me',
     'The deadline is killing me',
+    "I don't want to die",
+    "I don't want to hurt myself",
+    'I need to cut myself a piece of cardboard for school',
     'I had a rough day',
     // Russian idioms must not trigger crisis routing
     'Я чуть не умерла от смеха',
     'Хочу умереть от смеха',
     'Этот экзамен меня убил',
     'Дедлайн меня убивает',
+    'Я не хочу умереть',
+    'Я не хочу навредить себе',
     // Kazakh idiom (pending native review)
     'күлкіден өлдім',
   ])('does not flag common non-crisis language: %s', (input) =>
     expect(assessUserInput(input).flagged).toBe(false),
   );
+
+  it('does not let the craft-language guard hide an explicit self-harm phrase', () => {
+    expect(assessUserInput('I want to cut myself some more').flagged).toBe(
+      true,
+    );
+  });
   it('blocks diagnostic model claims', () => {
     const result = assessModelOutput('You definitely have depression.');
     expect(result.level).toBe('blocked_output');

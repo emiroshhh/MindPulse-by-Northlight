@@ -246,4 +246,10 @@ The full list lives in [docs/LIMITATIONS.md](docs/LIMITATIONS.md).
 
 ## Project status
 
-The active web application is deployed on Cloudflare Workers and is ready for small, supervised public-beta testing. Product decisions should continue to be driven by real student use and explicit feedback rather than invented traction.
+The active web target is Cloudflare Workers. The transformed local state has
+passed independent verification and is ready for a small private beta only
+after backup, remote migration verification, deployment, and a production
+smoke test. Public beta still requires native Kazakh safety review and the
+human checks in `docs/CODEX_INDEPENDENT_VERIFICATION.md`. Product decisions
+should continue to be driven by real student use and explicit feedback rather
+than invented traction.

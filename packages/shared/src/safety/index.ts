@@ -114,11 +114,14 @@ const FALSE_POSITIVE_PHRASES = [
   /\bkill(?:ing)? time\b/gi,
   /\bthat test killed me\b/gi,
   /\bdeadline is killing me\b/gi,
+  /\bi\s+(?:do\s+not|don'?t)\s+want\s+to\s+(?:die|kill\s+myself|hurt\s+myself|harm\s+myself|cut\s+myself)\b/gi,
+  /\bcut\s+myself\s+(?:a|some)\s+(?:piece|strip|sheet|slice)\s+of\s+(?:paper|cardboard|fabric|tape|string)\b/gi,
   // No \b around Cyrillic: JS \b only understands ASCII \w, so a word
   // boundary next to a Cyrillic letter never matches.
   /умер(?:еть|ла)?\s+от\s+смеха/giu,
   /эт(?:от|а)\s+(?:тест|экзамен|контрольная)\s+меня\s+убил[а]?/giu,
   /дедлайн\s+меня\s+убивает/giu,
+  /я\s+не\s+хочу\s+(?:умереть|покончить\s+с\s+собой|навредить\s+себе|порезать\s+себя)/giu,
   // NEEDS NATIVE REVIEW (kk): "күлкіден өлдім" = "died laughing"
   /күлкіден\s+өл(?:дім|еміз|ді)/giu,
 ];

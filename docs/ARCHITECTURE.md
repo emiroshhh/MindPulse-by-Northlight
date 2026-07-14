@@ -71,7 +71,12 @@ places.
 - **AI structured output**: Recovery Mode requires strict JSON validated by a
   zod schema (`packages/shared/src/recovery.ts`) with one repair retry, then a
   deterministic fallback plan built only from the user's own items. Chat output
-  is free-text but screened by the deterministic safety layer.
+  is free-text but screened by the deterministic safety layer. Valid recovery
+  provider JSON is output-screened before it can be accepted.
+- **Deletion atomicity**: account deletion uses one D1 `batch()` transaction
+  for limiter, chat, saved artifacts, preferences, usage, session, and user
+  rows. A failed statement rolls back the whole batch; cookies clear only
+  after the batch succeeds.
 
 ## Monorepo layout
 
