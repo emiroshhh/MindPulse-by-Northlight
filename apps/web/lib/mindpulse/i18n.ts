@@ -143,6 +143,47 @@ export type UiCopy = {
   // Auth state
   authChecking: string;
   agentNeedLogin: string;
+  // Next action + quick start (dashboard primary card)
+  nextAction: {
+    eyebrow: string;
+    currentTitle: string;
+    doneButton: string;
+    changeButton: string;
+    localNote: string;
+    quickStartTitle: string;
+    quickStartIntro: string;
+    needLabel: string;
+    taskLabel: string;
+    taskPlaceholder: string;
+    submit: string;
+    loading: string;
+    error: string;
+    limitGuest: string;
+    limitAccount: string;
+    resultLabel: string;
+    setAsNext: string;
+    tryAgain: string;
+    recoveryOption: string;
+    recoveryHint: string;
+    doneCelebration: string;
+  };
+  // Insights (honest aggregates only)
+  insights: {
+    title: string;
+    empty: string;
+    activeDays: string;
+    messagesToday: string;
+    savedResults: string;
+    recoveryPlans: string;
+    localNote: string;
+    accountNote: string;
+  };
+  // Recovery entry card on the dashboard
+  recoveryCard: {
+    title: string;
+    copy: string;
+    cta: string;
+  };
   // Recovery Mode
   recovery: {
     eyebrow: string;
@@ -399,6 +440,47 @@ const EN: UiCopy = {
   },
   authChecking: 'Checking your session…',
   agentNeedLogin: 'Sign in to save your plan to your account.',
+  nextAction: {
+    eyebrow: 'What should I do now?',
+    currentTitle: 'Your next action',
+    doneButton: 'Done',
+    changeButton: 'Pick a new one',
+    localNote: 'Stored on this device only.',
+    quickStartTitle: 'Get one clear next action',
+    quickStartIntro:
+      'Pick what you need help with, describe one real task or difficulty, and MindPulse will suggest the smallest useful step.',
+    needLabel: 'What do you need right now?',
+    taskLabel: 'One real task, goal, or difficulty',
+    taskPlaceholder: 'e.g. Essay due Friday and I have not started…',
+    submit: 'Suggest my next action',
+    loading: 'Finding the smallest useful step…',
+    error: 'Could not get a suggestion right now. Please try again.',
+    limitGuest:
+      "You've reached today's free guest limit. Create a free account to continue.",
+    limitAccount: "You've reached today's free limit. Come back tomorrow.",
+    resultLabel: 'Suggested next action',
+    setAsNext: 'Set as my next action',
+    tryAgain: 'Try a different one',
+    recoveryOption: 'I missed work and need to restart',
+    recoveryHint: 'Opens Recovery Mode — a guided restart, not a chat.',
+    doneCelebration: 'Nice. One real step beats a perfect plan.',
+  },
+  insights: {
+    title: 'Your activity',
+    empty:
+      'Not enough activity yet — nothing to show. That is normal on day one.',
+    activeDays: 'days active',
+    messagesToday: 'AI messages today',
+    savedResults: 'saved results',
+    recoveryPlans: 'recovery plans',
+    localNote: 'Based only on activity saved on this device.',
+    accountNote: 'Based only on your saved account activity.',
+  },
+  recoveryCard: {
+    title: 'Missed a few days?',
+    copy: 'Recovery Mode turns missed work into a smaller, realistic restart with one immediate action. No guilt.',
+    cta: 'Open Recovery Mode',
+  },
   recovery: {
     eyebrow: 'Recovery Mode',
     title: 'Fell behind? Restart smaller.',
@@ -662,6 +744,48 @@ const RU: UiCopy = {
   },
   authChecking: 'Проверяем сессию…',
   agentNeedLogin: 'Войдите, чтобы сохранить план в аккаунте.',
+  nextAction: {
+    eyebrow: 'Что делать сейчас?',
+    currentTitle: 'Твоё следующее действие',
+    doneButton: 'Готово',
+    changeButton: 'Выбрать новое',
+    localNote: 'Хранится только на этом устройстве.',
+    quickStartTitle: 'Получи одно ясное следующее действие',
+    quickStartIntro:
+      'Выбери, с чем нужна помощь, опиши одну реальную задачу или трудность — MindPulse предложит самый маленький полезный шаг.',
+    needLabel: 'Что нужно прямо сейчас?',
+    taskLabel: 'Одна реальная задача, цель или трудность',
+    taskPlaceholder: 'напр. Эссе к пятнице, а я ещё не начал(а)…',
+    submit: 'Предложить следующее действие',
+    loading: 'Ищем самый маленький полезный шаг…',
+    error: 'Не получилось получить подсказку. Попробуй ещё раз.',
+    limitGuest:
+      'Дневной лимит для гостей исчерпан. Создай бесплатный аккаунт, чтобы продолжить.',
+    limitAccount: 'Дневной лимит исчерпан. Возвращайся завтра.',
+    resultLabel: 'Предложенное действие',
+    setAsNext: 'Сделать моим следующим действием',
+    tryAgain: 'Попробовать другое',
+    recoveryOption: 'Я пропустил(а) работу и хочу перезапуститься',
+    recoveryHint:
+      'Откроет Режим восстановления — направляемый перезапуск, а не чат.',
+    doneCelebration: 'Отлично. Один реальный шаг лучше идеального плана.',
+  },
+  insights: {
+    title: 'Твоя активность',
+    empty:
+      'Пока мало активности — показывать нечего. В первый день это нормально.',
+    activeDays: 'активных дней',
+    messagesToday: 'AI-сообщений сегодня',
+    savedResults: 'сохранённых результатов',
+    recoveryPlans: 'планов восстановления',
+    localNote: 'Только по активности, сохранённой на этом устройстве.',
+    accountNote: 'Только по сохранённой активности аккаунта.',
+  },
+  recoveryCard: {
+    title: 'Пропустил(а) несколько дней?',
+    copy: 'Режим восстановления превращает пропущенную работу в уменьшенный реалистичный перезапуск с одним немедленным действием. Без чувства вины.',
+    cta: 'Открыть Режим восстановления',
+  },
   recovery: {
     eyebrow: 'Режим восстановления',
     title: 'Отстал(а)? Перезапустись с меньшего.',
@@ -929,6 +1053,48 @@ const KK: UiCopy = {
   },
   authChecking: 'Сессия тексерілуде…',
   agentNeedLogin: 'Жоспарды аккаунтта сақтау үшін кіріңіз.',
+  nextAction: {
+    eyebrow: 'Қазір не істеу керек?',
+    currentTitle: 'Келесі әрекетің',
+    doneButton: 'Дайын',
+    changeButton: 'Жаңасын таңдау',
+    localNote: 'Тек осы құрылғыда сақталады.',
+    quickStartTitle: 'Бір айқын келесі әрекет ал',
+    quickStartIntro:
+      'Не көмек керегін таңда, бір нақты тапсырманы немесе қиындықты сипатта — MindPulse ең кіші пайдалы қадамды ұсынады.',
+    needLabel: 'Қазір не қажет?',
+    taskLabel: 'Бір нақты тапсырма, мақсат немесе қиындық',
+    taskPlaceholder: 'мыс. Эссе жұмаға дейін, әлі бастаған жоқпын…',
+    submit: 'Келесі әрекетті ұсыну',
+    loading: 'Ең кіші пайдалы қадам ізделуде…',
+    error: 'Ұсыныс алу мүмкін болмады. Қайта байқап көр.',
+    limitGuest:
+      'Бүгінгі қонақ лимитіне жеттің. Жалғастыру үшін тегін аккаунт аш.',
+    limitAccount: 'Бүгінгі лимитке жеттің. Ертең қайта орал.',
+    resultLabel: 'Ұсынылған әрекет',
+    setAsNext: 'Менің келесі әрекетім ету',
+    tryAgain: 'Басқасын байқап көру',
+    recoveryOption: 'Жұмысты өткізіп алдым, қайта бастағым келеді',
+    recoveryHint:
+      'Қалпына келу режимін ашады — бұл чат емес, бағытталған қайта бастау.',
+    doneCelebration: 'Керемет. Бір нақты қадам мінсіз жоспардан артық.',
+  },
+  insights: {
+    title: 'Белсенділігің',
+    empty:
+      'Әзірге белсенділік аз — көрсететін ештеңе жоқ. Бірінші күні бұл қалыпты.',
+    activeDays: 'белсенді күн',
+    messagesToday: 'бүгінгі AI хабарламалары',
+    savedResults: 'сақталған нәтиже',
+    recoveryPlans: 'қалпына келу жоспары',
+    localNote: 'Тек осы құрылғыда сақталған белсенділік бойынша.',
+    accountNote: 'Тек аккаунтта сақталған белсенділік бойынша.',
+  },
+  recoveryCard: {
+    title: 'Бірнеше күн өткізіп алдың ба?',
+    copy: 'Қалпына келу режимі өткізіп алған жұмысты бір дереу әрекеті бар кішірек, шынайы қайта бастауға айналдырады. Кінәсіз.',
+    cta: 'Қалпына келу режимін ашу',
+  },
   recovery: {
     eyebrow: 'Қалпына келу режимі',
     title: 'Артта қалдың ба? Кішірек қайта баста.',

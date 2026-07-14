@@ -5,11 +5,8 @@ import {
   Brain,
   CheckCircle2,
   Globe2,
-  History,
   Loader2,
   LogIn,
-  ShieldCheck,
-  Target,
   UserPlus,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -27,13 +24,14 @@ import { sendReturningVisitOnce } from '@/lib/mindpulse/beta-events';
 import {
   GUEST_AGENT_KEY,
   GUEST_BANNER_KEY,
-  GUEST_FOCUS_KEY,
   LANGUAGE_KEY,
   localId,
   readJson,
   writeJson,
 } from '@/lib/mindpulse/local-store';
 import { languages, type LanguageCode } from '@/lib/mindpulse/tools';
+import { NextActionCard } from './dashboard/next-action-card';
+import { InsightsCard } from './dashboard/insights-card';
 import { ChatPanel } from './mindpulse/chat-panel';
 import { FeedbackModal } from './mindpulse/feedback-modal';
 import { LogoutButton } from './mindpulse/logout-button';
@@ -56,7 +54,6 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
   // If the server passed null, we wait for /api/auth/me before showing guest UI.
   const [authReady, setAuthReady] = useState(Boolean(initialUser));
   const [language, setLanguage] = useState<LanguageCode>('en');
-  const [todayFocus, setTodayFocus] = useState('');
   const [showGuestBanner, setShowGuestBanner] = useState(false);
   const [agentInput, setAgentInput] = useState('');
   const [agentOutput, setAgentOutput] = useState('');
@@ -114,17 +111,12 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
     const storedLanguage = readJson<LanguageCode | null>(LANGUAGE_KEY, null);
     if (storedLanguage && languages.some((item) => item.id === storedLanguage))
       setLanguage(storedLanguage);
-    setTodayFocus(readJson(GUEST_FOCUS_KEY, ''));
     setShowGuestBanner(!readJson(GUEST_BANNER_KEY, false));
   }, []);
 
   useEffect(() => {
     writeJson(LANGUAGE_KEY, language);
   }, [language]);
-
-  useEffect(() => {
-    writeJson(GUEST_FOCUS_KEY, todayFocus);
-  }, [todayFocus]);
 
   async function runAgent(prompt = agentInput) {
     const text = prompt.trim();
@@ -310,153 +302,44 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
         )}
 
         <section className="grid gap-5 lg:grid-cols-[1fr_22rem]">
-          <div className="overflow-hidden rounded-[2rem] bg-surface p-6 shadow-soft sm:p-8">
-            <div className="flex flex-wrap gap-2">
-              <span className="rounded-full bg-sage-soft px-4 py-2 text-xs font-bold uppercase tracking-[.18em] text-sage">
-                {ui.heroBeta}
-              </span>
-              <span className="rounded-full bg-canvas px-4 py-2 text-xs font-bold uppercase tracking-[.18em] text-muted">
-                {ui.heroBuiltBy}
-              </span>
-            </div>
-            <p className="mt-6 text-xs font-bold uppercase tracking-[.2em] text-sage">
-              {ui.commandLabel}
-            </p>
-            <h1 className="mt-3 max-w-3xl text-4xl font-semibold leading-tight tracking-[-.045em] sm:text-6xl">
-              {ui.heroTitle}
-            </h1>
-            <p className="mt-5 max-w-2xl text-lg leading-8 text-muted">
-              {ui.heroSubtitle}
-            </p>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-muted">
-              {ui.commandDesc}
-            </p>
-            <div className="mt-7 flex flex-wrap gap-3">
-              <a
-                href="#chat"
-                className="inline-flex min-h-12 items-center rounded-full bg-sage px-6 font-semibold text-canvas"
-              >
-                {ui.heroOpenChat}
-              </a>
-              <Link
-                href="/why"
-                className="inline-flex min-h-12 items-center rounded-full bg-canvas px-6 font-semibold text-ink"
-              >
-                {ui.heroWhy}
-              </Link>
-              <FeedbackModal language={language} />
-            </div>
-          </div>
-          <aside className="rounded-[2rem] bg-ink p-6 text-canvas shadow-soft">
-            <Target className="text-sage-soft" />
-            <h2 className="mt-5 text-xl font-semibold">{ui.focusTitle}</h2>
-            <textarea
-              value={todayFocus}
-              onChange={(event) => setTodayFocus(event.target.value)}
-              rows={4}
-              className="mt-4 w-full resize-none rounded-2xl border border-canvas/10 bg-canvas/10 px-4 py-3 text-sm text-canvas outline-none placeholder:text-canvas/45 focus:border-sage-soft"
-              placeholder={ui.focusPlaceholder}
+          <NextActionCard
+            language={language}
+            copy={ui.nextAction}
+            tools={localizedTools}
+          />
+          <aside className="flex flex-col gap-5">
+            <InsightsCard
+              copy={ui.insights}
+              isGuest={isGuest}
+              authReady={authReady}
             />
-            <p className="mt-3 text-sm leading-6 text-canvas/70">
-              {ui.focusNote}
-            </p>
-            <div className="mt-5 rounded-2xl bg-canvas/10 p-4">
-              <p className="text-xs font-bold uppercase tracking-[.16em] text-sage-soft">
-                {!authReady
-                  ? ui.authChecking
-                  : isGuest
-                    ? ui.planGuestLabel
-                    : ui.planAccountLabel}
+            <div className="rounded-[2rem] bg-ink p-6 text-canvas shadow-soft">
+              <h2 className="text-xl font-semibold">{ui.recoveryCard.title}</h2>
+              <p className="mt-2 text-sm leading-7 text-canvas/75">
+                {ui.recoveryCard.copy}
               </p>
-              {authReady && (
-                <p className="mt-2 text-sm leading-6 text-canvas/75">
-                  {isGuest ? ui.planGuestDesc : ui.planAccountDesc}
+              <Link
+                href="/recovery"
+                className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full bg-canvas/15 px-5 text-sm font-semibold text-canvas hover:bg-canvas/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sage-soft"
+              >
+                {ui.recoveryCard.cta} <ArrowRight size={15} />
+              </Link>
+              <div className="mt-5 rounded-2xl bg-canvas/10 p-4">
+                <p className="text-xs font-bold uppercase tracking-[.16em] text-sage-soft">
+                  {!authReady
+                    ? ui.authChecking
+                    : isGuest
+                      ? ui.planGuestLabel
+                      : ui.planAccountLabel}
                 </p>
-              )}
+                {authReady && (
+                  <p className="mt-2 text-sm leading-6 text-canvas/75">
+                    {isGuest ? ui.planGuestDesc : ui.planAccountDesc}
+                  </p>
+                )}
+              </div>
             </div>
           </aside>
-        </section>
-
-        <section className="mt-8 rounded-[2rem] border border-sage/15 bg-surface/90 p-5 shadow-soft sm:p-7">
-          <div className="grid gap-6 lg:grid-cols-[.8fr_1.2fr] lg:items-center">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[.2em] text-sage">
-                {ui.onboardingLabel}
-              </p>
-              <h2 className="mt-2 text-3xl font-semibold tracking-[-.03em] sm:text-4xl">
-                {ui.onboardingTitle}
-              </h2>
-              <p className="mt-3 text-sm leading-7 text-muted">
-                {ui.onboardingIntro}
-              </p>
-            </div>
-            <div className="grid gap-3 md:grid-cols-3">
-              {ui.onboardingSteps.map(([title, copy], index) => (
-                <article key={title} className="rounded-2xl bg-canvas/80 p-4">
-                  <span className="text-xs font-bold text-sage">
-                    0{index + 1}
-                  </span>
-                  <h3 className="mt-3 font-semibold">{title}</h3>
-                  <p className="mt-2 text-sm leading-6 text-muted">{copy}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-          <div className="mt-5 rounded-[1.5rem] bg-sage-soft/70 p-4">
-            <p className="text-sm font-semibold">{ui.onboardingPromptTitle}</p>
-            <div className="mt-3 grid gap-3 md:grid-cols-2">
-              {ui.onboardingPromptExamples.map((prompt) => (
-                <p
-                  key={prompt}
-                  className="rounded-2xl bg-canvas/80 p-4 text-sm leading-6 text-muted"
-                >
-                  &ldquo;{prompt}&rdquo;
-                </p>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="mt-8 grid gap-4 sm:grid-cols-3">
-          {ui.featureCards.map(([title, copy]) => (
-            <article
-              key={title}
-              className="rounded-mp bg-surface p-5 shadow-soft"
-            >
-              <ShieldCheck className="text-sage" size={20} />
-              <h2 className="mt-4 font-semibold">{title}</h2>
-              <p className="mt-2 text-sm leading-6 text-muted">{copy}</p>
-            </article>
-          ))}
-        </section>
-
-        <section className="mt-8 rounded-[2rem] bg-ink p-5 text-canvas shadow-soft sm:p-6">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[.2em] text-sage-soft">
-              {ui.commandTitle}
-            </p>
-            <h2 className="mt-2 text-2xl font-semibold">
-              {ui.nextActionsTitle}
-            </h2>
-          </div>
-          <div className="mt-5 grid gap-3 md:grid-cols-3">
-            {ui.nextActions.map(([title, copy, route]) => (
-              <Link
-                key={route}
-                href={route}
-                className="group rounded-2xl bg-canvas/10 p-4 transition hover:bg-canvas/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sage-soft"
-              >
-                <h3 className="flex items-center justify-between gap-3 font-semibold">
-                  {title}
-                  <ArrowRight
-                    size={16}
-                    className="transition group-hover:translate-x-1"
-                  />
-                </h3>
-                <p className="mt-2 text-sm leading-6 text-canvas/70">{copy}</p>
-              </Link>
-            ))}
-          </div>
         </section>
 
         <section className="mt-8">
@@ -480,51 +363,6 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
               />
             ))}
           </div>
-        </section>
-
-        <section className="mt-8 grid gap-5 rounded-[2rem] bg-sage-soft/70 p-5 shadow-soft sm:p-7 lg:grid-cols-[1.25fr_.75fr]">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[.2em] text-sage">
-              {ui.betaJourneyLabel}
-            </p>
-            <h2 className="mt-2 text-3xl font-semibold tracking-[-.03em]">
-              {ui.betaJourneyTitle}
-            </h2>
-            <p className="mt-3 max-w-3xl text-sm leading-7 text-muted">
-              {ui.betaJourneyDesc}
-            </p>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {ui.betaJourneySteps.map(([title, copy], index) => (
-                <article key={title} className="rounded-2xl bg-canvas/80 p-4">
-                  <span className="text-xs font-bold text-sage">
-                    0{index + 1}
-                  </span>
-                  <h3 className="mt-2 font-semibold">{title}</h3>
-                  <p className="mt-1 text-sm leading-6 text-muted">{copy}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-          <aside className="rounded-[1.5rem] bg-ink p-5 text-canvas">
-            <h2 className="text-xl font-semibold">{ui.retentionTitle}</h2>
-            <ul className="mt-4 space-y-3 text-sm leading-6 text-canvas/70">
-              {ui.retentionItems.map((item) => (
-                <li key={item} className="flex gap-3">
-                  <CheckCircle2
-                    className="mt-0.5 shrink-0 text-sage-soft"
-                    size={17}
-                  />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-            <Link
-              href="/beta"
-              className="mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-canvas/10 px-5 text-sm font-semibold text-canvas"
-            >
-              {ui.footerBeta}
-            </Link>
-          </aside>
         </section>
 
         <section id="chat" className="scroll-mt-24">
@@ -608,18 +446,9 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
           </div>
         </section>
 
-        <section className="mt-8 rounded-mp bg-surface p-5 shadow-soft">
-          <h2 className="flex items-center gap-2 font-semibold">
-            <History size={18} className="text-sage" /> {ui.recentTitle}
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-muted">
-            {!authReady
-              ? ui.authChecking
-              : isGuest
-                ? ui.recentGuest
-                : ui.recentAccount}
-          </p>
-        </section>
+        <div className="mt-8 flex justify-end">
+          <FeedbackModal language={language} flow="dashboard" />
+        </div>
 
         <SiteFooter language={language} />
       </main>

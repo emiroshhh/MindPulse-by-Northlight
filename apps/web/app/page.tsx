@@ -4,12 +4,12 @@ import {
   Brain,
   CalendarDays,
   CheckCircle2,
+  LifeBuoy,
   LockKeyhole,
   MessageSquareText,
   Repeat2,
   Sparkles,
   Target,
-  Wand2,
   Zap,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -23,8 +23,8 @@ const features = [
   ['Habit Coach', Repeat2],
   ['Goal Breakdown', Target],
   ['Quick Reflection', Sparkles],
-  ['AI Chat', MessageSquareText],
-  ['AI Agent', Wand2],
+  ['Recovery Mode', LifeBuoy],
+  ['AI Chat + Agent', MessageSquareText],
 ] as const;
 
 export default function LandingPage() {
@@ -58,10 +58,10 @@ export default function LandingPage() {
             </Link>
           </div>
           <Link
-            href="/signup"
+            href="/app"
             className="inline-flex min-h-11 items-center gap-2 rounded-full bg-ink px-5 text-sm font-semibold text-canvas hover:bg-sage"
           >
-            Get started <ArrowRight size={16} />
+            Try it free <ArrowRight size={16} />
           </Link>
         </nav>
       </header>
@@ -71,23 +71,24 @@ export default function LandingPage() {
           <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1.05fr_.95fr]">
             <div>
               <span className="inline-flex items-center gap-2 rounded-full border border-sage/20 bg-surface px-4 py-2 text-xs font-semibold text-sage">
-                <Sparkles size={15} /> AI study + self-growth workspace
+                <Sparkles size={15} /> Student beta — free while in testing
               </span>
               <h1 className="mt-6 text-5xl font-semibold leading-[1.02] tracking-[-.045em] sm:text-6xl lg:text-7xl">
-                Study better. Plan smarter.{' '}
-                <span className="text-sage">Stay consistent.</span>
+                Overwhelmed by school?{' '}
+                <span className="text-sage">Start with one small step.</span>
               </h1>
               <p className="mt-7 max-w-2xl text-lg leading-8 text-muted">
-                MindPulse is an AI study and self-growth assistant for daily
-                planning, motivation, habits, and learning. Turn messy thoughts
-                into clear next steps and keep your progress organized.
+                MindPulse is an AI workspace for students. Describe one real
+                task, deadline, or stuck point, and it suggests the smallest
+                useful next action — then helps you plan, restart after missed
+                days, and reflect without guilt.
               </p>
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
                 <Link
-                  href="/signup"
+                  href="/app"
                   className="inline-flex min-h-14 items-center justify-center gap-2 rounded-full bg-sage px-7 font-semibold text-canvas shadow-soft hover:-translate-y-1 hover:bg-ink"
                 >
-                  Get started <ArrowRight size={18} />
+                  Try it now — no login needed <ArrowRight size={18} />
                 </Link>
                 <Link
                   href="/login"
@@ -96,27 +97,35 @@ export default function LandingPage() {
                   Log in
                 </Link>
               </div>
+              <p className="mt-4 text-sm text-muted">
+                Guests get 5 free AI messages a day on this device. A free
+                account saves your history and raises the limit to 20.
+              </p>
             </div>
             <div className="rounded-[2rem] border border-white/60 bg-surface/90 p-6 shadow-soft sm:p-8">
-              <div className="rounded-[1.5rem] bg-ink p-5 text-canvas">
-                <p className="text-sm text-canvas/65">Today, just this:</p>
-                <h2 className="mt-2 text-2xl font-semibold">
-                  Finish chemistry practice set
-                </h2>
-                <p className="mt-3 text-sm leading-6 text-canvas/70">
-                  While you were away, MindPulse moved two tasks forward and
-                  picked one calm focus.
+              <p className="text-xs font-bold uppercase tracking-[.16em] text-muted">
+                Example of what you get
+              </p>
+              <div className="mt-3 rounded-[1.5rem] bg-ink p-5 text-canvas">
+                <p className="text-sm text-canvas/65">
+                  &ldquo;Essay due Friday and I haven&rsquo;t started&rdquo;
                 </p>
+                <h2 className="mt-2 text-xl font-semibold leading-8">
+                  Set a 10-minute timer and write three rough bullet points of
+                  what the essay should argue. Stopping after 10 minutes is
+                  allowed.
+                </h2>
               </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                {['AI chat remembers context', 'Agent plans next steps'].map(
-                  (text) => (
-                    <div key={text} className="rounded-2xl bg-sage-soft/70 p-4">
-                      <CheckCircle2 className="text-sage" size={18} />
-                      <p className="mt-3 text-sm font-semibold">{text}</p>
-                    </div>
-                  ),
-                )}
+                {[
+                  'One next action, not a wall of advice',
+                  'Recovery Mode for missed days',
+                ].map((text) => (
+                  <div key={text} className="rounded-2xl bg-sage-soft/70 p-4">
+                    <CheckCircle2 className="text-sage" size={18} />
+                    <p className="mt-3 text-sm font-semibold">{text}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -134,18 +143,18 @@ export default function LandingPage() {
               {[
                 [
                   '01',
-                  'Create your account',
-                  'Your history follows your login securely.',
+                  'Pick what you need',
+                  'Study help, planning, motivation, habits, goals, reflection — or Recovery Mode after missed days.',
                 ],
                 [
                   '02',
-                  'Tell MindPulse what you need',
-                  'Ask for study help, planning, motivation, habits, or reflection.',
+                  'Describe one real task',
+                  'One sentence is enough. No questionnaire, no login required.',
                 ],
                 [
                   '03',
-                  'Get practical support',
-                  'Use AI chat help, saved history, and Agent support.',
+                  'Get one small next action',
+                  'A concrete step you can start in the next 15 minutes — with a free account if you want history saved.',
                 ],
               ].map(([n, title, copy]) => (
                 <div

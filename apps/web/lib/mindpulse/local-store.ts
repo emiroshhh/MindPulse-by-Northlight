@@ -5,6 +5,8 @@ export const LANGUAGE_KEY = 'mindpulse-language-v1';
 export const GUEST_BANNER_KEY = 'mindpulse-guest-banner-dismissed-v1';
 export const GUEST_RECOVERY_KEY = 'mindpulse-guest-recovery-v1';
 export const GUEST_TOOL_RESULTS_KEY = 'mindpulse-guest-tool-results-v1';
+export const NEXT_ACTION_KEY = 'mindpulse-next-action-v1';
+export const ONBOARDED_KEY = 'mindpulse-onboarded-v1';
 
 export function readJson<T>(key: string, fallback: T): T {
   if (typeof window === 'undefined') return fallback;
