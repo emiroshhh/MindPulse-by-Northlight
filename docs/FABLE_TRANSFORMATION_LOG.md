@@ -41,6 +41,8 @@ WP1 crisis localization → WP2 security → WP3 feedback → WP4 events → WP5
 
 `format:check` ✓ · `lint` ✓ · `typecheck` ✓ · `test` ✓ (42 shared + 179 web = 221) · `build` (OpenNext) ✓
 
+- **WP10 (done)** — manual browser verification (crisis en/ru/kk, recovery end-to-end with fallback, language/lang-attribute sync, feedback dialog a11y, 320px overflow checks, route sweep — found and fixed a dev-only CSP/HMR hydration break); docs suite written (ARCHITECTURE, AI_SAFETY, PRIVACY, LOCALIZATION, BETA_GUIDE, LIMITATIONS, ENV); README, privacy page, and case study brought in line with the implementation; final report at MINDPULSE_FABLE5_FINAL_REPORT.md.
+
 ## Unresolved blockers
 
 - Kazakh safety patterns, crisis reply, and marketing copy still need native-speaker review (flagged in code).

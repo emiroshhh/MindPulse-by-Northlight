@@ -26,7 +26,14 @@ MindPulse is designed for students who want:
 | Goal Breakdown   | Turns ambitious goals into outcomes, milestones, blockers, and ordered next actions.             |
 | Quick Reflection | Guides a short, non-clinical reflection around a win, friction, lesson, and tomorrow adjustment. |
 
-MindPulse also includes a structured Agent workflow for turning an unclear situation into a goal, plan, next actions, obstacles, and smallest first step.
+Each tool opens with 2–3 guided intake fields that compose a structured first message, and every useful reply can be saved as a completed result (to the account, or to the device for guests).
+
+MindPulse also includes:
+
+- **Recovery Mode** (`/recovery`) — a distinct three-step restart workflow (what got missed → tasks with fixed-deadline flags → realistic time/energy) that produces a validated revised plan with an urgent/optional/postponed split and one 10-minute immediate action. If the AI output fails schema validation twice or the provider is down, a deterministic fallback plan is built from the student's own items.
+- **Quick start on the dashboard** — pick a need, describe one real task, get the smallest useful next action; exactly one primary "next action" card drives the dashboard.
+- A structured Agent workflow for turning an unclear situation into a goal, plan, next actions, obstacles, and smallest first step.
+- An anonymous in-app feedback form and honest aggregate-only beta counters (see [docs/BETA_GUIDE.md](docs/BETA_GUIDE.md)).
 
 ## Product model
 
@@ -40,8 +47,9 @@ MindPulse also includes a structured Agent workflow for turning an unclear situa
 ### Free account
 
 - Twenty AI messages per day, enforced server-side.
-- Chat history and saved Agent plans are stored in Cloudflare D1.
+- Chat history, saved plans/results, and recovery plans are stored in Cloudflare D1.
 - Authentication uses server-created sessions; raw session tokens are not stored in D1.
+- Self-service account and data deletion from the dashboard Account section (password-confirmed).
 
 There are currently no payments, subscriptions, ads, or premium tiers.
 
@@ -51,11 +59,11 @@ The interface supports:
 
 - English (`en`)
 - Russian (`ru`)
-- Kazakh (`kk`)
+- Kazakh (`kk`, labeled **beta** in the language picker)
 
-The AI is instructed to follow the language of the student's latest message and use the selected interface language as a fallback.
+The AI is instructed to follow the language of the student's latest message and use the selected interface language as a fallback. `<html lang>` follows the selection, and an automated completeness test guards all three locales.
 
-This is an interface and response-language feature, not a claim of equivalent trilingual crisis-safety coverage. Deterministic urgent-language screening is currently strongest in English and Russian; reviewed Kazakh safety coverage remains future work.
+Deterministic crisis screening and localized crisis replies exist in all three languages, but Kazakh strings have not had native review yet — until they do, Kazakh crisis replies are always shown together with the Russian text. See [docs/LOCALIZATION.md](docs/LOCALIZATION.md) and [docs/AI_SAFETY.md](docs/AI_SAFETY.md).
 
 ## Safety and privacy boundaries
 
@@ -67,7 +75,9 @@ MindPulse is a productivity and learning assistant. It is not therapy, medical c
 - Gemini, optional DeepSeek, and session secrets remain server-side.
 - Passwords are stored as uniquely salted PBKDF2-SHA-256 hashes using Workers WebCrypto.
 - D1 stores a keyed hash of each session token, not the raw token.
-- Feedback is optional and should never contain private chat content or sensitive data.
+- Feedback is optional and anonymous by construction: the `feedback` table stores no user id, session, IP, or email.
+- Beta measurement is aggregate-only (`events` table: name, day, count — no per-user rows).
+- Worker responses ship CSP, HSTS, frame, nosniff, referrer, and permissions headers via `apps/web/middleware.ts`.
 
 See the plain-language [privacy page](/apps/web/app/privacy/page.tsx) for the user-facing explanation.
 
@@ -103,15 +113,16 @@ Active production storage is Cloudflare D1. Supabase files in the repository are
 
 ## Important routes
 
-| Route                               | Purpose                                                     |
-| ----------------------------------- | ----------------------------------------------------------- |
-| `/`                                 | Public landing page                                         |
-| `/app`                              | Guest-first dashboard, chat, Agent, focus, and recent state |
-| `/study`, `/planner`, `/motivation` | Focused learning, planning, and restart tools               |
-| `/habits`, `/goals`, `/reflection`  | Habit, goal, and reflection tools                           |
-| `/beta`                             | Beta tester guide                                           |
-| `/case-study`                       | Public portfolio case study                                 |
-| `/why`, `/impact`, `/privacy`       | Project story, honest beta goals, and privacy boundaries    |
+| Route                               | Purpose                                                                       |
+| ----------------------------------- | ----------------------------------------------------------------------------- |
+| `/`                                 | Public landing page (localized en/ru/kk)                                      |
+| `/app`                              | Guest-first dashboard: one next action, insights, tools, chat, Agent, account |
+| `/recovery`                         | Recovery Mode — guided restart after missed work                              |
+| `/study`, `/planner`, `/motivation` | Focused learning, planning, and restart tools                                 |
+| `/habits`, `/goals`, `/reflection`  | Habit, goal, and reflection tools                                             |
+| `/beta`                             | Beta tester guide                                                             |
+| `/case-study`                       | Public portfolio case study                                                   |
+| `/why`, `/impact`, `/privacy`       | Project story, honest beta goals, and privacy boundaries                      |
 
 ## Repository structure
 
@@ -204,6 +215,13 @@ Deployment is intentionally not part of ordinary feature implementation. Product
 
 ## Beta and portfolio documentation
 
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — system, data model, and data-flow decisions
+- [docs/AI_SAFETY.md](docs/AI_SAFETY.md) — the deterministic safety pipeline and language policy
+- [docs/PRIVACY.md](docs/PRIVACY.md) — implementation behind every privacy claim
+- [docs/LOCALIZATION.md](docs/LOCALIZATION.md) — coverage matrix and Kazakh beta status
+- [docs/BETA_GUIDE.md](docs/BETA_GUIDE.md) — events, queries, tester script
+- [docs/LIMITATIONS.md](docs/LIMITATIONS.md) — known limitations, stated plainly
+- [docs/ENV.md](docs/ENV.md) — environment variables and graceful degradation
 - [DEMO.md](DEMO.md) — 60-second, two-minute, and five-minute demo scripts
 - [ROADMAP.md](ROADMAP.md) — completed phases and evidence-driven next steps
 - [`/case-study`](apps/web/app/case-study/page.tsx) — public product and engineering case study
@@ -219,9 +237,12 @@ Near-term priorities are beta feedback, accessibility, reliability, AI-answer qu
 - Current beta metrics are goals; real results have not been published yet.
 - AI answers may be incomplete or wrong.
 - Guest enforcement uses a conservative server-derived anonymous key and is not a perfect identity system.
-- Account synchronization currently covers chat history and saved Agent plans, not every piece of guest-local state.
-- EN/RU/KZ coverage is actively tested, but translation quality still benefits from native-speaker feedback.
-- The mobile workspace is not the active deployed product.
+- Account synchronization covers chat history, saved plans/results, and recovery plans — the "next action" pointer stays on the device by design.
+- Kazakh strings and safety patterns await native review (labeled beta; crisis text paired with Russian).
+- No password reset or email verification yet.
+- The mobile workspace is frozen and not the active deployed product.
+
+The full list lives in [docs/LIMITATIONS.md](docs/LIMITATIONS.md).
 
 ## Project status
 

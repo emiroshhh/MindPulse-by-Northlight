@@ -22,28 +22,36 @@ export const metadata: Metadata = { title: 'Case study' };
 const architecture = [
   [
     'Interface',
-    'Next.js and React provide the guest-first dashboard, six tool pages, and EN/RU/KZ UI.',
+    'Next.js and React provide the guest-first dashboard built around one primary next action, six tool pages with guided intake, Recovery Mode, and an en/ru/kk UI with an automated translation-completeness test.',
   ],
   [
     'AI layer',
-    'A server-only chat route assembles mode-specific instructions and calls Gemini without exposing the API key.',
+    'Server-only routes assemble mode-specific instructions and call Gemini (or optional DeepSeek) without exposing keys. Recovery Mode requires strict JSON validated by a zod schema, with one repair retry and a deterministic fallback plan built from the student’s own items.',
+  ],
+  [
+    'Safety layer',
+    'Deterministic regex screening runs before any generation; crisis input routes to localized reviewed replies with region-appropriate support links (Kazakh always paired with Russian until native review). Model output is screened before display.',
   ],
   [
     'Data layer',
-    'Cloudflare D1 stores account, session-hash, usage, chat-history, and saved Agent-plan data.',
+    'Cloudflare D1 stores accounts, session-token hashes, usage counters, chat history, saved plans/results/recovery plans, anonymous feedback, aggregate beta counters, and durable rate limits.',
   ],
   [
     'Runtime',
-    'OpenNext packages the application for Cloudflare Workers and Static Assets.',
+    'OpenNext packages the application for Cloudflare Workers and Static Assets; a middleware ships CSP, HSTS, and frame protection on every Worker response.',
   ],
 ] as const;
 
 const built = [
-  'Guest access with local conversation state',
-  'Account signup, login, logout, and D1-backed history',
-  'Six distinct AI support modes and a structured Agent workflow',
-  'Daily guest and account limits enforced server-side',
-  'English, Russian, and Kazakh interface support',
+  'Guest-first access with local conversation state and no login wall',
+  'One-primary-next-action dashboard with a quick-start onboarding flow',
+  'Recovery Mode: a guided, schema-validated restart workflow with a deterministic fallback',
+  'Six AI tools with guided intake fields and save-result completion states',
+  'Account signup, login, logout, D1-backed history, and password-confirmed account deletion',
+  'Daily guest and account limits enforced server-side with atomic D1 counters',
+  'Localized crisis pipeline (en/ru/kk) with verified-source support links and false-positive guards',
+  'Anonymous in-app feedback and aggregate-only beta measurement',
+  'English, Russian, and Kazakh (beta) interface support with document-language sync',
   'Public privacy, impact, beta, and project-story pages',
 ] as const;
 
@@ -264,6 +272,11 @@ export default function CaseStudyPage() {
             beta until there is evidence they are useful and safe.
           </p>
         </section>
+
+        <p className="mt-8 text-sm text-muted">
+          Built and maintained by a solo student founder. Last updated:
+          2026-07-14.
+        </p>
 
         <SiteFooter />
       </main>
