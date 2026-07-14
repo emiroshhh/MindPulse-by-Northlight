@@ -9,6 +9,13 @@ import { NextResponse } from 'next/server';
  * runtime injects inline bootstrap scripts; a nonce-based policy under
  * OpenNext is a documented follow-up (docs/LIMITATIONS.md).
  */
+// Next.js dev bundles rely on eval for HMR/sourcemaps; production does not.
+// 'unsafe-eval' is therefore added in development only and never ships.
+const SCRIPT_SRC =
+  process.env.NODE_ENV === 'development'
+    ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"
+    : "script-src 'self' 'unsafe-inline'";
+
 export const SECURITY_HEADERS: Record<string, string> = {
   'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
   'X-Content-Type-Options': 'nosniff',
@@ -26,7 +33,7 @@ export const SECURITY_HEADERS: Record<string, string> = {
     "img-src 'self' data: blob:",
     "font-src 'self' data:",
     "style-src 'self' 'unsafe-inline'",
-    "script-src 'self' 'unsafe-inline'",
+    SCRIPT_SRC,
     "connect-src 'self'",
     "manifest-src 'self'",
     "worker-src 'self' blob:",
