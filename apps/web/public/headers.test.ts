@@ -20,5 +20,9 @@ describe('Cloudflare static asset security headers', () => {
     expect(headers).toContain("frame-ancestors 'none'");
     expect(headers).toContain("script-src 'self' 'unsafe-inline'");
     expect(headers).toContain("connect-src 'self'");
+    expect(headers).toContain('/_next/static/*');
+    expect(headers).toContain(
+      'Cache-Control: public,max-age=31536000,immutable',
+    );
   });
 });
