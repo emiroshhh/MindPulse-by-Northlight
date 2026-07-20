@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 describe('Cloudflare static asset security headers', () => {
   it('contains the required beta hardening headers', () => {
     const headers = readFileSync(
-      new URL('./_headers', import.meta.url),
+      new URL('./public/_headers', import.meta.url),
       'utf8',
     );
 
