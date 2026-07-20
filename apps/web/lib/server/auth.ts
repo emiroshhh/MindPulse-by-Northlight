@@ -12,6 +12,7 @@ type D1Result<T = unknown> = {
   results?: T[];
   success: boolean;
   error?: string;
+  meta?: { changes?: number };
 };
 
 type D1PreparedStatement = {
@@ -23,6 +24,19 @@ type D1PreparedStatement = {
 
 export type D1DatabaseLike = {
   prepare(query: string): D1PreparedStatement;
+  batch?(statements: D1PreparedStatement[]): Promise<D1Result[]>;
+};
+
+export type SessionDebugResult = {
+  dbAvailable: boolean;
+  sessionHashComputed: boolean;
+  sessionTableChecked: boolean;
+  sessionRowFound: boolean;
+  sessionCountForDebugToken: boolean;
+  sessionNotExpired: boolean;
+  joinedUserFound: boolean;
+  userResolved: boolean;
+  nowIso: string;
 };
 
 type WorkerBindings = {
@@ -33,9 +47,15 @@ type WorkerBindings = {
 };
 
 const SESSION_COOKIE = 'mindpulse_session';
+const HOST_SESSION_COOKIE = '__Host-mindpulse_session';
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30;
-const PASSWORD_MIN_LENGTH = 8;
-const PBKDF2_ITERATIONS = 210_000;
+const MIN_SESSION_TOKEN_LENGTH = 20;
+const PASSWORD_MIN_LENGTH = 10;
+// Cloudflare Workers' WebCrypto rejects PBKDF2 iteration counts above 100000
+// in production, so this is the maximum supported value. The count is embedded
+// in each stored hash, so verifyPassword always uses the count the hash was
+// created with (older/newer hashes remain verifiable).
+const PBKDF2_ITERATIONS = 100_000;
 const encoder = new TextEncoder();
 let schemaReady = false;
 
@@ -156,36 +176,239 @@ export async function createSession(db: D1DatabaseLike, userId: string) {
   const now = new Date();
   const expires = new Date(now.getTime() + SESSION_TTL_SECONDS * 1000);
   const id = secureId('session');
-  await db
+  const result = await db
     .prepare(
       `INSERT INTO sessions (id, user_id, session_hash, created_at, expires_at)
        VALUES (?, ?, ?, ?, ?)`,
     )
     .bind(id, userId, hash, now.toISOString(), expires.toISOString())
     .run();
+  console.info('[MindPulse] session insert result:', {
+    success: Boolean(result.success),
+    changes: result.meta?.changes ?? null,
+  });
+  if (!result.success) throw new Error('Session insert failed');
+  const inserted = await db
+    .prepare('SELECT 1 AS found FROM sessions WHERE session_hash = ? LIMIT 1')
+    .bind(hash)
+    .first<{ found: number }>();
+  console.info('[MindPulse] session insert verification:', {
+    passed: Boolean(inserted),
+  });
+  if (!inserted) throw new Error('Session insert verification failed');
   return { token, expires };
 }
 
 export async function setSessionCookie(token: string, expires: Date) {
   const jar = await cookies();
-  jar.set(SESSION_COOKIE, token, {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'lax',
-    path: '/',
-    expires,
-  });
+  for (const name of [SESSION_COOKIE, HOST_SESSION_COOKIE]) {
+    jar.set(name, token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      path: '/',
+      expires,
+    });
+  }
 }
 
 export async function clearSessionCookie() {
   const jar = await cookies();
-  jar.set(SESSION_COOKIE, '', {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 0,
-  });
+  for (const name of [SESSION_COOKIE, HOST_SESSION_COOKIE]) {
+    jar.set(name, '', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 0,
+    });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Explicit Set-Cookie header helpers
+// On Cloudflare Workers / OpenNext, cookies().set() may not reliably write
+// Set-Cookie headers in the outgoing response. These pure helpers produce a
+// valid Set-Cookie string that callers append directly to a Response.
+// ---------------------------------------------------------------------------
+
+/** Returns a Set-Cookie header value that sets the session cookie. */
+export function sessionCookieHeader(token: string, expires: Date): string {
+  return sessionCookieHeaderFor(SESSION_COOKIE, token, expires);
+}
+
+/** Returns Set-Cookie header values for both legacy and host-prefixed cookies. */
+export function sessionCookieHeaders(token: string, expires: Date): string[] {
+  return [
+    sessionCookieHeaderFor(HOST_SESSION_COOKIE, token, expires),
+    sessionCookieHeaderFor(SESSION_COOKIE, token, expires),
+  ];
+}
+
+function sessionCookieHeaderFor(
+  name: string,
+  token: string,
+  expires: Date,
+): string {
+  return [
+    `${name}=${encodeURIComponent(token)}`,
+    'Path=/',
+    'HttpOnly',
+    'Secure',
+    'SameSite=Lax',
+    `Expires=${expires.toUTCString()}`,
+  ].join('; ');
+}
+
+/** Returns a Set-Cookie header value that immediately expires the session cookie. */
+export function clearSessionCookieHeader(): string {
+  return clearSessionCookieHeaderFor(SESSION_COOKIE);
+}
+
+/** Returns Set-Cookie header values that clear both session cookie names. */
+export function clearSessionCookieHeaders(): string[] {
+  return [
+    clearSessionCookieHeaderFor(HOST_SESSION_COOKIE),
+    clearSessionCookieHeaderFor(SESSION_COOKIE),
+  ];
+}
+
+function clearSessionCookieHeaderFor(name: string): string {
+  return [
+    `${name}=`,
+    'Path=/',
+    'HttpOnly',
+    'Secure',
+    'SameSite=Lax',
+    'Max-Age=0',
+    'Expires=Thu, 01 Jan 1970 00:00:00 GMT',
+  ].join('; ');
+}
+
+export function authSuccessHtmlResponse(
+  cookieHeaders: string[],
+  redirectTo = '/app',
+  sessionToken?: string,
+) {
+  const safeRedirect = redirectTo.startsWith('/') ? redirectTo : '/app';
+  const safeRedirectAttribute = safeRedirect.replace(/"/g, '%22');
+  const tokenStorageScript = sessionToken
+    ? `  try { localStorage.setItem('mindpulse_session_token', ${JSON.stringify(
+        sessionToken,
+      )}); } catch {}\n`
+    : '';
+  const response = new Response(
+    `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="refresh" content="0;url=${safeRedirectAttribute}" />
+  <title>Signing in...</title>
+</head>
+<body>
+  <p>Signing you in...</p>
+  <script>
+${tokenStorageScript}  window.location.replace(${JSON.stringify(safeRedirect)});
+  </script>
+</body>
+</html>`,
+    {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-store',
+      },
+    },
+  );
+  for (const cookie of cookieHeaders)
+    response.headers.append('Set-Cookie', cookie);
+  return response;
+}
+
+export function logoutSuccessHtmlResponse(cookieHeaders: string[]) {
+  const response = new Response(
+    `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="refresh" content="0;url=/" />
+  <title>Signing out...</title>
+</head>
+<body>
+  <p id="signing-out">Signing you out...</p>
+  <script>
+    try {
+      const language = JSON.parse(localStorage.getItem('mindpulse-language-v1'));
+      const copy = {
+        en: 'Signing you out...',
+        ru: 'Выходим из аккаунта...',
+        kk: 'Аккаунттан шығу орындалуда...',
+        es: 'Cerrando sesión...',
+      }[language];
+      if (copy) {
+        document.documentElement.lang = language;
+        document.title = copy;
+        document.getElementById('signing-out').textContent = copy;
+      }
+      localStorage.removeItem('mindpulse_session_token');
+    } catch {}
+    window.location.replace('/');
+  </script>
+</body>
+</html>`,
+    {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-store',
+      },
+    },
+  );
+  for (const cookie of cookieHeaders)
+    response.headers.append('Set-Cookie', cookie);
+  return response;
+}
+
+/**
+ * Reads the session token from the incoming request's Cookie header.
+ * More reliable than cookies() on Cloudflare Workers.
+ */
+export function readTokenFromRequest(request: Request): string | null {
+  return readSessionTokenFromRequest(request);
+}
+
+export type SessionTokenSource =
+  | 'authorization'
+  | 'x-header'
+  | 'host-cookie'
+  | 'cookie'
+  | 'none';
+
+export function readSessionTokenFromRequest(request: Request): string | null {
+  return readSessionTokenWithSourceFromRequest(request).token;
+}
+
+export function readSessionTokenWithSourceFromRequest(request: Request): {
+  token: string | null;
+  source: SessionTokenSource;
+} {
+  const authorization = request.headers.get('authorization') ?? '';
+  const bearerPrefix = 'Bearer ';
+  if (authorization.startsWith(bearerPrefix)) {
+    const token = normalizeSessionToken(
+      authorization.slice(bearerPrefix.length),
+    );
+    if (token) return { token, source: 'authorization' };
+  }
+
+  const headerToken = normalizeSessionToken(
+    request.headers.get('x-mindpulse-session') ?? '',
+  );
+  if (headerToken) return { token: headerToken, source: 'x-header' };
+
+  return readSessionTokenWithSourceFromHeader(
+    request.headers.get('cookie') ?? '',
+  );
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
@@ -196,7 +419,24 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     return null;
   }
   const jar = await cookies();
-  const token = jar.get(SESSION_COOKIE)?.value;
+  const token =
+    jar.get(HOST_SESSION_COOKIE)?.value ?? jar.get(SESSION_COOKIE)?.value;
+  if (!token) return null;
+  return getUserBySessionToken(db, token);
+}
+
+export async function getCurrentUserFromRequest(
+  request: Request,
+): Promise<AuthUser | null> {
+  let db: D1DatabaseLike;
+  try {
+    db = await getAuthDb();
+  } catch {
+    return null;
+  }
+  const token =
+    readSessionTokenFromRequest(request) ??
+    (await readSessionTokenFromCookie().catch(() => null));
   if (!token) return null;
   return getUserBySessionToken(db, token);
 }
@@ -205,7 +445,9 @@ export async function getUserBySessionToken(
   db: D1DatabaseLike,
   token: string,
 ): Promise<AuthUser | null> {
-  const sessionHash = await hashSessionToken(token);
+  const cleanToken = normalizeSessionToken(token);
+  if (!cleanToken) return null;
+  const sessionHash = await hashSessionToken(cleanToken);
   return db
     .prepare(
       `SELECT users.id, users.email, users.name, users.created_at
@@ -231,7 +473,126 @@ export async function invalidateSessionToken(
 
 export async function readSessionTokenFromCookie() {
   const jar = await cookies();
-  return jar.get(SESSION_COOKIE)?.value ?? null;
+  return (
+    jar.get(HOST_SESSION_COOKIE)?.value ??
+    jar.get(SESSION_COOKIE)?.value ??
+    null
+  );
+}
+
+export async function debugSessionResolution(
+  db: D1DatabaseLike,
+  token: string | null,
+): Promise<SessionDebugResult> {
+  const nowIso = new Date().toISOString();
+  const base: SessionDebugResult = {
+    dbAvailable: true,
+    sessionHashComputed: false,
+    sessionTableChecked: false,
+    sessionRowFound: false,
+    sessionCountForDebugToken: false,
+    sessionNotExpired: false,
+    joinedUserFound: false,
+    userResolved: false,
+    nowIso,
+  };
+
+  const cleanToken = normalizeSessionToken(token);
+  if (!cleanToken) return base;
+
+  let sessionHash: string;
+  try {
+    sessionHash = await hashSessionToken(cleanToken);
+    base.sessionHashComputed = true;
+  } catch {
+    return base;
+  }
+
+  type SessionDebugRow = {
+    user_id: string;
+    expires_at: string;
+    not_expired: number;
+  };
+
+  let session: SessionDebugRow | null = null;
+  try {
+    session = await db
+      .prepare(
+        `SELECT user_id, expires_at, expires_at > ? AS not_expired
+         FROM sessions
+         WHERE session_hash = ?
+         LIMIT 1`,
+      )
+      .bind(nowIso, sessionHash)
+      .first<SessionDebugRow>();
+    base.sessionTableChecked = true;
+  } catch {
+    return base;
+  }
+
+  base.sessionRowFound = Boolean(session);
+  base.sessionCountForDebugToken = Boolean(session);
+  base.sessionNotExpired = Boolean(session?.not_expired);
+  if (!session || !base.sessionNotExpired) return base;
+
+  try {
+    const user = await db
+      .prepare(
+        `SELECT users.id, users.email, users.name, users.created_at
+         FROM users
+         WHERE users.id = ?
+         LIMIT 1`,
+      )
+      .bind(session.user_id)
+      .first<AuthUser>();
+    base.joinedUserFound = Boolean(user);
+    base.userResolved = Boolean(user);
+    return base;
+  } catch {
+    return base;
+  }
+}
+
+function readSessionTokenWithSourceFromHeader(header: string): {
+  token: string | null;
+  source: SessionTokenSource;
+} {
+  const hostToken = normalizeSessionToken(
+    readCookieValue(header, HOST_SESSION_COOKIE),
+  );
+  if (hostToken) return { token: hostToken, source: 'host-cookie' };
+
+  const cookieToken = normalizeSessionToken(
+    readCookieValue(header, SESSION_COOKIE),
+  );
+  if (cookieToken) return { token: cookieToken, source: 'cookie' };
+
+  return { token: null, source: 'none' };
+}
+
+function normalizeSessionToken(value: string | null) {
+  let token = value?.trim();
+  if (!token) return null;
+  if (
+    (token.startsWith('"') && token.endsWith('"')) ||
+    (token.startsWith("'") && token.endsWith("'"))
+  )
+    token = token.slice(1, -1).trim();
+  const lower = token.toLowerCase();
+  if (lower === 'undefined' || lower === 'null') return null;
+  if (token.length < MIN_SESSION_TOKEN_LENGTH || token.length > 512)
+    return null;
+  return token;
+}
+
+function readCookieValue(header: string, name: string) {
+  const prefix = `${name}=`;
+  for (const part of header.split(';')) {
+    const value = part.trim();
+    if (value.startsWith(prefix))
+      return decodeURIComponent(value.slice(prefix.length));
+  }
+  return null;
 }
 
 export async function clientIp() {
@@ -331,6 +692,8 @@ async function ensureAuthSchema(db: D1DatabaseLike) {
       title TEXT NOT NULL,
       content TEXT NOT NULL,
       status TEXT NOT NULL DEFAULT 'saved',
+      kind TEXT DEFAULT 'plan',
+      data TEXT,
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -341,10 +704,44 @@ async function ensureAuthSchema(db: D1DatabaseLike) {
       updated_at TEXT NOT NULL,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     )`,
+    `CREATE TABLE IF NOT EXISTS daily_usage (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NULL,
+      guest_key TEXT NULL,
+      usage_date TEXT NOT NULL,
+      message_count INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    )`,
+    `CREATE TABLE IF NOT EXISTS rate_limits (
+      key TEXT PRIMARY KEY,
+      window_start TEXT NOT NULL,
+      count INTEGER NOT NULL DEFAULT 0,
+      updated_at TEXT NOT NULL
+    )`,
+    `CREATE TABLE IF NOT EXISTS feedback (
+      id TEXT PRIMARY KEY,
+      flow TEXT NOT NULL,
+      helped INTEGER NULL,
+      confusing INTEGER NULL,
+      matched_expectation INTEGER NULL,
+      suggestion TEXT NULL,
+      locale TEXT NOT NULL,
+      device_category TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    )`,
+    `CREATE TABLE IF NOT EXISTS events (
+      name TEXT NOT NULL,
+      day TEXT NOT NULL,
+      count INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (name, day)
+    )`,
     `CREATE INDEX IF NOT EXISTS idx_sessions_hash ON sessions(session_hash)`,
     `CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id)`,
     `CREATE INDEX IF NOT EXISTS idx_chat_messages_user_created ON chat_messages(user_id, created_at DESC)`,
     `CREATE INDEX IF NOT EXISTS idx_agent_tasks_user_created ON agent_tasks(user_id, created_at DESC)`,
+    `CREATE INDEX IF NOT EXISTS idx_daily_usage_user_date ON daily_usage(user_id, usage_date)`,
+    `CREATE INDEX IF NOT EXISTS idx_daily_usage_guest_date ON daily_usage(guest_key, usage_date)`,
   ];
   for (const statement of statements) await db.prepare(statement).run();
 
@@ -356,6 +753,8 @@ async function ensureAuthSchema(db: D1DatabaseLike) {
     `ALTER TABLE users ADD COLUMN name TEXT DEFAULT ''`,
     `ALTER TABLE users ADD COLUMN created_at TEXT`,
     `ALTER TABLE users ADD COLUMN updated_at TEXT`,
+    `ALTER TABLE agent_tasks ADD COLUMN kind TEXT DEFAULT 'plan'`,
+    `ALTER TABLE agent_tasks ADD COLUMN data TEXT`,
   ]) {
     try {
       await db.prepare(statement).run();

@@ -1,0 +1,91 @@
+import { getAuthDb, type AuthUser } from './auth';
+
+export const GUEST_DAILY_LIMIT = 5;
+export const ACCOUNT_DAILY_LIMIT = 20;
+
+export type DailyUsage = {
+  allowed: boolean;
+  limit: number;
+  used: number;
+  remaining: number;
+  accountRequired: boolean;
+};
+
+/**
+ * Atomically reserve one AI message from the caller's daily quota.
+ * D1-backed, so it survives Worker restarts and coordinates across isolates.
+ * The conditional upsert either increments under the limit (changes=1) or
+ * does nothing (changes=0 → denied).
+ */
+export async function reserveDailyUsage({
+  request,
+  user,
+}: {
+  request: Request;
+  user: AuthUser | null;
+}): Promise<DailyUsage> {
+  const db = await getAuthDb();
+  const usageDate = new Date().toISOString().slice(0, 10);
+  const now = new Date().toISOString();
+  const limit = user ? ACCOUNT_DAILY_LIMIT : GUEST_DAILY_LIMIT;
+  const accountRequired = !user;
+  const guestKey = user ? null : await guestUsageKey(request);
+  const id = user
+    ? `user:${user.id}:${usageDate}`
+    : `guest:${guestKey}:${usageDate}`;
+
+  const result = await db
+    .prepare(
+      `INSERT INTO daily_usage (
+        id, user_id, guest_key, usage_date, message_count, created_at, updated_at
+      )
+      VALUES (?, ?, ?, ?, 1, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        message_count = message_count + 1,
+        updated_at = excluded.updated_at
+      WHERE daily_usage.message_count < ?`,
+    )
+    .bind(id, user?.id ?? null, guestKey, usageDate, now, now, limit)
+    .run();
+  const changes =
+    (result as { meta?: { changes?: number } }).meta?.changes ?? 1;
+  const row = await db
+    .prepare('SELECT message_count FROM daily_usage WHERE id = ? LIMIT 1')
+    .bind(id)
+    .first<{ message_count: number }>();
+  const used = Number(row?.message_count ?? limit);
+  const allowed = changes > 0 && used <= limit;
+  return {
+    allowed,
+    limit,
+    used: Math.min(used, limit),
+    remaining: Math.max(limit - used, 0),
+    accountRequired,
+  };
+}
+
+/**
+ * Conservative anonymous key for guest quotas: a hash of ip|user-agent.
+ * Not an identity system — documented as such in the README.
+ */
+export async function guestUsageKey(request: Request) {
+  const ip =
+    request.headers.get('cf-connecting-ip') ??
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+    'unknown-ip';
+  const userAgent = request.headers.get('user-agent') ?? 'unknown-agent';
+  const bytes = new TextEncoder().encode(`${ip}|${userAgent}`);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return base64Url(new Uint8Array(digest));
+}
+
+function base64Url(bytes: Uint8Array) {
+  let binary = '';
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return btoa(binary)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '');
+}

@@ -1,163 +1,123 @@
 'use client';
 
 import {
-  BookOpen,
+  ArrowRight,
   Brain,
-  CalendarDays,
   CheckCircle2,
-  History,
+  Globe2,
   Loader2,
-  LogOut,
-  MessageSquareText,
-  Repeat2,
-  Send,
-  Sparkles,
-  Target,
-  Wand2,
-  Zap,
-  type LucideIcon,
+  LogIn,
+  UserPlus,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  chatCopyFor,
+  copyFor,
+  getToolsForLanguage,
+} from '@/lib/mindpulse/i18n';
+import {
+  authHeaders,
+  healSessionTokenFallback,
+} from '@/lib/mindpulse/client-auth';
+import { sendReturningVisitOnce } from '@/lib/mindpulse/beta-events';
+import {
+  GUEST_AGENT_KEY,
+  GUEST_BANNER_KEY,
+  localId,
+  readJson,
+  writeJson,
+} from '@/lib/mindpulse/local-store';
+import {
+  languages,
+  languageLabelFor,
+  type LanguageCode,
+} from '@/lib/mindpulse/tools';
+import { useLanguagePreference } from '@/lib/mindpulse/use-language-preference';
+import { useLocalizedMetadata } from '@/lib/mindpulse/use-localized-metadata';
+import { AccountSection } from './dashboard/account-section';
+import { NextActionCard } from './dashboard/next-action-card';
+import { InsightsCard } from './dashboard/insights-card';
+import { ChatPanel } from './mindpulse/chat-panel';
+import { FeedbackModal } from './mindpulse/feedback-modal';
+import { LogoutButton } from './mindpulse/logout-button';
+import { SiteFooter } from './mindpulse/site-footer';
+import { ToolCard } from './mindpulse/tool-card';
 import { SafeMarkdown } from './safe-markdown';
 
-type User = { email: string; name: string };
-type ModeId =
-  | 'study'
-  | 'planner'
-  | 'motivation'
-  | 'habit'
-  | 'goal'
-  | 'reflection';
-type ChatMessage = {
+type User = { id?: string; email: string; name: string };
+type AuthMeBody = { user?: User | null };
+type AgentPlan = {
   id: string;
-  role: 'user' | 'assistant';
+  title: string;
   content: string;
-  mode: ModeId;
   created_at: string;
 };
 
-const modes: Array<{
-  id: ModeId;
-  title: string;
-  icon: LucideIcon;
-  copy: string;
-}> = [
-  {
-    id: 'study',
-    title: 'Study Help',
-    icon: BookOpen,
-    copy: 'Explain topics and practice.',
-  },
-  {
-    id: 'planner',
-    title: 'Daily Planner',
-    icon: CalendarDays,
-    copy: 'Make time blocks realistic.',
-  },
-  {
-    id: 'motivation',
-    title: 'Motivation Reset',
-    icon: Zap,
-    copy: 'Start with one tiny action.',
-  },
-  {
-    id: 'habit',
-    title: 'Habit Coach',
-    icon: Repeat2,
-    copy: 'Build routines that survive busy days.',
-  },
-  {
-    id: 'goal',
-    title: 'Goal Breakdown',
-    icon: Target,
-    copy: 'Turn goals into milestones.',
-  },
-  {
-    id: 'reflection',
-    title: 'Quick Reflection',
-    icon: Sparkles,
-    copy: 'Learn from today without guilt.',
-  },
-];
-
-const agentPrompts = [
-  'Turn my exam panic into a 3-day study plan',
-  'Break my semester project into next actions',
-  'I keep procrastinating. Give me the smallest first step',
-];
-
-export function DashboardApp({ user }: { user: User }) {
-  const [mode, setMode] = useState<ModeId>('study');
-  const [chatInput, setChatInput] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [chatLoading, setChatLoading] = useState(false);
-  const [chatError, setChatError] = useState('');
+export function DashboardApp({ user: initialUser }: { user: User | null }) {
+  const [user, setUser] = useState<User | null>(initialUser);
+  // authReady starts true if the server already confirmed a user (no flash needed).
+  // If the server passed null, we wait for /api/auth/me before showing guest UI.
+  const [authReady, setAuthReady] = useState(Boolean(initialUser));
+  const [language, setLanguage] = useLanguagePreference();
+  const [showGuestBanner, setShowGuestBanner] = useState(false);
   const [agentInput, setAgentInput] = useState('');
   const [agentOutput, setAgentOutput] = useState('');
   const [agentLoading, setAgentLoading] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const isGuest = !user;
 
-  useEffect(() => {
-    void loadHistory();
-  }, []);
-
-  const selectedMode = useMemo(
-    () => modes.find((item) => item.id === mode)!,
-    [mode],
+  const ui = useMemo(() => copyFor(language), [language]);
+  const chatCopy = useMemo(() => chatCopyFor(language), [language]);
+  const localizedTools = useMemo(
+    () => getToolsForLanguage(language),
+    [language],
   );
 
-  async function loadHistory() {
-    const response = await fetch('/api/chat/history');
-    if (!response.ok) return;
-    const body = (await response.json()) as { messages?: ChatMessage[] };
-    setMessages([...(body.messages ?? [])].reverse());
-  }
+  useEffect(() => {
+    setUser(initialUser);
+  }, [initialUser]);
 
-  async function sendChat(event: FormEvent) {
-    event.preventDefault();
-    const text = chatInput.trim();
-    if (!text || chatLoading) return;
-    setChatLoading(true);
-    setChatError('');
-    setChatInput('');
-    const localUser: ChatMessage = {
-      id: `local-user-${Date.now()}`,
-      role: 'user',
-      content: text,
-      mode,
-      created_at: new Date().toISOString(),
-    };
-    setMessages((items) => [...items, localUser]);
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, mode }),
-      });
-      const body = (await response.json().catch(() => ({}))) as {
-        reply?: string;
-        error?: string;
-      };
-      if (!response.ok || !body.reply) {
-        console.error('[MindPulse] chat failed:', body);
-        setChatError('MindPulse could not answer right now. Please try again.');
-        return;
+  useEffect(() => {
+    let active = true;
+    async function reconcileSession() {
+      try {
+        const response = await fetch('/api/auth/me', {
+          credentials: 'same-origin',
+          cache: 'no-store',
+          headers: authHeaders(),
+        });
+        if (active) {
+          if (response.ok) {
+            const body = (await response
+              .json()
+              .catch(() => ({}))) as AuthMeBody;
+            setUser(body.user ?? null);
+          } else if (response.status === 401) {
+            setUser(null);
+          }
+          // For other status codes (network error handled in catch), keep initialUser.
+        }
+      } catch {
+        // Keep server-rendered state if the lightweight session check fails.
+      } finally {
+        // Always mark auth as ready so the UI stops blocking on the check.
+        if (active) setAuthReady(true);
       }
-      setMessages((items) => [
-        ...items,
-        {
-          id: `local-ai-${Date.now()}`,
-          role: 'assistant',
-          content: body.reply!,
-          mode,
-          created_at: new Date().toISOString(),
-        },
-      ]);
-    } finally {
-      setChatLoading(false);
     }
-  }
+    void reconcileSession().then(() => healSessionTokenFallback());
+    sendReturningVisitOnce();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    setShowGuestBanner(!readJson(GUEST_BANNER_KEY, false));
+  }, []);
+
+  useLocalizedMetadata(`${ui.navDashboard} · MindPulse`, ui.heroSubtitle);
 
   async function runAgent(prompt = agentInput) {
     const text = prompt.trim();
@@ -165,21 +125,25 @@ export function DashboardApp({ user }: { user: User }) {
     setAgentInput(text);
     setAgentLoading(true);
     setSaved(false);
+    setSaveError('');
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mode: 'planner',
-          message: `Act as the MindPulse Agent. Create a structured student plan with these sections: Goal, Plan, Next 3 actions, Deadline, Motivation reset, Possible obstacles, Smallest first step. Be practical and supportive. User request: ${text}`,
+          language,
+          message:
+            language === 'es'
+              ? `Actúa como el Agente de MindPulse. Crea un plan estudiantil estructurado con estas secciones: Meta, Plan, Próximas 3 acciones, Fecha límite, Reinicio de motivación, Posibles obstáculos y Primer paso más pequeño. Sé práctico y comprensivo. Solicitud del usuario: ${text}`
+              : `Act as the MindPulse Agent. Create a structured student plan with these sections: Goal, Plan, Next 3 actions, Deadline, Motivation reset, Possible obstacles, Smallest first step. Be practical and supportive. User request: ${text}`,
         }),
       });
       const body = (await response.json().catch(() => ({}))) as {
         reply?: string;
       };
-      setAgentOutput(
-        body.reply ?? 'MindPulse Agent could not generate a plan right now.',
-      );
+      setAgentOutput(body.reply ?? ui.agentFallback);
     } finally {
       setAgentLoading(false);
     }
@@ -187,174 +151,244 @@ export function DashboardApp({ user }: { user: User }) {
 
   async function savePlan() {
     if (!agentOutput.trim()) return;
+    setSaved(false);
+    setSaveError('');
+
+    // Do not save while session check is still in progress.
+    if (!authReady) {
+      setSaveError(ui.authChecking);
+      return;
+    }
+
+    if (!user) {
+      // Confirmed guest — save locally.
+      const plans = readJson<AgentPlan[]>(GUEST_AGENT_KEY, []);
+      writeJson(
+        GUEST_AGENT_KEY,
+        [
+          {
+            id: localId('guest-agent'),
+            title: agentInput.slice(0, 80) || 'MindPulse Agent plan',
+            content: agentOutput,
+            created_at: new Date().toISOString(),
+          },
+          ...plans,
+        ].slice(0, 20),
+      );
+      setSaved(true);
+      return;
+    }
+
+    // Logged-in user — POST to account.
     const response = await fetch('/api/agent', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify({
         title: agentInput.slice(0, 80) || 'MindPulse Agent plan',
         content: agentOutput,
       }),
     });
-    setSaved(response.ok);
+    if (response.ok) {
+      setSaved(true);
+    } else if (response.status === 401) {
+      setSaveError(ui.agentNeedLogin);
+    } else {
+      setSaveError(ui.agentFallback);
+    }
   }
 
   return (
     <div className="ambient min-h-screen">
       <header className="sticky top-0 z-40 border-b border-ink/5 bg-canvas/85 backdrop-blur-xl">
-        <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
-          <Link href="/app" className="flex items-center gap-3">
+        <nav className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-8">
+          <Link
+            href="/app"
+            className="flex min-h-11 min-w-11 items-center gap-3"
+          >
             <span className="grid h-10 w-10 place-items-center rounded-2xl bg-ink text-canvas">
               <Brain size={20} />
             </span>
-            <b>MindPulse</b>
+            <span className="hidden sm:block">
+              <b className="block text-sm">MindPulse</b>
+              <small className="font-semibold uppercase tracking-[.16em] text-muted">
+                by Northlight
+              </small>
+            </span>
           </Link>
-          <div className="hidden gap-6 text-sm font-semibold text-muted md:flex">
-            <a href="#dashboard">Dashboard</a>
-            <a href="#chat">AI Chat</a>
-            <a href="#agent">Agent</a>
-            <a href="#history">History</a>
-            <a href="#settings">Settings</a>
+          <div className="hidden gap-6 text-sm font-semibold text-muted lg:flex">
+            <Link
+              href="/app"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center hover:text-ink"
+            >
+              {ui.navDashboard}
+            </Link>
+            <Link
+              href="/why"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center hover:text-ink"
+            >
+              {ui.navWhy}
+            </Link>
+            <a
+              href="#agent"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center hover:text-ink"
+            >
+              {ui.navAgent}
+            </a>
           </div>
-          <Link
-            href="/logout"
-            className="inline-flex min-h-10 items-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-canvas"
-          >
-            <LogOut size={15} /> Logout
-          </Link>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <label className="inline-flex min-h-11 items-center gap-2 rounded-full bg-surface px-3 text-sm font-semibold text-muted shadow-soft">
+              <Globe2 size={15} />
+              <span className="sr-only">{languageLabelFor[language]}</span>
+              <select
+                value={language}
+                onChange={(event) =>
+                  setLanguage(event.target.value as LanguageCode)
+                }
+                aria-label={languageLabelFor[language]}
+                className="min-h-11 bg-transparent font-semibold text-ink outline-none"
+              >
+                {languages.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {/* Hide auth-dependent nav buttons until session is confirmed */}
+            {authReady &&
+              (user ? (
+                <LogoutButton
+                  label={ui.navLogout}
+                  className="inline-flex min-h-11 items-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-canvas"
+                />
+              ) : (
+                <>
+                  <Link
+                    href="/login"
+                    className="inline-flex min-h-11 items-center gap-2 rounded-full bg-surface px-4 text-sm font-semibold text-ink shadow-soft"
+                  >
+                    <LogIn size={15} /> {ui.navLogin}
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="inline-flex min-h-11 items-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-canvas"
+                  >
+                    <UserPlus size={15} /> {ui.navSignup}
+                  </Link>
+                </>
+              ))}
+          </div>
         </nav>
       </header>
 
       <main id="main-content" className="mx-auto max-w-7xl px-5 py-10 sm:px-8">
-        <section id="dashboard" className="grid gap-5 lg:grid-cols-[1fr_22rem]">
-          <div className="rounded-[2rem] bg-surface p-6 shadow-soft sm:p-8">
-            <p className="text-xs font-bold uppercase tracking-[.2em] text-sage">
-              Dashboard
-            </p>
-            <h1 className="mt-3 text-4xl font-semibold tracking-tight">
-              Welcome, {user.name || user.email}.
-            </h1>
-            <p className="mt-3 leading-7 text-muted">
-              Your account is connected to <b>{user.email}</b>. Chat history and
-              saved Agent plans stay attached to this login.
-            </p>
-            <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {[
-                ...modes,
-                {
-                  id: 'chat' as const,
-                  title: 'AI Chat',
-                  icon: MessageSquareText,
-                  copy: 'Ask anything study-related.',
-                },
-                {
-                  id: 'agent' as const,
-                  title: 'Agent',
-                  icon: Wand2,
-                  copy: 'Generate structured plans.',
-                },
-              ].map((item) => (
-                <a
-                  key={item.title}
-                  href={item.id === 'agent' ? '#agent' : '#chat'}
-                  className="rounded-mp bg-canvas/70 p-4 transition hover:-translate-y-1 hover:bg-sage-soft/70"
+        {/* Guest banner — only show after auth check confirms user is null */}
+        {authReady && isGuest && showGuestBanner && (
+          <section className="mb-6 rounded-[1.75rem] border border-sage/20 bg-sage-soft/70 p-5 shadow-soft">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <p className="max-w-3xl text-sm leading-6 text-muted">
+                {ui.guestBannerText}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Link
+                  href="/signup"
+                  className="inline-flex min-h-11 items-center rounded-full bg-ink px-4 py-2 text-sm font-semibold text-canvas"
                 >
-                  <item.icon className="text-sage" size={20} />
-                  <h2 className="mt-4 font-semibold">{item.title}</h2>
-                  <p className="mt-1 text-sm leading-6 text-muted">
-                    {item.copy}
-                  </p>
-                </a>
-              ))}
+                  {ui.guestBannerCreate}
+                </Link>
+                <Link
+                  href="/login"
+                  className="inline-flex min-h-11 items-center rounded-full bg-canvas px-4 py-2 text-sm font-semibold text-ink"
+                >
+                  {ui.guestBannerLogin}
+                </Link>
+                <button
+                  onClick={() => {
+                    writeJson(GUEST_BANNER_KEY, true);
+                    setShowGuestBanner(false);
+                  }}
+                  className="inline-flex min-h-11 items-center rounded-full bg-canvas/70 px-4 py-2 text-sm font-semibold text-muted"
+                >
+                  {ui.guestBannerContinue}
+                </button>
+              </div>
             </div>
-          </div>
-          <aside className="rounded-[2rem] bg-ink p-6 text-canvas shadow-soft">
-            <Target className="text-sage-soft" />
-            <h2 className="mt-5 text-xl font-semibold">
-              Today&apos;s check-in
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-canvas/70">
-              No shame streaks. Pick one useful return today and let the rest
-              become easier after that.
-            </p>
+          </section>
+        )}
+
+        <section className="grid gap-5 lg:grid-cols-[1fr_22rem]">
+          <NextActionCard
+            language={language}
+            copy={ui.nextAction}
+            tools={localizedTools}
+          />
+          <aside className="flex flex-col gap-5">
+            <InsightsCard
+              copy={ui.insights}
+              isGuest={isGuest}
+              authReady={authReady}
+            />
+            <div className="rounded-[2rem] bg-ink p-6 text-canvas shadow-soft">
+              <h2 className="text-xl font-semibold">{ui.recoveryCard.title}</h2>
+              <p className="mt-2 text-sm leading-7 text-canvas/75">
+                {ui.recoveryCard.copy}
+              </p>
+              <Link
+                href="/recovery"
+                className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full bg-canvas/15 px-5 text-sm font-semibold text-canvas hover:bg-canvas/25 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sage-soft"
+              >
+                {ui.recoveryCard.cta} <ArrowRight size={15} />
+              </Link>
+              <div className="mt-5 rounded-2xl bg-canvas/10 p-4">
+                <p className="text-xs font-bold uppercase tracking-[.16em] text-sage-soft">
+                  {!authReady
+                    ? ui.authChecking
+                    : isGuest
+                      ? ui.planGuestLabel
+                      : ui.planAccountLabel}
+                </p>
+                {authReady && (
+                  <p className="mt-2 text-sm leading-6 text-canvas/75">
+                    {isGuest ? ui.planGuestDesc : ui.planAccountDesc}
+                  </p>
+                )}
+              </div>
+            </div>
           </aside>
         </section>
 
-        <section id="chat" className="mt-8 grid gap-5 lg:grid-cols-[20rem_1fr]">
-          <div className="rounded-mp bg-surface p-5 shadow-soft">
-            <h2 className="font-semibold">Choose a mode</h2>
-            <div className="mt-4 space-y-2">
-              {modes.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setMode(item.id)}
-                  className={`w-full rounded-2xl p-3 text-left text-sm font-semibold ${
-                    mode === item.id
-                      ? 'bg-sage-soft text-ink'
-                      : 'bg-canvas/60 text-muted'
-                  }`}
-                >
-                  {item.title}
-                </button>
-              ))}
+        <section className="mt-8">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[.2em] text-sage">
+                {ui.toolsLabel}
+              </p>
+              <h2 className="mt-2 text-3xl font-semibold">{ui.toolsTitle}</h2>
             </div>
+            <p className="max-w-xl text-sm leading-6 text-muted">
+              {ui.toolsDesc}
+            </p>
           </div>
-          <div className="rounded-[2rem] bg-surface shadow-soft">
-            <div className="border-b border-ink/5 p-5">
-              <h2 className="text-xl font-semibold">{selectedMode.title}</h2>
-              <p className="text-sm text-muted">{selectedMode.copy}</p>
-            </div>
-            <div className="max-h-[32rem] min-h-[24rem] space-y-4 overflow-y-auto bg-canvas/40 p-5">
-              {!messages.length && (
-                <p className="rounded-mp bg-surface p-4 text-muted">
-                  Your saved conversation history will appear here.
-                </p>
-              )}
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[85%] rounded-[1.35rem] px-4 py-3 text-sm leading-7 ${
-                      message.role === 'user'
-                        ? 'rounded-br-md bg-ink text-canvas'
-                        : 'rounded-bl-md bg-surface'
-                    }`}
-                  >
-                    {message.role === 'assistant' ? (
-                      <SafeMarkdown>{message.content}</SafeMarkdown>
-                    ) : (
-                      message.content
-                    )}
-                  </div>
-                </div>
-              ))}
-              {chatLoading && <Loader2 className="animate-spin text-sage" />}
-            </div>
-            {chatError && (
-              <div className="mx-5 mt-4 rounded-2xl bg-warm/15 p-3 text-sm text-danger">
-                {chatError}
-              </div>
-            )}
-            <form onSubmit={sendChat} className="p-5">
-              <textarea
-                value={chatInput}
-                onChange={(event) => setChatInput(event.target.value)}
-                maxLength={1000}
-                rows={3}
-                className="w-full resize-none rounded-2xl border border-ink/10 bg-canvas/70 px-4 py-3 outline-none focus:border-sage"
-                placeholder={`Ask ${selectedMode.title}...`}
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {localizedTools.map((tool) => (
+              <ToolCard
+                key={tool.id}
+                tool={tool}
+                openLabel={ui.toolOpenLabel}
               />
-              <div className="mt-3 flex items-center justify-between">
-                <p className="text-xs text-muted">
-                  AI can make mistakes. MindPulse is not a doctor or therapist.
-                </p>
-                <button className="inline-flex min-h-11 items-center gap-2 rounded-full bg-sage px-5 font-semibold text-canvas">
-                  Send <Send size={15} />
-                </button>
-              </div>
-            </form>
+            ))}
           </div>
+        </section>
+
+        <section id="chat" className="scroll-mt-24">
+          <ChatPanel
+            user={user}
+            language={language}
+            copy={chatCopy}
+            authReady={authReady}
+            className="mt-8"
+          />
         </section>
 
         <section
@@ -362,17 +396,18 @@ export function DashboardApp({ user }: { user: User }) {
           className="mt-8 rounded-[2rem] bg-surface p-6 shadow-soft"
         >
           <p className="text-xs font-bold uppercase tracking-[.2em] text-sage">
-            AI Agent
+            {ui.agentLabel}
           </p>
-          <h2 className="mt-3 text-3xl font-semibold">
-            Turn vague pressure into a plan.
-          </h2>
+          <h2 className="mt-3 text-3xl font-semibold">{ui.agentTitle}</h2>
+          <p className="mt-2 max-w-2xl text-sm leading-7 text-muted">
+            {ui.agentSubtitle}
+          </p>
           <div className="mt-5 flex flex-wrap gap-2">
-            {agentPrompts.map((prompt) => (
+            {ui.agentPrompts.map((prompt) => (
               <button
                 key={prompt}
                 onClick={() => void runAgent(prompt)}
-                className="rounded-full bg-sage-soft px-4 py-2 text-sm font-semibold text-ink"
+                className="min-h-11 rounded-full bg-sage-soft px-4 py-2 text-sm font-semibold text-ink"
               >
                 {prompt}
               </button>
@@ -390,59 +425,52 @@ export function DashboardApp({ user }: { user: User }) {
                 onChange={(event) => setAgentInput(event.target.value)}
                 rows={8}
                 className="w-full resize-none rounded-2xl border border-ink/10 bg-canvas/70 px-4 py-3 outline-none focus:border-sage"
-                placeholder="I have a biology exam Friday and I am behind..."
+                placeholder={ui.agentPlaceholder}
               />
-              <button className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-full bg-ink px-5 font-semibold text-canvas">
+              <button className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-ink px-5 font-semibold text-canvas sm:w-auto">
                 {agentLoading && <Loader2 size={16} className="animate-spin" />}
-                Generate next step
+                {ui.agentGenerate}
               </button>
             </form>
             <div className="rounded-mp bg-canvas/70 p-5">
-              <h3 className="font-semibold">Structured output</h3>
+              <h3 className="font-semibold">{ui.agentOutputTitle}</h3>
               <div className="mt-4 min-h-[12rem] text-sm leading-7">
                 {agentOutput ? (
                   <SafeMarkdown>{agentOutput}</SafeMarkdown>
                 ) : (
-                  <p className="text-muted">
-                    Your Agent result will show Goal, Plan, Next 3 actions,
-                    Deadline, Motivation reset, Obstacles, and Smallest first
-                    step.
-                  </p>
+                  <p className="text-muted">{ui.agentOutputEmpty}</p>
                 )}
               </div>
               <button
                 onClick={() => void savePlan()}
                 disabled={!agentOutput}
-                className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-full bg-sage px-4 text-sm font-semibold text-canvas disabled:opacity-40"
+                className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full bg-sage px-4 text-sm font-semibold text-canvas disabled:opacity-40"
               >
-                Save plan {saved && <CheckCircle2 size={15} />}
+                {ui.agentSave} {saved && <CheckCircle2 size={15} />}
               </button>
+              {saved && isGuest && (
+                <p className="mt-2 text-xs font-semibold text-sage">
+                  {ui.agentSavedLocal}
+                </p>
+              )}
+              {saveError && (
+                <p className="mt-2 text-xs font-semibold text-danger">
+                  {saveError}
+                </p>
+              )}
             </div>
           </div>
         </section>
 
-        <section
-          id="history"
-          className="mt-8 rounded-mp bg-surface p-5 shadow-soft"
-        >
-          <h2 className="flex items-center gap-2 font-semibold">
-            <History size={18} className="text-sage" /> Recent conversations
-          </h2>
-          <p className="mt-2 text-sm text-muted">
-            Showing your latest saved messages from this account.
-          </p>
-        </section>
+        {authReady && user && (
+          <AccountSection email={user.email} copy={ui.account} />
+        )}
 
-        <section
-          id="settings"
-          className="mt-8 rounded-mp bg-surface p-5 shadow-soft"
-        >
-          <h2 className="font-semibold">Settings</h2>
-          <p className="mt-2 text-sm text-muted">
-            Preferences are ready for the next iteration. Private configuration
-            stays server-side.
-          </p>
-        </section>
+        <div className="mt-8 flex justify-end">
+          <FeedbackModal language={language} flow="dashboard" />
+        </div>
+
+        <SiteFooter language={language} />
       </main>
     </div>
   );

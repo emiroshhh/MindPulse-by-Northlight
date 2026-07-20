@@ -1,13 +1,19 @@
 import {
   clearSessionCookie,
+  clearSessionCookieHeaders,
   invalidateSessionToken,
   json,
   readSessionTokenFromCookie,
+  readTokenFromRequest,
   requireDb,
 } from '@/lib/server/auth';
 
-export async function POST() {
-  const token = await readSessionTokenFromCookie();
+export async function POST(request: Request) {
+  // Prefer the request Cookie header (reliable on Cloudflare Workers).
+  const token =
+    readTokenFromRequest(request) ??
+    (await readSessionTokenFromCookie().catch(() => null));
+
   if (token) {
     try {
       const db = await requireDb();
@@ -16,6 +22,12 @@ export async function POST() {
       // Cookie clearing is still safe even if D1 is temporarily unavailable.
     }
   }
-  await clearSessionCookie();
-  return json({ ok: true });
+
+  // Belt-and-suspenders: try the Next.js cookies() path too.
+  await clearSessionCookie().catch(() => undefined);
+
+  const response = json({ ok: true });
+  for (const cookie of clearSessionCookieHeaders())
+    response.headers.append('Set-Cookie', cookie);
+  return response;
 }

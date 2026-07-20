@@ -1,49 +1,62 @@
-# MindPulse v2 audit
+# MindPulse current beta audit
 
-Audit date: 2026-06-22. Scope: web PWA, Expo client, shared safety package, AI route, desktop and 375px layouts.
+Audit refreshed: 2026-07-03. Scope: active Next.js/OpenNext web app on Cloudflare Workers, D1 persistence, Gemini chat route, public beta/portfolio pages, feedback flow, safety documentation, and Static Assets headers.
 
-## Baseline findings
+## Current architecture findings
 
-| Area             | Before             | Finding                                                                                                                                                                      | Fix / after                                                                                                                                                     |
-| ---------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/` onboarding   | Working            | Warm and keyboard-usable, but initial loader is only an icon and the dashboard has no tailored next step.                                                                    | Add designed loading treatment and adaptive exercise recommendation.                                                                                            |
-| Today            | Working            | Mood logging persists locally. Empty/current state is clear.                                                                                                                 | Add a polished mood-to-exercise flagship card driven by real check-in data.                                                                                     |
-| Companion        | Broken without env | Default provider is OpenAI even when no server key exists, so local use returns HTTP 503. Errors replace the reply but offer no retry. No starter prompts or opt-in context. | Add safe automatic local fallback for development, provider timeout, structured errors, retry, prompt chips, bounded mood context and clean markdown rendering. |
-| Companion safety | Working            | Input and output are screened; crisis input bypasses the model. No route-level regression test.                                                                              | Add crisis and demo-provider route tests; preserve fixed crisis reply and resource metadata.                                                                    |
-| Journal          | Working            | Create/edit/delete and empty state work locally.                                                                                                                             | Retain behavior; include journal data only in export, never implicit AI context.                                                                                |
-| Exercises        | Working            | Four complete guided flows and reduced-motion support.                                                                                                                       | Use adaptive suggestion as the flagship entry point.                                                                                                            |
-| Insights         | Working            | Gentle trend and empty state are present; no clinical claims.                                                                                                                | Keep conclusions explicitly non-clinical.                                                                                                                       |
-| Safety           | Working            | Always reachable, bilingual and uses centrally governed resources.                                                                                                           | No hotline values added; verification gate remains intact.                                                                                                      |
-| Settings/login   | Working            | Export, local deletion, language and theme controls work. Supabase login degrades to a friendly error when unconfigured.                                                     | Keep controls and clarify AI context opt-in in chat.                                                                                                            |
-| `/style`         | Missing            | No visible design-system reference.                                                                                                                                          | Add token, typography, component and state reference route.                                                                                                     |
-| Mobile           | Mostly working     | Shared endpoint and safety are used. Older WebViews previously lacked `randomUUID`; fixed in v1. Streaming error handling is minimal.                                        | Reuse structured server errors and keep fallback ID generator.                                                                                                  |
+| Area               | Current state         | Audit conclusion                                                                                                                                     |
+| ------------------ | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Production storage | Cloudflare D1         | Active auth, sessions, daily usage, account chat history, and Agent plans use D1. Supabase is legacy and unused by active web routes.                |
+| Guest access       | Working               | `/app` and six tools are guest-first. Guest state stays local; five daily AI messages are enforced server-side.                                      |
+| Accounts           | Working               | Accounts receive twenty daily messages and D1-backed chat/Agent history. Auth/session/logout code was not changed in this hardening pass.            |
+| AI transport       | Buffered JSON         | Gemini output is fully received and screened before the API returns JSON. There is no production SSE/token stream claim.                             |
+| AI modes           | Six distinct modes    | Study, Planner, Motivation, Habits, Goals, and Reflection have distinct system guidance and bounded context.                                         |
+| Languages          | EN/RU/KZ interface    | UI localization exists in three languages. Deterministic safety coverage is primarily English/Russian; equivalent KZ crisis coverage is not claimed. |
+| Feedback           | External and optional | The configured external form opens in a new tab with `noreferrer`. MindPulse stores only a local opened marker and has no feedback database.         |
+| Metrics            | Goals only            | Impact numbers are explicitly beta targets/placeholders, not observed outcomes.                                                                      |
 
-## Console, network, and streaming
+## Stage 7.5 hardening results
 
-- Browser console is clean after the v1 hydration and ID fixes.
-- Production build succeeds.
-- Root cause of the reported AI failure: `.env` has no provider key while `/api/chat` defaults to `openai`; the route returns `503 "not configured"`.
-- Provider output is deliberately buffered for a complete safety pass before approved text is streamed to the client. This is a safety/latency tradeoff, not a broken stream.
-- Missing resilience: provider timeout, actionable 429 message, mid-stream recovery and retry.
+### HTTP headers
 
-## Accessibility and responsive layout
+`apps/web/public/_headers` now adds the following to Cloudflare Static Assets:
 
-- Dark-mode contrast and mood-face contrast were fixed in v1 and have regression tests.
-- Focus styles, semantic headings, labels, skip link and reduced-motion rules are present.
-- Mobile at 375–390px is usable; closed off-canvas navigation was still discoverable to assistive technology and was changed to `visibility: hidden` when closed.
-- Remaining v2 work: ensure starter chips and retry controls have 44px targets; keep context opt-in explicit and screen-reader labelled.
+- HSTS;
+- `X-Content-Type-Options: nosniff`;
+- strict-origin referrer policy;
+- restricted camera, microphone, geolocation, payment, and USB permissions;
+- `X-Frame-Options: DENY`;
+- a practical CSP with `frame-ancestors 'none'`, no objects or frames, same-origin scripts/connections, and narrowly required inline styles/scripts for the current Next.js output.
 
-## Performance
+Cloudflare documents that `_headers` does not apply to Worker-generated SSR/API responses. Existing `next.config.ts` already applies nosniff, Referrer-Policy, and Permissions-Policy across Next routes. Extending CSP/HSTS/X-Frame parity to every Worker response is intentionally deferred because this pass forbids risky Worker/deployment-config changes.
 
-- Current production route sizes: `/` about 19 kB route code / 208 kB first load; `/login` about 5 kB / 194 kB first load.
-- No remote font or audio dependency. Heavy chart library is not used.
-- The AI route is capped at 700 output tokens and eight requests per ten minutes per instance-local identity bucket.
-- Instance-local rate limiting is acceptable for the demo but must move to a shared store before a broad launch.
+### Logging hygiene
 
-## Safety invariants for this pass
+- User prompts and conversation history are not logged.
+- Gemini error/response bodies are no longer logged.
+- Provider exception messages are no longer logged.
+- Safe status and error-name metadata remains.
+- Existing auth diagnostics remain unchanged and sanitized.
 
-1. Crisis input never reaches an AI provider.
-2. Full model output is screened before any approved text reaches the client.
-3. Demo fallback is non-clinical, bounded and server-side.
-4. Mood context is opt-in, minimal and described to the user.
-5. No unverified crisis phone number is introduced.
+### Privacy readiness
+
+The public privacy page now explains guest storage, D1 account storage, daily usage counters, Gemini processing, optional feedback, beta retention, local deletion, account-data requests, and the current feedback-form contact channel.
+
+### Public links
+
+Automated tests verify the Case Study footer link, `/beta` → `/case-study`, feedback destination safety, and static internal links on the main public pages. No `href="#"` feedback destination remains.
+
+## Outdated audit findings removed
+
+The previous audit described an older mood/journal/Supabase application, instance-local rate limiting, OpenAI provider defaults, and SSE streaming. Those statements do not describe the active MindPulse beta and have been removed.
+
+## Intentionally deferred
+
+- Full runtime security-header parity for Worker-generated SSR/API responses
+- Professional safety/privacy/legal review
+- Reviewed Kazakh urgent-language rules and fixed safety response
+- Self-service account deletion
+- Formal automatic retention schedule and backup-deletion policy
+- Advanced analytics, payments, ads, mood tracking, and journals
+
+These items should be addressed only through separately scoped, reviewed work. They must not be presented as current production capabilities.

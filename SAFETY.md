@@ -1,140 +1,138 @@
 # MindPulse safety design
 
-This document is a launch-critical part of the product. MindPulse supports everyday mental wellbeing for ages 13–18; it is not medical care, therapy, diagnosis, monitoring, or an emergency/crisis service.
+This document describes the current production web beta. MindPulse is a student productivity and learning assistant—not therapy, diagnosis, medical treatment, professional mental-health care, monitoring, or an emergency service.
 
-## Safety invariants
+## Current safety invariants
 
-1. A model is never called before the user's newest text is screened.
-2. A crisis or abuse signal never receives improvised model advice.
-3. No generated text reaches the user before the complete answer passes output screening.
-4. Crisis UI remains visible and does not offer points, streaks, dismissal rewards, or an artificial “resolved” state.
-5. Provider credentials stay server-side. Raw wellbeing content is not written to application logs.
-6. Every private database record is owner-isolated by row-level security.
+1. The newest user message is screened before Gemini is called.
+2. Flagged self-harm, suicide, abuse, or immediate-danger language receives a fixed safety reply instead of ordinary AI coaching.
+3. A complete Gemini response is buffered and screened before it is returned to the browser.
+4. Model output matching focused diagnostic, harmful, isolating, or sexual-content rules is replaced with a fixed safe fallback.
+5. API keys and session secrets remain server-side.
+6. User prompts, Gemini response bodies, and generated answers are not written to application logs.
+7. Account history queries are scoped by the authenticated D1 `user_id`; guest history is not written to account history.
 
-## Turn flow
+## Current chat flow
 
 ```mermaid
 sequenceDiagram
-  participant U as Teen user
-  participant C as Web / mobile client
-  participant S as MindPulse API
-  participant E as Shared safety engine
-  participant P as AI provider
-  U->>C: Sends message
-  C->>E: Immediate local safety hint
-  C->>S: Auth/session + bounded history
-  S->>E: Authoritative input screen
-  alt Crisis, self-harm, acute danger, or abuse signal
-    E-->>S: Flag + categories
-    S-->>C: Fixed reviewed reply + crisis metadata
-    C-->>U: Persistent resources panel
-  else No urgent signal
-    S->>P: System prompt + bounded history
-    P-->>S: Provider stream (held server-side)
-    S->>E: Complete output screen
-    alt Unsafe output
-      E-->>S: Block
-      S-->>C: Fixed safe fallback
+  participant U as Student
+  participant C as Web client
+  participant A as MindPulse API
+  participant S as Shared safety rules
+  participant G as Gemini
+  U->>C: Sends current message + bounded context
+  C->>A: POST /api/chat
+  A->>S: Screen current user message
+  alt Flagged safety signal
+    S-->>A: Flagged
+    A-->>C: Fixed safety reply (buffered JSON)
+  else No flagged signal
+    A->>G: System instruction + bounded context
+    G-->>A: Complete response
+    A->>S: Screen complete output
+    alt Unsafe model output
+      S-->>A: Block
+      A-->>C: Fixed safe fallback
     else Approved output
-      S-->>C: Approved text as SSE tokens
+      A-->>C: Approved reply (buffered JSON)
     end
   end
 ```
 
-The local client check exists only to surface urgent UI quickly. The server check is authoritative and cannot be bypassed by modifying the client.
+The current route does **not** stream SSE tokens. Buffering is intentional so the full output can be screened before display.
 
-## Detection model
+## Deterministic screening coverage
 
-`packages/shared/src/safety/index.ts` uses explicit, reviewable English and Russian signals for:
+`packages/shared/src/safety/index.ts` contains explicit, reviewable English and Russian patterns for:
 
 - suicidal ideation and intent;
 - self-harm intent;
-- immediate danger from another person;
-- abuse, threats, or unsafe touching disclosures;
-- model output that diagnoses, prescribes, enables harm, sexualizes the relationship, or isolates the teen from trusted adults.
+- immediate danger;
+- abuse or threats;
+- selected unsafe model-output patterns.
 
-Known idioms such as “kill time” are removed before matching. Tests cover urgent phrases, abuse, false positives, safe supportive language, and blocked clinical claims.
+Known false-positive idioms are removed before matching. Regression tests cover urgent English/Russian phrases, common false positives, diagnostic claims, and safe supportive language.
 
-Regex/rule detection is intentionally explainable but cannot understand every spelling, euphemism, language, context, or emerging phrase. It can miss real crises and can over-trigger. It must be supplemented by regularly evaluated classifiers and professional review before a public launch; a classifier must never weaken the deterministic high-confidence path.
+This is a focused rule layer, not comprehensive crisis understanding. It can miss euphemisms, spelling variants, context, and unsupported languages.
 
-## Crisis response
+## Language limitation
 
-On any matched urgent/abuse signal:
+MindPulse has English, Russian, and Kazakh **interface support**. It does not currently claim equivalent trilingual safety coverage:
 
-1. Do not call the model.
-2. Return `SAFE_CRISIS_REPLY[locale]`, which validates disclosure without promising safety or acting as a counselor.
-3. Send crisis metadata to display the persistent resources panel.
-4. Encourage moving near a safe person, contacting a trusted adult, and using current local emergency/support resources.
-5. Never mark the crisis “complete,” start a countdown, congratulate, award a badge, or hide the panel automatically.
+- deterministic urgent-input rules are strongest in English and Russian;
+- the production fixed crisis reply is currently English;
+- Kazakh crisis-language evaluation and reviewed KZ safety copy are not complete.
 
-MindPulse does not claim to contact emergency services, track location, notify a parent, or monitor whether help was reached.
+The KZ interface remains available, but professional review and dedicated KZ safety tests are required before describing the safety system as fully trilingual.
 
-## Resource governance
+## Prompt and context boundaries
 
-Resources are centralized in `packages/shared/src/safety/resources.ts`. Every entry includes regions, localized copy, URL, availability text, verification status, authoritative source, and last-check date.
+- Current user input is limited to 1,000 characters.
+- Conversation context is limited to the six latest valid messages from the selected mode.
+- Each context message is normalized and truncated to 600 characters.
+- Context is explicitly marked as conversation data that cannot override system instructions.
+- Gemini credentials and environment configuration are never included in the prompt.
 
-The Kazakhstan government resource intentionally has `phone: null` and `verification_required`. A missing number is safer than a plausible but stale number. Before launch, a named human owner must:
+The route currently does not set a verified provider-side maximum-output-token field. Responses are screened after completion.
 
-1. verify phone/chat availability with the linked Kazakhstan government authority;
-2. verify that the service is appropriate and accessible to minors;
-3. record the exact source and date;
-4. test the displayed link/number from the target region;
-5. set a recurring re-verification schedule and removal SLA.
+## Data isolation and privacy
 
-The international fallback links to Find a Helpline's country directory. A directory is not a guarantee of availability; users are still told to contact local emergency services when danger is immediate.
+- Active production storage is Cloudflare D1, not Supabase.
+- Guest chat, focus, and guest plans are stored in browser local storage.
+- Account chat and Agent data are queried and written with the authenticated D1 `user_id`.
+- D1 does not provide PostgreSQL RLS; isolation is enforced by server-side application queries and session resolution.
+- Session records store a keyed hash of the session token, not the raw token.
+- Daily usage is stored by account/date or a server-derived guest key/date.
+- Feedback uses an external form and stores only a local “feedback opened” marker in MindPulse.
 
-## AI guardrails
+See `/privacy` for the student-readable storage, AI-processing, retention, and deletion-request explanation.
 
-`MINDPULSE_SYSTEM_PROMPT` requires short, age-appropriate, validating replies and forbids:
+## Logging rules
 
-- diagnosis, prescription, or clinical certainty;
-- romantic/sexual engagement;
-- instructions or encouragement for harm;
-- shame, fear, coercion, or promises;
-- secrecy, exclusivity, dependence, or isolation from trusted people;
-- engagement-maximizing behavior.
+Allowed production metadata includes:
 
-History is limited to 12 bounded messages, user input to 4,000 characters, and model output to at most 700 tokens. Only the server owns provider selection and credentials.
+- whether a required server key is configured (`true`/`false` only);
+- upstream HTTP status;
+- sanitized error name;
+- database change/verification booleans used by the existing auth diagnostics.
 
-## Privacy and data controls
+Do not log:
 
-- Browser demo mode stores data locally and labels that behavior.
-- Authenticated production records belong to the user ID from Supabase Auth.
-- RLS is enabled on profiles, moods, journals, chat sessions/messages, and exercise completions.
-- Policies scope reads and writes to `auth.uid()`; chat-message inserts also verify session ownership.
-- Foreign keys cascade deletion from `auth.users`.
-- The deletion RPC can act only on the authenticated caller and is not granted to anonymous/public roles.
-- Export produces a readable JSON copy. Provider/service-role keys never enter an export.
-- The chat route does not log prompts, answers, safety matches, or identities.
+- prompts or conversation history;
+- Gemini response/error bodies;
+- generated answers;
+- API keys or secrets;
+- raw session tokens, password hashes, cookies, request bodies, or authorization headers.
 
-Before launch, define retention windows, backup-deletion behavior, lawful-basis/consent handling, guardian requirements by jurisdiction, subject access operations, and incident notification procedures with qualified counsel.
+Raw tail logs may contain request headers supplied by the platform and must not be retained casually.
 
-## Abuse disclosure nuance
+## Serious-risk behavior
 
-Abuse signals are treated as safety events even without explicit self-harm language. The response encourages reaching a safe adult/local support without telling the teen to confront an alleged abuser or making a promise of confidentiality. Mandatory-reporting obligations vary by service, staff role, and country; MindPulse must not claim duties or actions it cannot perform.
+For a matched serious-risk signal, MindPulse stops ordinary productivity coaching and advises immediate real-world support such as local emergency services or a trusted nearby person. It does not diagnose, promise confidentiality, contact services, track location, notify another person, or know whether the user reached safety.
 
-## Testing and review
+The fixed response is a limited safety fallback, not professional crisis intervention.
 
-Required before each release that changes safety code, prompts, providers, languages, or crisis UI:
+## Release checks
 
-- run `npm test` and preserve regression cases;
-- manually test English and Russian urgent phrases on web and mobile;
-- verify that the model provider is not called on a flagged input;
-- inject disallowed model outputs and verify full blocking before token delivery;
-- verify crisis UI with keyboard, screen reader, narrow viewport, dark mode, and reduced motion;
-- verify rate-limit responses do not dismiss crisis resources;
-- verify all resource links and human verification metadata;
-- run Supabase RLS tests using two distinct users.
+For changes to chat safety, provider integration, prompts, or supported languages:
 
-## Known limitations / launch blockers
+- run `npm run lint`, `npm run typecheck`, `npm test`, and `npm run build`;
+- verify flagged input does not call Gemini;
+- verify an unsafe complete output is replaced before display;
+- verify prompts, provider bodies, and secrets are absent from logs;
+- manually test representative English and Russian phrases;
+- do not claim KZ safety equivalence until reviewed KZ coverage and tests exist;
+- verify privacy and emergency-limit wording remains visible and accurate.
 
-- Deterministic phrases do not provide comprehensive multilingual crisis understanding.
-- The MVP rate limiter is instance-local; a distributed limiter is required at scale.
-- Region defaults to Kazakhstan; production must use a consent-respecting explicit region choice, not covert location tracking.
-- The provider output safety screen is a focused rule layer, not proof that every response is appropriate.
-- MindPulse cannot know whether a user is safe, whether a disclosure is literal, or whether a resource answered.
-- Resource freshness requires a staffed operational process.
-- Local demo storage is not cross-device and should not be presented as cloud-backed persistence.
-- The product requires professional clinical-safety, child-safeguarding, privacy/legal, accessibility, and security review before real-world use by minors.
+## Known limitations and deferred work
 
-When uncertain, fail toward human support, transparent limits, and less model improvisation.
+- Deterministic phrase matching is not comprehensive safety classification.
+- Kazakh urgent-language coverage and localized fixed replies are incomplete.
+- No professional clinical-safety or child-safeguarding review has been completed.
+- The app does not provide verified country-specific crisis numbers.
+- The current fixed safety response is not a substitute for local emergency resources.
+- Full Worker-response CSP/HSTS parity needs a separately reviewed runtime-header change; `_headers` protects Static Assets only.
+- Formal retention, incident-response, and jurisdiction-specific privacy processes require qualified review before a broad launch.
+
+When uncertain, MindPulse should prefer transparent limits, immediate real-world support, and less model improvisation.

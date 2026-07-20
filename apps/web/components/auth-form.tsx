@@ -1,49 +1,27 @@
 'use client';
 
-import { Brain, Loader2 } from 'lucide-react';
+import { Brain } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { authCopyFor } from '@/lib/mindpulse/auth-i18n';
+import { languages, type LanguageCode } from '@/lib/mindpulse/tools';
+import { useLanguagePreference } from '@/lib/mindpulse/use-language-preference';
+import { useLocalizedMetadata } from '@/lib/mindpulse/use-localized-metadata';
 
 export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
-  const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/auth/${mode}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email,
-          password,
-          ...(mode === 'signup' ? { name } : {}),
-        }),
-      });
-      const body = (await response.json().catch(() => ({}))) as {
-        error?: string;
-      };
-      if (!response.ok) {
-        setError(body.error ?? 'Something went wrong. Please try again.');
-        return;
-      }
-      router.push('/app');
-      router.refresh();
-    } catch {
-      setError('MindPulse could not connect. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  const searchParams = useSearchParams();
   const isSignup = mode === 'signup';
+  const [language, setLanguage] = useLanguagePreference();
+  const copy = authCopyFor(language);
+
+  useLocalizedMetadata(
+    `${isSignup ? copy.signupTitle : copy.loginTitle} · MindPulse`,
+    isSignup ? copy.signupIntro : copy.loginIntro,
+  );
+  const errorCode = searchParams.get('error');
+  const error =
+    errorCode && isSignup ? copy.signupError : errorCode ? copy.loginError : '';
+
   return (
     <main className="ambient grid min-h-screen place-items-center px-5 py-10">
       <section className="w-full max-w-md rounded-[2rem] border border-ink/5 bg-surface p-6 shadow-soft sm:p-8">
@@ -58,50 +36,66 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
             </small>
           </span>
         </Link>
+        <label className="mt-6 block text-sm font-semibold">
+          <span className="sr-only">{copy.languageLabel}</span>
+          <select
+            aria-label={copy.languageLabel}
+            value={language}
+            onChange={(event) =>
+              setLanguage(event.target.value as LanguageCode)
+            }
+            className="min-h-11 w-full rounded-xl border border-ink/10 bg-canvas px-3"
+          >
+            {languages.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+        </label>
         <h1 className="mt-8 text-3xl font-semibold tracking-tight">
-          {isSignup ? 'Create your account' : 'Welcome back'}
+          {isSignup ? copy.signupTitle : copy.loginTitle}
         </h1>
         <p className="mt-2 leading-7 text-muted">
-          {isSignup
-            ? 'Save your study history, AI chats, and Agent plans privately.'
-            : 'Log in to continue your dashboard, chat history, and Agent plans.'}
+          {isSignup ? copy.signupIntro : copy.loginIntro}
         </p>
-        <form onSubmit={submit} className="mt-6 space-y-4">
+        <form
+          method="post"
+          action={isSignup ? '/api/auth/signup' : '/api/auth/login'}
+          className="mt-6 space-y-4"
+        >
           {isSignup && (
             <label className="block text-sm font-semibold">
-              Name
+              {copy.name}
               <input
-                value={name}
-                onChange={(event) => setName(event.target.value)}
+                name="name"
                 autoComplete="name"
                 className="mt-2 w-full rounded-2xl border border-ink/10 bg-canvas/70 px-4 py-3 outline-none focus:border-sage focus:ring-4 focus:ring-sage/10"
-                placeholder="Alex"
+                placeholder={copy.namePlaceholder}
               />
             </label>
           )}
           <label className="block text-sm font-semibold">
-            Email
+            {copy.email}
             <input
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              name="email"
               type="email"
               autoComplete="email"
               required
               className="mt-2 w-full rounded-2xl border border-ink/10 bg-canvas/70 px-4 py-3 outline-none focus:border-sage focus:ring-4 focus:ring-sage/10"
-              placeholder="you@example.com"
+              placeholder={copy.emailPlaceholder}
             />
           </label>
           <label className="block text-sm font-semibold">
-            Password
+            {copy.password}
             <input
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              name="password"
               type="password"
               autoComplete={isSignup ? 'new-password' : 'current-password'}
-              minLength={8}
+              minLength={10}
               required
               className="mt-2 w-full rounded-2xl border border-ink/10 bg-canvas/70 px-4 py-3 outline-none focus:border-sage focus:ring-4 focus:ring-sage/10"
-              placeholder="At least 8 characters"
+              placeholder={copy.passwordPlaceholder}
             />
           </label>
           {error && (
@@ -112,21 +106,17 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
               {error}
             </div>
           )}
-          <button
-            disabled={loading}
-            className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-sage px-5 font-semibold text-canvas hover:bg-ink disabled:opacity-50"
-          >
-            {loading && <Loader2 size={17} className="animate-spin" />}
-            {isSignup ? 'Create your free account' : 'Log in'}
+          <button className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-sage px-5 font-semibold text-canvas hover:bg-ink">
+            {isSignup ? copy.signup : copy.login}
           </button>
         </form>
         <p className="mt-5 text-center text-sm text-muted">
-          {isSignup ? 'Already have an account?' : 'New to MindPulse?'}{' '}
+          {isSignup ? copy.hasAccount : copy.needsAccount}{' '}
           <Link
             href={isSignup ? '/login' : '/signup'}
-            className="font-semibold text-sage hover:text-ink"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center font-semibold text-sage hover:text-ink"
           >
-            {isSignup ? 'Log in' : 'Get started'}
+            {isSignup ? copy.login : copy.getStarted}
           </Link>
         </p>
       </section>

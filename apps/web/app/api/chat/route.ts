@@ -1,11 +1,23 @@
-import { getCloudflareContext } from '@opennextjs/cloudflare';
-import { assessModelOutput, assessUserInput } from '@mindpulse/shared';
-import { getAuthDb, getCurrentUser, json } from '../../../lib/server/auth';
+import {
+  assessModelOutput,
+  assessUserInput,
+  safeOutputFallbacksFor,
+} from '@mindpulse/shared';
+import {
+  getAuthDb,
+  getCurrentUserFromRequest,
+  json,
+} from '../../../lib/server/auth';
+import { generateMindPulseReply } from '../../../lib/server/ai-provider';
+import { crisisPayload } from '../../../lib/server/crisis';
+import { reserveDailyUsage } from '../../../lib/server/usage';
+import {
+  buildInteractionInput,
+  buildSystemPrompt,
+} from '../../../lib/server/mindpulse-prompt';
 
 export const maxDuration = 30;
 
-const GEMINI_URL =
-  'https://generativelanguage.googleapis.com/v1beta/interactions';
 const MODES = [
   'study',
   'planner',
@@ -15,192 +27,111 @@ const MODES = [
   'reflection',
 ] as const;
 type Mode = (typeof MODES)[number];
-
-const MODE_PROMPTS: Record<Mode, string> = {
-  study:
-    'Explain the topic in simple language. Give a concrete example, a short summary, and, when useful, three practice questions.',
-  planner:
-    'Create a realistic plan. Ask about or reasonably infer available time, use time blocks and breaks, and mark one priority task.',
-  motivation:
-    'Be grounded and supportive without toxic positivity. Give a short reset and one action the student can begin within five minutes.',
-  habit:
-    'Identify the habit, make it easier, suggest one small daily action, and offer a simple tracking method.',
-  goal: 'Clarify the goal, create milestones, list the next three actions, and suggest a realistic timeline.',
-  reflection:
-    'Help the student notice what went well, what was hard, one lesson, and one improvement for tomorrow.',
+const LANGUAGES = ['en', 'ru', 'kk', 'es'] as const;
+type Language = (typeof LANGUAGES)[number];
+const ERROR_COPY: Record<
+  Language,
+  { invalid: string; required: string; tooLong: string; method: string }
+> = {
+  en: {
+    invalid: 'Invalid request',
+    required: 'Message is required',
+    tooLong: 'Message must be 1,000 characters or fewer',
+    method: 'Method not allowed',
+  },
+  ru: {
+    invalid: 'Некорректный запрос',
+    required: 'Введите сообщение',
+    tooLong: 'Сообщение должно содержать не более 1 000 символов',
+    method: 'Метод не поддерживается',
+  },
+  kk: {
+    invalid: 'Сұрау жарамсыз',
+    required: 'Хабарлама енгізіңіз',
+    tooLong: 'Хабарлама 1 000 таңбадан аспауы керек',
+    method: 'Әдіске рұқсат етілмейді',
+  },
+  es: {
+    invalid: 'La solicitud no es válida',
+    required: 'El mensaje es obligatorio',
+    tooLong: 'El mensaje debe tener 1.000 caracteres o menos',
+    method: 'Método no permitido',
+  },
 };
 
-const SYSTEM_PROMPT = `You are MindPulse, an AI study and self-growth assistant for students.
-Help with studying, planning, motivation, discipline, habits, productivity, goal breakdown, and reflection.
-Use friendly, clear, structured language. Give practical steps and avoid filler.
-Never claim to be a doctor or therapist, diagnose a mental health condition, or replace real-world support.
-If the user mentions self-harm, suicide, danger, abuse, or an immediate crisis, tell them to contact local emergency services or a trusted person immediately.`;
-
-const CRISIS_REPLY =
-  'I am glad you reached out. You may need immediate real-world support, and MindPulse is not an emergency service. Please contact local emergency services now or tell a trusted person nearby and stay with someone safe. You do not have to handle this alone.';
-const SAFE_FALLBACK =
-  'I cannot provide that answer safely. I can still help you make a safe study plan, break down a goal, or find a trusted person to support you.';
-
-async function geminiConfig() {
-  if (process.env.GEMINI_API_KEY)
-    return {
-      key: process.env.GEMINI_API_KEY,
-      model: process.env.GEMINI_MODEL ?? 'gemini-3.5-flash',
-    };
-  try {
-    const { env } = await getCloudflareContext({ async: true });
-    const bindings = env as CloudflareEnv & {
-      GEMINI_API_KEY?: string;
-      GEMINI_MODEL?: string;
-    };
-    return {
-      key: bindings.GEMINI_API_KEY,
-      model: bindings.GEMINI_MODEL ?? 'gemini-3.5-flash',
-    };
-  } catch {
-    return {
-      key: undefined,
-      model: process.env.GEMINI_MODEL ?? 'gemini-3.5-flash',
-    };
-  }
-}
-
-function extractReply(value: unknown): string | null {
-  if (!value || typeof value !== 'object') return null;
-  const body = value as Record<string, unknown>;
-  if (typeof body.output_text === 'string') return body.output_text;
-  if (typeof body.text === 'string') return body.text;
-
-  const textFromContent = (content: unknown) =>
-    Array.isArray(content)
-      ? content
-          .flatMap((part) =>
-            part &&
-            typeof part === 'object' &&
-            typeof (part as Record<string, unknown>).text === 'string'
-              ? [(part as Record<string, unknown>).text as string]
-              : [],
-          )
-          .join('\n')
-          .trim()
-      : '';
-
-  const textFromItems = (items: unknown) =>
-    Array.isArray(items)
-      ? items
-          .flatMap((item) => {
-            if (!item || typeof item !== 'object') return [];
-            const record = item as Record<string, unknown>;
-            if (typeof record.text === 'string') return [record.text];
-            const text = textFromContent(record.content);
-            return text ? [text] : [];
-          })
-          .join('\n')
-          .trim()
-      : '';
-
-  const stepText = textFromItems(body.steps);
-  if (stepText) return stepText;
-
-  const outputs = Array.isArray(body.outputs)
-    ? body.outputs
-    : Array.isArray(body.output)
-      ? body.output
-      : [];
-  const outputText = textFromItems(outputs);
-  if (outputText) return outputText;
-  const candidates = Array.isArray(body.candidates) ? body.candidates : [];
-  return (
-    candidates
-      .flatMap((candidate) => {
-        if (!candidate || typeof candidate !== 'object') return [];
-        const content = (candidate as Record<string, unknown>).content;
-        if (!content || typeof content !== 'object') return [];
-        const text = textFromContent(
-          (content as Record<string, unknown>).parts,
-        );
-        return text ? [text] : [];
-      })
-      .join('\n')
-      .trim() || null
-  );
+function requestLanguage(request: Request, raw?: Record<string, unknown>) {
+  if (
+    typeof raw?.language === 'string' &&
+    LANGUAGES.includes(raw.language as Language)
+  )
+    return raw.language as Language;
+  const preferred = request.headers
+    .get('accept-language')
+    ?.toLowerCase()
+    .split(',')[0]
+    ?.split('-')[0];
+  return LANGUAGES.includes(preferred as Language)
+    ? (preferred as Language)
+    : 'en';
 }
 
 export async function POST(request: Request) {
-  const user = await getCurrentUser();
-  if (!user) return json({ error: 'unauthorized' }, 401);
+  const user = await getCurrentUserFromRequest(request);
 
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return json({ error: 'Invalid JSON body' }, 400);
+    return json({ error: ERROR_COPY[requestLanguage(request)].invalid }, 400);
   }
   if (!body || typeof body !== 'object')
-    return json({ error: 'Message is required' }, 400);
+    return json({ error: ERROR_COPY[requestLanguage(request)].invalid }, 400);
   const raw = body as Record<string, unknown>;
+  const language = requestLanguage(request, raw);
+  const errorCopy = ERROR_COPY[language];
   const message = typeof raw.message === 'string' ? raw.message.trim() : '';
-  if (!message) return json({ error: 'Message is required' }, 400);
-  if (message.length > 1000)
-    return json({ error: 'Message must be 1,000 characters or fewer' }, 400);
+  if (!message) return json({ error: errorCopy.required }, 400);
+  if (message.length > 1000) return json({ error: errorCopy.tooLong }, 400);
   const mode: Mode =
     typeof raw.mode === 'string' && MODES.includes(raw.mode as Mode)
       ? (raw.mode as Mode)
       : 'study';
 
+  // Crisis responses bypass generation entirely and never consume quota.
   const inputSafety = assessUserInput(message);
-  if (inputSafety.flagged) return json({ reply: CRISIS_REPLY });
+  if (inputSafety.flagged) return json(crisisPayload(language, request));
 
-  const { key, model } = await geminiConfig();
-  console.info('[MindPulse] GEMINI_API_KEY configured:', Boolean(key));
-  if (!key) return json({ error: 'missing_key' }, 503);
+  const usage = await reserveDailyUsage({ request, user });
+  if (!usage.allowed) {
+    return json(
+      {
+        error: 'daily_limit_reached',
+        limit: usage.limit,
+        accountRequired: usage.accountRequired,
+        remaining: 0,
+      },
+      429,
+    );
+  }
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 25_000);
-  try {
-    const response = await fetch(GEMINI_URL, {
-      method: 'POST',
-      signal: controller.signal,
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-      body: JSON.stringify({
-        model,
-        store: false,
-        system_instruction: `${SYSTEM_PROMPT}\n\nSelected mode: ${mode}. ${MODE_PROMPTS[mode]}`,
-        input: message,
-        generation_config: { temperature: 0.7 },
-      }),
-    });
-    console.info('[MindPulse] Gemini response status:', response.status);
-    if (!response.ok) {
-      const errorBody = await response.text();
-      console.error('[MindPulse] Gemini request failed:', {
-        status: response.status,
-        body: errorBody,
-      });
-      return json(
-        { error: 'gemini_request_failed', status: response.status },
-        502,
-      );
-    }
-    const reply = extractReply(await response.json());
-    if (!reply) return json({ error: 'gemini_empty_response' }, 502);
-    const safeReply = assessModelOutput(reply).flagged ? SAFE_FALLBACK : reply;
+  const aiResult = await generateMindPulseReply({
+    systemPrompt: buildSystemPrompt(mode, language),
+    interactionInput: buildInteractionInput(message, raw.history),
+  });
+  if (!aiResult.ok) return json(aiResult.body, aiResult.status);
+
+  const safeReply = assessModelOutput(aiResult.reply).flagged
+    ? safeOutputFallbacksFor(language).join('\n\n')
+    : aiResult.reply;
+  if (user) {
     await saveChatExchange({
       userId: user.id,
       message,
       reply: safeReply,
       mode,
     });
-    return json({ reply: safeReply });
-  } catch (error) {
-    console.error('[MindPulse] Gemini unavailable:', {
-      name: error instanceof Error ? error.name : 'UnknownError',
-      message: error instanceof Error ? error.message : 'Unknown error',
-    });
-    return json({ error: 'gemini_unavailable' }, 502);
-  } finally {
-    clearTimeout(timeout);
   }
+  return json({ reply: safeReply, usage });
 }
 
 async function saveChatExchange({
@@ -250,9 +181,9 @@ function chatId() {
     : `chat-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-function methodNotAllowed() {
+function methodNotAllowed(request: Request) {
   return Response.json(
-    { error: 'Method not allowed' },
+    { error: ERROR_COPY[requestLanguage(request)].method },
     { status: 405, headers: { Allow: 'POST' } },
   );
 }
