@@ -27,6 +27,55 @@ function renderCard() {
 }
 
 describe('NextActionCard quick start', () => {
+  it.each(['en', 'ru', 'kk', 'es'] as const)(
+    'constructs the actual next-action request in %s',
+    async (language) => {
+      const localizedCopy = copyFor(language).nextAction;
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValue(
+          new Response(JSON.stringify({ reply: 'ok' }), { status: 200 }),
+        );
+      vi.stubGlobal('fetch', fetchMock);
+      render(
+        <NextActionCard
+          language={language}
+          copy={localizedCopy}
+          tools={getToolsForLanguage(language)}
+        />,
+      );
+      fireEvent.change(
+        await screen.findByPlaceholderText(localizedCopy.taskPlaceholder),
+        { target: { value: 'Tarea concreta' } },
+      );
+      fireEvent.click(
+        screen.getByRole('button', { name: localizedCopy.submit }),
+      );
+      await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+      const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+      const body = JSON.parse(String(init.body)) as {
+        language: string;
+        message: string;
+      };
+      expect(body.language).toBe(language);
+      expect(body.message).toBe(localizedCopy.requestPrompt('Tarea concreta'));
+      if (language !== 'en')
+        expect(body.message).not.toContain('Suggest exactly ONE');
+      if (language === 'es') {
+        for (const phrase of [
+          'Estoy pensando en matarme',
+          'Me quiero hacer daño',
+          'Voy a matarme esta noche',
+          'Tengo un plan para suicidarme',
+          'Quiero acabar con mi vida',
+          'Ahora mismo quiero quitarme mi propia vida',
+        ]) {
+          expect(localizedCopy.requestPrompt(phrase)).toContain(phrase);
+        }
+      }
+    },
+  );
+
   it('suggests one next action and stores it on acceptance', async () => {
     const fetchMock = vi.fn().mockImplementation((url: string) => {
       if (String(url).includes('/api/chat')) {

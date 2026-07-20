@@ -16,19 +16,15 @@ import {
   Zap,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { FeedbackModal } from '@/components/mindpulse/feedback-modal';
 import { SiteFooter } from '@/components/mindpulse/site-footer';
 import { landingCopyFor } from '@/lib/mindpulse/marketing-i18n';
+import { useLanguagePreference } from '@/lib/mindpulse/use-language-preference';
+import { useLocalizedMetadata } from '@/lib/mindpulse/use-localized-metadata';
 import {
-  LANGUAGE_KEY,
-  applyDocumentLanguage,
-  readJson,
-  writeJson,
-} from '@/lib/mindpulse/local-store';
-import {
-  isLanguageCode,
   languages,
+  languageLabelFor,
   type LanguageCode,
 } from '@/lib/mindpulse/tools';
 
@@ -44,23 +40,21 @@ const FEATURE_ICONS = [
 ] as const;
 
 export function LandingPage() {
-  const [language, setLanguage] = useState<LanguageCode>('en');
+  const [language, setLanguage] = useLanguagePreference();
   const copy = useMemo(() => landingCopyFor(language), [language]);
 
-  useEffect(() => {
-    const stored = readJson<LanguageCode | null>(LANGUAGE_KEY, null);
-    if (stored && isLanguageCode(stored)) setLanguage(stored);
-  }, []);
-
-  useEffect(() => {
-    writeJson(LANGUAGE_KEY, language);
-    applyDocumentLanguage(language);
-  }, [language]);
+  const titles: Record<LanguageCode, string> = {
+    en: 'MindPulse · Student support',
+    ru: 'MindPulse · Поддержка для студентов',
+    kk: 'MindPulse · Студенттерге қолдау',
+    es: 'MindPulse · Apoyo para estudiantes',
+  };
+  useLocalizedMetadata(titles[language], copy.heroSubtitle);
 
   return (
     <div className="ambient min-h-screen overflow-hidden">
       <header className="sticky top-0 z-40 border-b border-ink/5 bg-canvas/85 backdrop-blur-xl">
-        <nav className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 py-4 sm:px-8">
+        <nav className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-8">
           <Link href="/" className="flex items-center gap-3">
             <span className="grid h-10 w-10 place-items-center rounded-2xl bg-ink text-canvas">
               <Brain size={20} />
@@ -73,30 +67,42 @@ export function LandingPage() {
             </span>
           </Link>
           <div className="hidden gap-7 text-sm font-semibold text-muted md:flex">
-            <a href="#features" className="hover:text-ink">
+            <a
+              href="#features"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center hover:text-ink"
+            >
               {copy.navFeatures}
             </a>
-            <a href="#how" className="hover:text-ink">
+            <a
+              href="#how"
+              className="inline-flex min-h-11 items-center hover:text-ink"
+            >
               {copy.navHow}
             </a>
-            <Link href="/beta" className="hover:text-ink">
+            <Link
+              href="/beta"
+              className="inline-flex min-h-11 items-center hover:text-ink"
+            >
               {copy.navBeta}
             </Link>
-            <Link href="/login" className="hover:text-ink">
+            <Link
+              href="/login"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center hover:text-ink"
+            >
               {copy.navLogin}
             </Link>
           </div>
-          <div className="flex items-center gap-2">
-            <label className="inline-flex min-h-10 items-center gap-2 rounded-full bg-surface px-3 text-sm font-semibold text-muted shadow-soft">
+          <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
+            <label className="inline-flex min-h-11 max-w-full items-center gap-2 rounded-full bg-surface px-3 text-sm font-semibold text-muted shadow-soft">
               <Globe2 size={15} />
-              <span className="sr-only">Language</span>
+              <span className="sr-only">{languageLabelFor[language]}</span>
               <select
                 value={language}
                 onChange={(event) =>
                   setLanguage(event.target.value as LanguageCode)
                 }
-                aria-label="Language"
-                className="bg-transparent font-semibold text-ink outline-none"
+                aria-label={languageLabelFor[language]}
+                className="min-h-11 min-w-0 max-w-[8.5rem] bg-transparent font-semibold text-ink outline-none"
               >
                 {languages.map((item) => (
                   <option key={item.id} value={item.id}>
@@ -107,7 +113,7 @@ export function LandingPage() {
             </label>
             <Link
               href="/app"
-              className="inline-flex min-h-11 items-center gap-2 rounded-full bg-ink px-5 text-sm font-semibold text-canvas hover:bg-sage"
+              className="inline-flex min-h-11 min-w-0 items-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-canvas hover:bg-sage"
             >
               {copy.navTry} <ArrowRight size={16} />
             </Link>

@@ -28,7 +28,7 @@ export const recoveryRequestSchema = z.object({
     .optional()
     .default(null),
   energy: z.enum(['low', 'ok']).optional().default('ok'),
-  language: z.enum(['en', 'ru', 'kk']).optional().default('en'),
+  language: z.enum(['en', 'ru', 'kk', 'es']).optional().default('en'),
 });
 export type RecoveryRequest = z.infer<typeof recoveryRequestSchema>;
 
@@ -92,7 +92,7 @@ type FallbackCopy = {
 
 // kk strings NEED NATIVE REVIEW; the fallback plan is productivity content
 // (not safety-critical), so single-language display is acceptable here.
-const FALLBACK_COPY: Record<'en' | 'ru' | 'kk', FallbackCopy> = {
+const FALLBACK_COPY: Record<'en' | 'ru' | 'kk' | 'es', FallbackCopy> = {
   en: {
     acknowledgement:
       'Falling behind happens to everyone. This is a smaller restart built only from what you listed — fixed deadlines first, everything else reduced.',
@@ -118,6 +118,16 @@ const FALLBACK_COPY: Record<'en' | 'ru' | 'kk', FallbackCopy> = {
     urgentAction: (title) =>
       `«${title}» бойынша келесі кішкентай нақты қадамды жаса.`,
     optionalReason: 'Қатаң дедлайн жоқ — шұғыл істерден кейін жоспарла.',
+  },
+  es: {
+    acknowledgement:
+      'A cualquiera le puede pasar quedarse atrás. Este reinicio usa solo lo que anotaste: primero las fechas fijas y con una carga menor para lo demás.',
+    immediateAction: (title) =>
+      `Programa un temporizador de 10 minutos y empieza la parte más pequeña de “${title}”. Puedes parar después de 10 minutos.`,
+    urgentAction: (title) =>
+      `Haz el siguiente paso pequeño y concreto de “${title}”.`,
+    optionalReason:
+      'No tiene una fecha límite fija: prográmalo después de las tareas urgentes.',
   },
 };
 

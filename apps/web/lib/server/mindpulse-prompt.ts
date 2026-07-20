@@ -22,7 +22,7 @@ Response behavior:
 
 const LANGUAGE_BEHAVIOR = `\
 Language behavior:
-- Follow the language of the student's latest message whenever it is clear: English to English, Russian to Russian, and Kazakh to Kazakh.
+- Follow the language of the student's latest message whenever it is clear: English to English, Russian to Russian, Kazakh to Kazakh, and Spanish to Spanish.
 - Use the selected interface language only as a fallback when the student's message is ambiguous or language-neutral.
 - Do not mix languages unless the student mixes them or asks you to translate.`;
 
@@ -37,6 +37,7 @@ const LANGUAGE_PREFERENCES: Record<string, string> = {
   en: 'Selected interface language: English. Use English as the fallback language.',
   ru: 'Выбранный язык интерфейса: русский. Используй русский как запасной язык, если язык сообщения неясен.',
   kk: 'Интерфейс тілі: қазақ тілі. Хабарлама тілі түсініксіз болса, қазақ тілін қолдан.',
+  es: 'Idioma seleccionado de la interfaz: español. Usa español como idioma de respaldo si el idioma del mensaje no está claro.',
 };
 
 const MODE_INSTRUCTIONS: Record<string, string> = {

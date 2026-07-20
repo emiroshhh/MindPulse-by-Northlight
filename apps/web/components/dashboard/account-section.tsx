@@ -99,7 +99,7 @@ export function AccountSection({
           ref={triggerRef}
           type="button"
           onClick={() => setOpen(true)}
-          className="inline-flex min-h-10 items-center gap-2 rounded-full bg-warm/20 px-4 text-sm font-semibold text-danger hover:bg-warm/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-danger"
+          className="inline-flex min-h-11 items-center gap-2 rounded-full bg-warm/20 px-4 text-sm font-semibold text-danger hover:bg-warm/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-danger"
         >
           <UserX size={15} /> {copy.deleteButton}
         </button>

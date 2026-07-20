@@ -20,25 +20,47 @@ export function SiteFooter({
     <footer className="mt-8 rounded-mp bg-surface p-5 text-sm text-muted shadow-soft">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <nav
-          aria-label="Footer navigation"
+          aria-label={
+            language === 'es'
+              ? 'Navegación del pie de página'
+              : 'Footer navigation'
+          }
           className="flex flex-wrap items-center gap-4"
         >
-          <Link href="/app" className="font-semibold hover:text-ink">
+          <Link
+            href="/app"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center font-semibold hover:text-ink"
+          >
             {ui.footerDashboard}
           </Link>
-          <Link href="/why" className="font-semibold hover:text-ink">
+          <Link
+            href="/why"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center font-semibold hover:text-ink"
+          >
             {ui.footerWhy}
           </Link>
-          <Link href="/beta" className="font-semibold hover:text-ink">
+          <Link
+            href="/beta"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center font-semibold hover:text-ink"
+          >
             {ui.footerBeta}
           </Link>
-          <Link href="/case-study" className="font-semibold hover:text-ink">
+          <Link
+            href="/case-study"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center font-semibold hover:text-ink"
+          >
             {ui.footerCaseStudy}
           </Link>
-          <Link href="/impact" className="font-semibold hover:text-ink">
+          <Link
+            href="/impact"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center font-semibold hover:text-ink"
+          >
             {ui.footerImpact}
           </Link>
-          <Link href="/privacy" className="font-semibold hover:text-ink">
+          <Link
+            href="/privacy"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center font-semibold hover:text-ink"
+          >
             {ui.footerPrivacy}
           </Link>
           <FeedbackModal compact language={language ?? 'en'} />

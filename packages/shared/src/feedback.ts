@@ -42,7 +42,7 @@ export const feedbackSubmissionSchema = z.object({
     .max(FEEDBACK_SUGGESTION_MAX)
     .optional()
     .default(''),
-  locale: z.enum(['en', 'ru', 'kk']),
+  locale: z.enum(['en', 'ru', 'kk', 'es']),
   deviceCategory: z.enum(FEEDBACK_DEVICE_CATEGORIES),
   consent: z.literal(true),
 });

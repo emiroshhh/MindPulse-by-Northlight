@@ -1,22 +1,15 @@
 'use client';
 
 import { Globe2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
 import { ENGLISH_ONLY_NOTICE } from '@/lib/mindpulse/marketing-i18n';
-import { LANGUAGE_KEY, readJson } from '@/lib/mindpulse/local-store';
-import { isLanguageCode, type LanguageCode } from '@/lib/mindpulse/tools';
+import { useLanguagePreference } from '@/lib/mindpulse/use-language-preference';
 
 /**
  * Shown on long-form pages that are intentionally English-only for now.
  * Honest scoping: a clear localized notice instead of a half-translated page.
  */
 export function EnglishOnlyNotice() {
-  const [language, setLanguage] = useState<LanguageCode>('en');
-
-  useEffect(() => {
-    const stored = readJson<string | null>(LANGUAGE_KEY, null);
-    if (stored && isLanguageCode(stored)) setLanguage(stored);
-  }, []);
+  const [language] = useLanguagePreference();
 
   const notice = ENGLISH_ONLY_NOTICE[language];
   if (!notice) return null;

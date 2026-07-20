@@ -69,6 +69,7 @@ export type ChatPanelCopy = {
   emptyAuth: string;
   guestLimitLabel: string;
   accountLimitLabel: string;
+  usageRemaining: (remaining: number) => string;
   guestLimitReached: string;
   accountLimitReached: string;
   signup: string;
@@ -342,7 +343,7 @@ export function ChatPanel({
               <button
                 key={item.id}
                 onClick={() => setMode(item.id)}
-                className={`w-full rounded-2xl p-3 text-left text-sm font-semibold ${
+                className={`min-h-11 w-full rounded-2xl p-3 text-left text-sm font-semibold ${
                   mode === item.id
                     ? 'bg-sage-soft text-ink'
                     : 'bg-canvas/60 text-muted'
@@ -364,7 +365,7 @@ export function ChatPanel({
           </p>
           <p className="mt-2 text-xs font-bold uppercase tracking-[.16em] text-sage">
             {user ? copy.accountLimitLabel : copy.guestLimitLabel}
-            {usage ? ` · ${usage.remaining} left today` : ''}
+            {usage ? ` · ${copy.usageRemaining(usage.remaining)}` : ''}
           </p>
           {examples.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-2">
@@ -372,7 +373,7 @@ export function ChatPanel({
                 <button
                   key={example}
                   onClick={() => void sendChat(undefined, example)}
-                  className="rounded-full bg-sage-soft px-4 py-2 text-left text-xs font-semibold leading-5 text-ink transition hover:bg-sage hover:text-canvas focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sage"
+                  className="min-h-11 rounded-full bg-sage-soft px-4 py-2 text-left text-xs font-semibold leading-5 text-ink transition hover:bg-sage hover:text-canvas focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sage"
                 >
                   {example}
                 </button>
@@ -524,7 +525,7 @@ export function ChatPanel({
                   type="button"
                   onClick={() => void saveLastResult()}
                   disabled={saveState === 'saving'}
-                  className="rounded-full bg-surface px-4 py-2 text-xs font-semibold text-ink shadow-soft hover:bg-sage-soft disabled:opacity-50"
+                  className="min-h-11 rounded-full bg-surface px-4 py-2 text-xs font-semibold text-ink shadow-soft hover:bg-sage-soft disabled:opacity-50"
                 >
                   {copy.saveResult ?? 'Save this result'}
                 </button>
@@ -544,13 +545,13 @@ export function ChatPanel({
               <div className="mt-3 flex flex-wrap gap-2">
                 <Link
                   href="/signup"
-                  className="rounded-full bg-ink px-4 py-2 text-xs font-semibold text-canvas"
+                  className="inline-flex min-h-11 items-center rounded-full bg-ink px-4 text-xs font-semibold text-canvas"
                 >
                   {copy.signup}
                 </Link>
                 <Link
                   href="/login"
-                  className="rounded-full bg-canvas px-4 py-2 text-xs font-semibold text-ink"
+                  className="inline-flex min-h-11 items-center rounded-full bg-canvas px-4 text-xs font-semibold text-ink"
                 >
                   {copy.login}
                 </Link>

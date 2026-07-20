@@ -4,6 +4,7 @@ const LANGUAGE_NAMES: Record<RecoveryRequest['language'], string> = {
   en: 'English',
   ru: 'Russian',
   kk: 'Kazakh',
+  es: 'Spanish',
 };
 
 /**
@@ -32,31 +33,50 @@ export function buildRecoverySystemPrompt(
 }
 
 export function buildRecoveryInput(request: RecoveryRequest) {
+  const spanish = request.language === 'es';
   const items = request.items
     .map((item, index) => {
       const deadline = item.deadline
-        ? ` (deadline: ${item.deadline}${item.fixedDeadline ? ', FIXED' : ''})`
+        ? ` (${spanish ? 'fecha límite' : 'deadline'}: ${item.deadline}${item.fixedDeadline ? (spanish ? ', FIJA' : ', FIXED') : ''})`
         : item.fixedDeadline
-          ? ' (FIXED deadline)'
+          ? spanish
+            ? ' (fecha límite FIJA)'
+            : ' (FIXED deadline)'
           : '';
       return `${index + 1}. ${item.title}${deadline}`;
     })
     .join('\n');
   const constraints = [
     request.hoursAvailable !== null
-      ? `Time available today: about ${request.hoursAvailable} hours.`
-      : 'Time available today: not specified.',
+      ? spanish
+        ? `Tiempo disponible hoy: unas ${request.hoursAvailable} horas.`
+        : `Time available today: about ${request.hoursAvailable} hours.`
+      : spanish
+        ? 'Tiempo disponible hoy: no especificado.'
+        : 'Time available today: not specified.',
     request.energy === 'low'
-      ? 'Energy: low — keep the plan very small.'
-      : 'Energy: okay.',
+      ? spanish
+        ? 'Energía: baja; el plan debe ser muy pequeño.'
+        : 'Energy: low — keep the plan very small.'
+      : spanish
+        ? 'Energía: bien.'
+        : 'Energy: okay.',
   ].join('\n');
   return [
-    `What got missed (student's own words):\n${request.missedContext}`,
-    `Tasks on the table:\n${items}`,
+    spanish
+      ? `Lo que quedó pendiente (palabras del estudiante):\n${request.missedContext}`
+      : `What got missed (student's own words):\n${request.missedContext}`,
+    spanish ? `Tareas pendientes:\n${items}` : `Tasks on the table:\n${items}`,
     constraints,
   ].join('\n\n');
 }
 
 /** One-shot repair message appended when the first response fails validation. */
-export const RECOVERY_REPAIR_INSTRUCTION =
-  'Your previous response was not valid JSON matching the required schema. Return ONLY the JSON object now — no fences, no extra text.';
+export function recoveryRepairInstruction(
+  language: RecoveryRequest['language'],
+) {
+  if (language === 'es') {
+    return 'La respuesta anterior no era un JSON válido con el esquema requerido. Devuelve SOLO el objeto JSON, sin bloques de código ni texto adicional.';
+  }
+  return 'Your previous response was not valid JSON matching the required schema. Return ONLY the JSON object now — no fences, no extra text.';
+}

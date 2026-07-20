@@ -79,14 +79,17 @@ describe('buildSystemPrompt', () => {
     expect(prompt).toContain('stop ordinary productivity coaching');
   });
 
-  it('follows the latest message language and uses EN/RU/KZ as fallbacks', () => {
+  it('follows the latest message language and uses every UI locale as a fallback', () => {
     const english = buildSystemPrompt('study', 'en');
     const russian = buildSystemPrompt('study', 'ru');
     const kazakh = buildSystemPrompt('study', 'kk');
+    const spanish = buildSystemPrompt('study', 'es');
     expect(english).toContain("language of the student's latest message");
     expect(russian).toContain('русский');
     expect(kazakh).toContain('қазақ тілін');
     expect(kazakh).toContain('Do not mix languages');
+    expect(spanish).toContain('Idioma seleccionado de la interfaz: español');
+    expect(spanish).toContain('Spanish to Spanish');
   });
 
   it('limits follow-up questions and hidden reasoning', () => {

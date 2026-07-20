@@ -335,9 +335,23 @@ export function logoutSuccessHtmlResponse(cookieHeaders: string[]) {
   <title>Signing out...</title>
 </head>
 <body>
-  <p>Signing you out...</p>
+  <p id="signing-out">Signing you out...</p>
   <script>
-    try { localStorage.removeItem('mindpulse_session_token'); } catch {}
+    try {
+      const language = JSON.parse(localStorage.getItem('mindpulse-language-v1'));
+      const copy = {
+        en: 'Signing you out...',
+        ru: 'Выходим из аккаунта...',
+        kk: 'Аккаунттан шығу орындалуда...',
+        es: 'Cerrando sesión...',
+      }[language];
+      if (copy) {
+        document.documentElement.lang = language;
+        document.title = copy;
+        document.getElementById('signing-out').textContent = copy;
+      }
+      localStorage.removeItem('mindpulse_session_token');
+    } catch {}
     window.location.replace('/');
   </script>
 </body>

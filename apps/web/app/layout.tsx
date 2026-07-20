@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
-import { LanguageHtmlSync } from '@/components/language-html-sync';
+import { LanguageProvider } from '@/components/language-provider';
+import { LocalizedSkipLink } from '@/components/localized-skip-link';
 import { ServiceWorkerRegister } from '@/components/service-worker-register';
 
 export const metadata: Metadata = {
@@ -24,14 +25,13 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body suppressHydrationWarning>
-        <a href="#main-content" className="skip-link">
-          Skip to content
-        </a>
-        {children}
-        <LanguageHtmlSync />
-        <ServiceWorkerRegister />
+    <html lang="en">
+      <body>
+        <LanguageProvider>
+          <LocalizedSkipLink />
+          {children}
+          <ServiceWorkerRegister />
+        </LanguageProvider>
       </body>
     </html>
   );

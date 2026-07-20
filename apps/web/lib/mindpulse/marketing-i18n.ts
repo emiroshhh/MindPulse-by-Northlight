@@ -257,7 +257,83 @@ const KK: LandingCopy = {
   betaFeedback: 'Пікір қалдыру',
 };
 
-const LANDING: Record<LanguageCode, LandingCopy> = { en: EN, ru: RU, kk: KK };
+const ES: LandingCopy = {
+  navFeatures: 'Funciones',
+  navHow: 'Cómo funciona',
+  navBeta: 'Prueba beta',
+  navLogin: 'Iniciar sesión',
+  navTry: 'Probar gratis',
+  badge: 'Beta para estudiantes — gratis durante las pruebas',
+  heroTitleLead: '¿La escuela te abruma?',
+  heroTitleAccent: 'Empieza con un paso pequeño.',
+  heroSubtitle:
+    'MindPulse es un espacio de IA para estudiantes. Describe una tarea, una fecha límite o algo que te bloquea y recibe la siguiente acción útil más pequeña. Después, planifica, retoma tras días difíciles y reflexiona sin culpa.',
+  ctaPrimary: 'Probar ahora — sin iniciar sesión',
+  ctaLogin: 'Iniciar sesión',
+  guestNote:
+    'Los invitados reciben 5 mensajes gratuitos de IA al día en este dispositivo. Una cuenta gratuita guarda el historial y aumenta el límite a 20.',
+  exampleLabel: 'Ejemplo de lo que recibirás',
+  exampleInput: '“El ensayo vence el viernes y todavía no empecé”',
+  exampleOutput:
+    'Programa un temporizador de 10 minutos y escribe tres ideas preliminares sobre lo que debe defender el ensayo. Puedes parar después de 10 minutos.',
+  exampleHighlights: [
+    'Una acción siguiente, no una pared de consejos',
+    'Modo Recuperación para retomar trabajo atrasado',
+  ],
+  howLabel: 'Cómo funciona',
+  howSteps: [
+    [
+      'Elige lo que necesitas',
+      'Ayuda de estudio, planificación, motivación, hábitos, metas, reflexión o Modo Recuperación para retomar trabajo atrasado.',
+    ],
+    [
+      'Describe una tarea real',
+      'Una frase es suficiente. Sin cuestionarios y sin tener que iniciar sesión.',
+    ],
+    [
+      'Recibe un paso pequeño',
+      'Una acción concreta que puedes empezar en los próximos 15 minutos. Crea una cuenta gratuita si quieres guardar el historial.',
+    ],
+  ],
+  featuresLabel: 'Funciones',
+  featuresTitle: 'Todo lo que necesitas para volver a avanzar.',
+  featureNames: [
+    'Ayuda de estudio con IA',
+    'Planificador diario',
+    'Reinicio de motivación',
+    'Guía de hábitos',
+    'División de metas',
+    'Reflexión rápida',
+    'Modo Recuperación',
+    'Chat con IA + Agente',
+  ],
+  whyLabel: 'Por qué lo usan los estudiantes',
+  whyTitle: 'Primero alivio. Después progreso.',
+  whyItems: [
+    'Ayuda a dejar de postergar',
+    'Hace que estudiar se sienta menos abrumador',
+    'Convierte pensamientos desordenados en pasos claros',
+    'Mantiene el progreso organizado',
+  ],
+  privacyTitle: 'Cuentas privadas y progreso guardado.',
+  privacyCopy:
+    'Tu historial de chat y los planes del Agente están vinculados a tu cuenta, no a un estado público del navegador. Las contraseñas solo se guardan como hashes seguros con sal, nunca como texto sin cifrar.',
+  privacySignup: 'Crear una cuenta gratuita',
+  privacyLogin: 'Iniciar sesión',
+  betaLabel: 'Beta para estudiantes',
+  betaTitle: 'Prueba una herramienta con una tarea real.',
+  betaCopy:
+    'Usa MindPulse para algo que de verdad necesites hoy y cuéntanos qué te ayudó o no quedó claro. Sin afirmaciones de impacto inventadas: solo un proyecto para estudiantes que mejora con comentarios sinceros.',
+  betaCta: 'Cómo probar la beta',
+  betaFeedback: 'Enviar comentarios sobre la beta',
+};
+
+const LANDING: Record<LanguageCode, LandingCopy> = {
+  en: EN,
+  ru: RU,
+  kk: KK,
+  es: ES,
+};
 
 export function landingCopyFor(language: string): LandingCopy {
   return LANDING[language as LanguageCode] ?? EN;
@@ -272,4 +348,5 @@ export const ENGLISH_ONLY_NOTICE: Record<LanguageCode, string> = {
   en: '',
   ru: 'Эта страница пока доступна только на английском. Основной интерфейс приложения переведён на русский.',
   kk: 'Бұл бет әзірге тек ағылшын тілінде. Қолданбаның негізгі интерфейсі қазақ тіліне аударылған.',
+  es: '',
 };

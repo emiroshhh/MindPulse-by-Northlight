@@ -3,6 +3,7 @@
 // Pure module: no React, no side-effects, safe to import from server or client.
 
 import { mindPulseTools, type LanguageCode, type MindPulseTool } from './tools';
+import { ES, ES_CHAT, ES_TOOLS } from './spanish';
 
 // ─────────────────────────────────────────────────────────────
 // UI copy shape
@@ -155,6 +156,7 @@ export type UiCopy = {
     needLabel: string;
     taskLabel: string;
     taskPlaceholder: string;
+    requestPrompt: (task: string) => string;
     submit: string;
     loading: string;
     error: string;
@@ -468,6 +470,8 @@ const EN: UiCopy = {
     needLabel: 'What do you need right now?',
     taskLabel: 'One real task, goal, or difficulty',
     taskPlaceholder: 'e.g. Essay due Friday and I have not started…',
+    requestPrompt: (task) =>
+      `Suggest exactly ONE small, concrete next action (1–2 sentences, something startable in the next 15 minutes) for this situation. No lists, no plan, just the single smallest useful step: ${task}`,
     submit: 'Suggest my next action',
     loading: 'Finding the smallest useful step…',
     error: 'Could not get a suggestion right now. Please try again.',
@@ -788,6 +792,8 @@ const RU: UiCopy = {
     needLabel: 'Что нужно прямо сейчас?',
     taskLabel: 'Одна реальная задача, цель или трудность',
     taskPlaceholder: 'напр. Эссе к пятнице, а я ещё не начал(а)…',
+    requestPrompt: (task) =>
+      `Предложи ровно ОДНО небольшое и конкретное следующее действие (1–2 предложения, которое можно начать в ближайшие 15 минут) для этой ситуации. Без списков и планов — только самый маленький полезный шаг: ${task}`,
     submit: 'Предложить следующее действие',
     loading: 'Ищем самый маленький полезный шаг…',
     error: 'Не получилось получить подсказку. Попробуй ещё раз.',
@@ -1113,6 +1119,8 @@ const KK: UiCopy = {
     needLabel: 'Қазір не қажет?',
     taskLabel: 'Бір нақты тапсырма, мақсат немесе қиындық',
     taskPlaceholder: 'мыс. Эссе жұмаға дейін, әлі бастаған жоқпын…',
+    requestPrompt: (task) =>
+      `Осы жағдай үшін дәл БІР шағын әрі нақты келесі әрекетті ұсын (1–2 сөйлем, оны алдағы 15 минутта бастауға болады). Тізім де, жоспар да керек емес — тек ең кішкентай пайдалы қадам: ${task}`,
     submit: 'Келесі әрекетті ұсыну',
     loading: 'Ең кіші пайдалы қадам ізделуде…',
     error: 'Ұсыныс алу мүмкін болмады. Қайта байқап көр.',
@@ -1221,6 +1229,7 @@ const KK: UiCopy = {
 export function copyFor(language: string): UiCopy {
   if (language === 'ru') return RU;
   if (language === 'kk') return KK;
+  if (language === 'es') return ES;
   return EN;
 }
 
@@ -1230,6 +1239,7 @@ export function copyFor(language: string): UiCopy {
 
 /** Return translated ChatPanel copy for the given language (defaults to English). */
 export function chatCopyFor(language: string) {
+  if (language === 'es') return ES_CHAT;
   if (language === 'ru') {
     return {
       chooseMode: 'Выбери режим',
@@ -1238,6 +1248,8 @@ export function chatCopyFor(language: string) {
       emptyAuth: 'Здесь появится история твоих сохранённых разговоров.',
       guestLimitLabel: '5 бесплатных гостевых сообщений в день',
       accountLimitLabel: '20 бесплатных сообщений в день',
+      usageRemaining: (remaining: number) =>
+        `Осталось на сегодня: ${remaining}`,
       guestLimitReached:
         'Ты достиг дневного лимита для гостей. Создай аккаунт, чтобы продолжить и сохранить прогресс.',
       accountLimitReached:
@@ -1268,6 +1280,8 @@ export function chatCopyFor(language: string) {
       emptyAuth: 'Сақталған сөйлесу тарихыңыз мұнда пайда болады.',
       guestLimitLabel: 'Күніне 5 тегін қонақ хабарламасы',
       accountLimitLabel: 'Күніне 20 тегін хабарлама',
+      usageRemaining: (remaining: number) =>
+        `Бүгін ${remaining} хабарлама қалды`,
       guestLimitReached:
         'Бүгінгі қонақ лимитіне жеттіңіз. Жалғастыру және прогресті сақтау үшін аккаунт ашыңыз.',
       accountLimitReached: 'Бүгінгі аккаунт лимитіне жеттіңіз. Ертең қайтыңыз.',
@@ -1297,6 +1311,7 @@ export function chatCopyFor(language: string) {
     emptyAuth: 'Your saved conversation history will appear here.',
     guestLimitLabel: '5 free guest messages/day',
     accountLimitLabel: '20 free messages/day',
+    usageRemaining: (remaining: number) => `${remaining} left today`,
     guestLimitReached:
       "You've reached today's free guest limit. Create a free account to continue with more messages and save your progress.",
     accountLimitReached:
@@ -1755,6 +1770,7 @@ const TOOL_TRANSLATIONS: Partial<
  * Falls back to the English source tools for any unknown language.
  */
 export function getToolsForLanguage(language: string): MindPulseTool[] {
+  if (language === 'es') return ES_TOOLS;
   const translations = TOOL_TRANSLATIONS[language as LanguageCode] ?? null;
   if (!translations) return mindPulseTools;
   return mindPulseTools.map((tool) => {

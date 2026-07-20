@@ -182,7 +182,7 @@ export function FeedbackModal({
             role="radio"
             aria-checked={value === option}
             onClick={() => onChange(option)}
-            className={`min-h-10 rounded-full px-4 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sage ${
+            className={`min-h-11 rounded-full px-4 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sage ${
               value === option
                 ? 'bg-ink text-canvas'
                 : 'bg-surface text-muted hover:text-ink'
@@ -201,7 +201,7 @@ export function FeedbackModal({
         onClick={openModal}
         className={
           compact
-            ? 'inline-flex min-h-10 items-center font-semibold hover:text-ink'
+            ? 'inline-flex min-h-11 items-center font-semibold hover:text-ink'
             : 'inline-flex min-h-11 items-center gap-2 rounded-full bg-surface px-5 text-sm font-semibold text-ink shadow-soft hover:bg-sage-soft'
         }
       >
@@ -235,7 +235,7 @@ export function FeedbackModal({
               </div>
               <button
                 onClick={close}
-                className="rounded-full bg-canvas p-2 text-muted hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sage"
+                className="grid min-h-11 min-w-11 place-items-center rounded-full bg-canvas p-2 text-muted hover:text-ink focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sage"
                 aria-label={feedback.close}
               >
                 <X size={18} />

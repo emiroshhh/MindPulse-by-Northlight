@@ -108,5 +108,9 @@ describe('buildFallbackRecoveryPlan', () => {
     expect(ru.acknowledgement).toContain('нормально');
     const kk = buildFallbackRecoveryPlan({ ...request, language: 'kk' });
     expect(kk.acknowledgement).toContain('қалыпты');
+    const es = buildFallbackRecoveryPlan({ ...request, language: 'es' });
+    expect(es.acknowledgement).toContain('quedarse atrás');
+    expect(es.immediateAction).toContain('Programa un temporizador');
+    expect(es.immediateAction).toContain('History essay');
   });
 });
