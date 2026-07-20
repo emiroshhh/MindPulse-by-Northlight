@@ -1,4 +1,4 @@
-export type LanguageCode = 'en' | 'ru' | 'kk';
+export type LanguageCode = 'en' | 'ru' | 'kk' | 'es';
 export type ToolIconId =
   | 'book'
   | 'calendar'
@@ -48,7 +48,15 @@ export const languages: Array<{
   { id: 'ru', label: 'Русский', prompt: 'Russian' },
   // Kazakh is labeled beta until safety patterns and copy get native review.
   { id: 'kk', label: 'Қазақша (beta)', prompt: 'Kazakh' },
+  { id: 'es', label: 'Español', prompt: 'Spanish' },
 ];
+
+export const languageLabelFor: Record<LanguageCode, string> = {
+  en: 'Language',
+  ru: 'Язык',
+  kk: 'Тіл',
+  es: 'Idioma',
+};
 
 export const mindPulseTools: MindPulseTool[] = [
   {

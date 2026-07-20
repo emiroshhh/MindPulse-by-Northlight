@@ -4,7 +4,7 @@ import { chatCopyFor, copyFor, getToolsForLanguage } from './i18n';
 import { ENGLISH_ONLY_NOTICE, landingCopyFor } from './marketing-i18n';
 import { languages } from './tools';
 
-const LOCALES = ['en', 'ru', 'kk'] as const;
+const LOCALES = ['en', 'ru', 'kk', 'es'] as const;
 
 /** Recursively assert that every string leaf is non-empty. */
 function assertNoEmptyStrings(value: unknown, path: string) {
@@ -43,7 +43,7 @@ describe('translation completeness', () => {
 
   it('chat copy exposes the same keys in every locale', () => {
     const enKeys = Object.keys(chatCopyFor('en')).sort();
-    for (const locale of ['ru', 'kk']) {
+    for (const locale of ['ru', 'kk', 'es']) {
       expect(Object.keys(chatCopyFor(locale)).sort()).toEqual(enKeys);
     }
   });
@@ -51,7 +51,7 @@ describe('translation completeness', () => {
   it('all six tools are localized with matching intake fields', () => {
     const english = getToolsForLanguage('en');
     expect(english).toHaveLength(6);
-    for (const locale of ['ru', 'kk']) {
+    for (const locale of ['ru', 'kk', 'es']) {
       const localized = getToolsForLanguage(locale);
       expect(localized).toHaveLength(6);
       localized.forEach((tool, index) => {
@@ -65,9 +65,9 @@ describe('translation completeness', () => {
     }
   });
 
-  it('russian and kazakh translations actually differ from english', () => {
+  it('localized copy actually differs from english', () => {
     const en = copyFor('en');
-    for (const locale of ['ru', 'kk'] as const) {
+    for (const locale of ['ru', 'kk', 'es'] as const) {
       const translated = copyFor(locale);
       expect(translated.nextAction.quickStartTitle).not.toBe(
         en.nextAction.quickStartTitle,
@@ -82,6 +82,15 @@ describe('translation completeness', () => {
   it('kazakh is honestly labeled beta in the language picker', () => {
     const kk = languages.find((language) => language.id === 'kk');
     expect(kk?.label).toContain('beta');
+  });
+
+  it('offers Spanish as a first-class language', () => {
+    expect(languages.find((language) => language.id === 'es')).toEqual({
+      id: 'es',
+      label: 'Español',
+      prompt: 'Spanish',
+    });
+    expect(ENGLISH_ONLY_NOTICE.es).toBe('');
   });
 
   it('english-only pages have a localized notice for ru and kk', () => {

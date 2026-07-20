@@ -20,14 +20,14 @@ import {
 import { sendBetaEvent } from '@/lib/mindpulse/beta-events';
 import {
   GUEST_RECOVERY_KEY,
-  LANGUAGE_KEY,
-  applyDocumentLanguage,
   readJson,
   writeJson,
 } from '@/lib/mindpulse/local-store';
+import { useLanguagePreference } from '@/lib/mindpulse/use-language-preference';
+import { useLocalizedMetadata } from '@/lib/mindpulse/use-localized-metadata';
 import {
-  isLanguageCode,
   languages,
+  languageLabelFor,
   type LanguageCode,
 } from '@/lib/mindpulse/tools';
 import { SiteFooter } from '../mindpulse/site-footer';
@@ -67,7 +67,7 @@ export function RecoveryFlow({
   user: MindPulseUser | null;
 }) {
   const [user, setUser] = useState<MindPulseUser | null>(initialUser);
-  const [language, setLanguage] = useState<LanguageCode>('en');
+  const [language, setLanguage] = useLanguagePreference();
   const [step, setStep] = useState(1);
   const [missedContext, setMissedContext] = useState('');
   const [items, setItems] = useState<ItemDraft[]>([{ ...EMPTY_ITEM }]);
@@ -86,17 +86,11 @@ export function RecoveryFlow({
   const copy = ui.recovery;
 
   useEffect(() => {
-    const storedLanguage = readJson<LanguageCode | null>(LANGUAGE_KEY, null);
-    if (storedLanguage && isLanguageCode(storedLanguage))
-      setLanguage(storedLanguage);
     const existing = readJson<StoredRecovery | null>(GUEST_RECOVERY_KEY, null);
     if (existing?.plan) setStored(existing);
   }, []);
 
-  useEffect(() => {
-    writeJson(LANGUAGE_KEY, language);
-    applyDocumentLanguage(language);
-  }, [language]);
+  useLocalizedMetadata(`${copy.eyebrow} · MindPulse`, copy.intro);
 
   useEffect(() => {
     let active = true;
@@ -244,22 +238,26 @@ export function RecoveryFlow({
     <div className="ambient min-h-screen">
       <header className="sticky top-0 z-40 border-b border-ink/5 bg-canvas/85 backdrop-blur-xl">
         <nav className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-8">
-          <Link href="/app" className="flex items-center gap-3">
+          <Link
+            href="/app"
+            className="flex min-h-11 min-w-11 items-center gap-3"
+          >
             <span className="grid h-10 w-10 place-items-center rounded-2xl bg-ink text-canvas">
               <Brain size={20} />
             </span>
             <b className="hidden sm:block">MindPulse</b>
           </Link>
           <div className="flex flex-wrap items-center justify-end gap-2">
-            <label className="inline-flex min-h-10 items-center gap-2 rounded-full bg-surface px-3 text-sm font-semibold text-muted shadow-soft">
+            <label className="inline-flex min-h-11 items-center gap-2 rounded-full bg-surface px-3 text-sm font-semibold text-muted shadow-soft">
               <Globe2 size={15} />
-              <span className="sr-only">Language</span>
+              <span className="sr-only">{languageLabelFor[language]}</span>
               <select
                 value={language}
                 onChange={(event) =>
                   setLanguage(event.target.value as LanguageCode)
                 }
-                className="bg-transparent outline-none"
+                className="min-h-11 bg-transparent outline-none"
+                aria-label={languageLabelFor[language]}
               >
                 {languages.map((item) => (
                   <option key={item.id} value={item.id}>
@@ -437,7 +435,7 @@ export function RecoveryFlow({
                                 current.filter((_, i) => i !== index),
                               )
                             }
-                            className="inline-flex min-h-10 items-center gap-1 rounded-full bg-surface px-4 text-sm font-semibold text-muted hover:text-danger"
+                            className="inline-flex min-h-11 items-center gap-1 rounded-full bg-surface px-4 text-sm font-semibold text-muted hover:text-danger"
                           >
                             <Trash2 size={14} /> {copy.removeItem}
                           </button>

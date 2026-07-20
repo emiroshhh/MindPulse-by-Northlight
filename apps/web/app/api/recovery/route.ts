@@ -17,7 +17,7 @@ import { crisisPayload } from '../../../lib/server/crisis';
 import { recordEvent } from '../../../lib/server/events';
 import { reserveDailyUsage } from '../../../lib/server/usage';
 import {
-  RECOVERY_REPAIR_INSTRUCTION,
+  recoveryRepairInstruction,
   buildRecoveryInput,
   buildRecoverySystemPrompt,
 } from '../../../lib/server/recovery-prompt';
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
   // built from their own items.
   if (!plan) {
     const second = await generateMindPulseReply({
-      systemPrompt: `${systemPrompt}\n\n${RECOVERY_REPAIR_INSTRUCTION}`,
+      systemPrompt: `${systemPrompt}\n\n${recoveryRepairInstruction(recoveryRequest.language)}`,
       interactionInput: input,
     });
     if (second.ok && !assessModelOutput(second.reply).flagged) {
@@ -108,7 +108,7 @@ export async function POST(request: Request) {
         .bind(
           id,
           user.id,
-          recoveryTitle(now),
+          recoveryTitle(now, recoveryRequest.language),
           plan.immediateAction,
           JSON.stringify(plan),
           now,
@@ -132,13 +132,19 @@ export async function POST(request: Request) {
   return json({ plan, source, usage, saved });
 }
 
-function recoveryTitle(isoNow: string) {
-  return `Recovery plan · ${isoNow.slice(0, 10)}`;
+function recoveryTitle(isoNow: string, language: string) {
+  const title: Record<string, string> = {
+    en: 'Recovery plan',
+    ru: 'План восстановления',
+    kk: 'Қалпына келу жоспары',
+    es: 'Plan de recuperación',
+  };
+  return `${title[language] ?? title.en} · ${isoNow.slice(0, 10)}`;
 }
 
 function methodNotAllowed() {
   return Response.json(
-    { error: 'Method not allowed' },
+    { error: 'method_not_allowed' },
     { status: 405, headers: { Allow: 'POST' } },
   );
 }

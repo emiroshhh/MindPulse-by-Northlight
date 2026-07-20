@@ -3,17 +3,24 @@
 import { Brain } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { authCopyFor } from '@/lib/mindpulse/auth-i18n';
+import { languages, type LanguageCode } from '@/lib/mindpulse/tools';
+import { useLanguagePreference } from '@/lib/mindpulse/use-language-preference';
+import { useLocalizedMetadata } from '@/lib/mindpulse/use-localized-metadata';
 
 export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
   const searchParams = useSearchParams();
   const isSignup = mode === 'signup';
+  const [language, setLanguage] = useLanguagePreference();
+  const copy = authCopyFor(language);
+
+  useLocalizedMetadata(
+    `${isSignup ? copy.signupTitle : copy.loginTitle} · MindPulse`,
+    isSignup ? copy.signupIntro : copy.loginIntro,
+  );
   const errorCode = searchParams.get('error');
   const error =
-    errorCode && isSignup
-      ? 'Could not create account. Please check your details.'
-      : errorCode
-        ? 'Invalid email or password.'
-        : '';
+    errorCode && isSignup ? copy.signupError : errorCode ? copy.loginError : '';
 
   return (
     <main className="ambient grid min-h-screen place-items-center px-5 py-10">
@@ -29,13 +36,28 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
             </small>
           </span>
         </Link>
+        <label className="mt-6 block text-sm font-semibold">
+          <span className="sr-only">{copy.languageLabel}</span>
+          <select
+            aria-label={copy.languageLabel}
+            value={language}
+            onChange={(event) =>
+              setLanguage(event.target.value as LanguageCode)
+            }
+            className="min-h-11 w-full rounded-xl border border-ink/10 bg-canvas px-3"
+          >
+            {languages.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.label}
+              </option>
+            ))}
+          </select>
+        </label>
         <h1 className="mt-8 text-3xl font-semibold tracking-tight">
-          {isSignup ? 'Create your account' : 'Welcome back'}
+          {isSignup ? copy.signupTitle : copy.loginTitle}
         </h1>
         <p className="mt-2 leading-7 text-muted">
-          {isSignup
-            ? 'Save your study history, AI chats, and Agent plans privately.'
-            : 'Log in to continue your dashboard, chat history, and Agent plans.'}
+          {isSignup ? copy.signupIntro : copy.loginIntro}
         </p>
         <form
           method="post"
@@ -44,28 +66,28 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
         >
           {isSignup && (
             <label className="block text-sm font-semibold">
-              Name
+              {copy.name}
               <input
                 name="name"
                 autoComplete="name"
                 className="mt-2 w-full rounded-2xl border border-ink/10 bg-canvas/70 px-4 py-3 outline-none focus:border-sage focus:ring-4 focus:ring-sage/10"
-                placeholder="Alex"
+                placeholder={copy.namePlaceholder}
               />
             </label>
           )}
           <label className="block text-sm font-semibold">
-            Email
+            {copy.email}
             <input
               name="email"
               type="email"
               autoComplete="email"
               required
               className="mt-2 w-full rounded-2xl border border-ink/10 bg-canvas/70 px-4 py-3 outline-none focus:border-sage focus:ring-4 focus:ring-sage/10"
-              placeholder="you@example.com"
+              placeholder={copy.emailPlaceholder}
             />
           </label>
           <label className="block text-sm font-semibold">
-            Password
+            {copy.password}
             <input
               name="password"
               type="password"
@@ -73,7 +95,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
               minLength={10}
               required
               className="mt-2 w-full rounded-2xl border border-ink/10 bg-canvas/70 px-4 py-3 outline-none focus:border-sage focus:ring-4 focus:ring-sage/10"
-              placeholder="At least 10 characters"
+              placeholder={copy.passwordPlaceholder}
             />
           </label>
           {error && (
@@ -85,16 +107,16 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
             </div>
           )}
           <button className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-sage px-5 font-semibold text-canvas hover:bg-ink">
-            {isSignup ? 'Create your free account' : 'Log in'}
+            {isSignup ? copy.signup : copy.login}
           </button>
         </form>
         <p className="mt-5 text-center text-sm text-muted">
-          {isSignup ? 'Already have an account?' : 'New to MindPulse?'}{' '}
+          {isSignup ? copy.hasAccount : copy.needsAccount}{' '}
           <Link
             href={isSignup ? '/login' : '/signup'}
-            className="font-semibold text-sage hover:text-ink"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center font-semibold text-sage hover:text-ink"
           >
-            {isSignup ? 'Log in' : 'Get started'}
+            {isSignup ? copy.login : copy.getStarted}
           </Link>
         </p>
       </section>

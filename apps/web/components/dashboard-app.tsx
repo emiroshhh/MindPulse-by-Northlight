@@ -24,13 +24,17 @@ import { sendReturningVisitOnce } from '@/lib/mindpulse/beta-events';
 import {
   GUEST_AGENT_KEY,
   GUEST_BANNER_KEY,
-  LANGUAGE_KEY,
-  applyDocumentLanguage,
   localId,
   readJson,
   writeJson,
 } from '@/lib/mindpulse/local-store';
-import { languages, type LanguageCode } from '@/lib/mindpulse/tools';
+import {
+  languages,
+  languageLabelFor,
+  type LanguageCode,
+} from '@/lib/mindpulse/tools';
+import { useLanguagePreference } from '@/lib/mindpulse/use-language-preference';
+import { useLocalizedMetadata } from '@/lib/mindpulse/use-localized-metadata';
 import { AccountSection } from './dashboard/account-section';
 import { NextActionCard } from './dashboard/next-action-card';
 import { InsightsCard } from './dashboard/insights-card';
@@ -55,7 +59,7 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
   // authReady starts true if the server already confirmed a user (no flash needed).
   // If the server passed null, we wait for /api/auth/me before showing guest UI.
   const [authReady, setAuthReady] = useState(Boolean(initialUser));
-  const [language, setLanguage] = useState<LanguageCode>('en');
+  const [language, setLanguage] = useLanguagePreference();
   const [showGuestBanner, setShowGuestBanner] = useState(false);
   const [agentInput, setAgentInput] = useState('');
   const [agentOutput, setAgentOutput] = useState('');
@@ -110,16 +114,10 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
   }, []);
 
   useEffect(() => {
-    const storedLanguage = readJson<LanguageCode | null>(LANGUAGE_KEY, null);
-    if (storedLanguage && languages.some((item) => item.id === storedLanguage))
-      setLanguage(storedLanguage);
     setShowGuestBanner(!readJson(GUEST_BANNER_KEY, false));
   }, []);
 
-  useEffect(() => {
-    writeJson(LANGUAGE_KEY, language);
-    applyDocumentLanguage(language);
-  }, [language]);
+  useLocalizedMetadata(`${ui.navDashboard} · MindPulse`, ui.heroSubtitle);
 
   async function runAgent(prompt = agentInput) {
     const text = prompt.trim();
@@ -136,7 +134,10 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
         body: JSON.stringify({
           mode: 'planner',
           language,
-          message: `Act as the MindPulse Agent. Create a structured student plan with these sections: Goal, Plan, Next 3 actions, Deadline, Motivation reset, Possible obstacles, Smallest first step. Be practical and supportive. User request: ${text}`,
+          message:
+            language === 'es'
+              ? `Actúa como el Agente de MindPulse. Crea un plan estudiantil estructurado con estas secciones: Meta, Plan, Próximas 3 acciones, Fecha límite, Reinicio de motivación, Posibles obstáculos y Primer paso más pequeño. Sé práctico y comprensivo. Solicitud del usuario: ${text}`
+              : `Act as the MindPulse Agent. Create a structured student plan with these sections: Goal, Plan, Next 3 actions, Deadline, Motivation reset, Possible obstacles, Smallest first step. Be practical and supportive. User request: ${text}`,
         }),
       });
       const body = (await response.json().catch(() => ({}))) as {
@@ -201,7 +202,10 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
     <div className="ambient min-h-screen">
       <header className="sticky top-0 z-40 border-b border-ink/5 bg-canvas/85 backdrop-blur-xl">
         <nav className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-8">
-          <Link href="/app" className="flex items-center gap-3">
+          <Link
+            href="/app"
+            className="flex min-h-11 min-w-11 items-center gap-3"
+          >
             <span className="grid h-10 w-10 place-items-center rounded-2xl bg-ink text-canvas">
               <Brain size={20} />
             </span>
@@ -213,27 +217,36 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
             </span>
           </Link>
           <div className="hidden gap-6 text-sm font-semibold text-muted lg:flex">
-            <Link href="/app" className="hover:text-ink">
+            <Link
+              href="/app"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center hover:text-ink"
+            >
               {ui.navDashboard}
             </Link>
-            <Link href="/why" className="hover:text-ink">
+            <Link
+              href="/why"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center hover:text-ink"
+            >
               {ui.navWhy}
             </Link>
-            <a href="#agent" className="hover:text-ink">
+            <a
+              href="#agent"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center hover:text-ink"
+            >
               {ui.navAgent}
             </a>
           </div>
           <div className="flex flex-wrap items-center justify-end gap-2">
-            <label className="inline-flex min-h-10 items-center gap-2 rounded-full bg-surface px-3 text-sm font-semibold text-muted shadow-soft">
+            <label className="inline-flex min-h-11 items-center gap-2 rounded-full bg-surface px-3 text-sm font-semibold text-muted shadow-soft">
               <Globe2 size={15} />
-              <span className="sr-only">Language</span>
+              <span className="sr-only">{languageLabelFor[language]}</span>
               <select
                 value={language}
                 onChange={(event) =>
                   setLanguage(event.target.value as LanguageCode)
                 }
-                aria-label="Language"
-                className="bg-transparent font-semibold text-ink outline-none"
+                aria-label={languageLabelFor[language]}
+                className="min-h-11 bg-transparent font-semibold text-ink outline-none"
               >
                 {languages.map((item) => (
                   <option key={item.id} value={item.id}>
@@ -247,19 +260,19 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
               (user ? (
                 <LogoutButton
                   label={ui.navLogout}
-                  className="inline-flex min-h-10 items-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-canvas"
+                  className="inline-flex min-h-11 items-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-canvas"
                 />
               ) : (
                 <>
                   <Link
                     href="/login"
-                    className="inline-flex min-h-10 items-center gap-2 rounded-full bg-surface px-4 text-sm font-semibold text-ink shadow-soft"
+                    className="inline-flex min-h-11 items-center gap-2 rounded-full bg-surface px-4 text-sm font-semibold text-ink shadow-soft"
                   >
                     <LogIn size={15} /> {ui.navLogin}
                   </Link>
                   <Link
                     href="/signup"
-                    className="inline-flex min-h-10 items-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-canvas"
+                    className="inline-flex min-h-11 items-center gap-2 rounded-full bg-ink px-4 text-sm font-semibold text-canvas"
                   >
                     <UserPlus size={15} /> {ui.navSignup}
                   </Link>
@@ -280,13 +293,13 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
               <div className="flex flex-wrap gap-2">
                 <Link
                   href="/signup"
-                  className="inline-flex min-h-10 items-center rounded-full bg-ink px-4 py-2 text-sm font-semibold text-canvas"
+                  className="inline-flex min-h-11 items-center rounded-full bg-ink px-4 py-2 text-sm font-semibold text-canvas"
                 >
                   {ui.guestBannerCreate}
                 </Link>
                 <Link
                   href="/login"
-                  className="inline-flex min-h-10 items-center rounded-full bg-canvas px-4 py-2 text-sm font-semibold text-ink"
+                  className="inline-flex min-h-11 items-center rounded-full bg-canvas px-4 py-2 text-sm font-semibold text-ink"
                 >
                   {ui.guestBannerLogin}
                 </Link>
@@ -295,7 +308,7 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
                     writeJson(GUEST_BANNER_KEY, true);
                     setShowGuestBanner(false);
                   }}
-                  className="inline-flex min-h-10 items-center rounded-full bg-canvas/70 px-4 py-2 text-sm font-semibold text-muted"
+                  className="inline-flex min-h-11 items-center rounded-full bg-canvas/70 px-4 py-2 text-sm font-semibold text-muted"
                 >
                   {ui.guestBannerContinue}
                 </button>
@@ -394,7 +407,7 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
               <button
                 key={prompt}
                 onClick={() => void runAgent(prompt)}
-                className="min-h-10 rounded-full bg-sage-soft px-4 py-2 text-sm font-semibold text-ink"
+                className="min-h-11 rounded-full bg-sage-soft px-4 py-2 text-sm font-semibold text-ink"
               >
                 {prompt}
               </button>
@@ -431,7 +444,7 @@ export function DashboardApp({ user: initialUser }: { user: User | null }) {
               <button
                 onClick={() => void savePlan()}
                 disabled={!agentOutput}
-                className="mt-4 inline-flex min-h-10 items-center gap-2 rounded-full bg-sage px-4 text-sm font-semibold text-canvas disabled:opacity-40"
+                className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full bg-sage px-4 text-sm font-semibold text-canvas disabled:opacity-40"
               >
                 {ui.agentSave} {saved && <CheckCircle2 size={15} />}
               </button>

@@ -85,7 +85,7 @@ export function NextActionCard({
         body: JSON.stringify({
           mode,
           language,
-          message: `Suggest exactly ONE small, concrete next action (1-2 sentences, something startable in the next 15 minutes) for this situation. No lists, no plan, just the single smallest useful step: ${text}`,
+          message: copy.requestPrompt(text),
         }),
       });
       const body = (await response.json().catch(() => ({}))) as {
@@ -185,7 +185,7 @@ export function NextActionCard({
       </p>
       {celebrate && (
         <p
-          className="mt-3 inline-flex items-center gap-2 rounded-full bg-sage-soft px-4 py-2 text-sm font-semibold"
+          className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-full bg-sage-soft px-4 py-2 text-sm font-semibold"
           role="status"
         >
           <CheckCircle2 size={15} className="text-sage" />
@@ -260,7 +260,7 @@ export function NextActionCard({
                   role="radio"
                   aria-checked={mode === tool.id}
                   onClick={() => setMode(tool.id)}
-                  className={`min-h-10 rounded-full px-4 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sage ${
+                  className={`min-h-11 rounded-full px-4 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sage ${
                     mode === tool.id
                       ? 'bg-ink text-canvas'
                       : 'bg-canvas/70 text-muted hover:text-ink'
@@ -274,7 +274,7 @@ export function NextActionCard({
                 role="radio"
                 aria-checked={mode === 'recovery'}
                 onClick={() => setMode('recovery')}
-                className={`min-h-10 rounded-full px-4 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sage ${
+                className={`min-h-11 rounded-full px-4 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sage ${
                   mode === 'recovery'
                     ? 'bg-ink text-canvas'
                     : 'bg-warm/25 text-muted hover:text-ink'
