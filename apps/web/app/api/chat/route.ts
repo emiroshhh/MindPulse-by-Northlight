@@ -27,8 +27,53 @@ const MODES = [
   'reflection',
 ] as const;
 type Mode = (typeof MODES)[number];
-const LANGUAGES = ['en', 'ru', 'kk'] as const;
+const LANGUAGES = ['en', 'ru', 'kk', 'es'] as const;
 type Language = (typeof LANGUAGES)[number];
+const ERROR_COPY: Record<
+  Language,
+  { invalid: string; required: string; tooLong: string; method: string }
+> = {
+  en: {
+    invalid: 'Invalid request',
+    required: 'Message is required',
+    tooLong: 'Message must be 1,000 characters or fewer',
+    method: 'Method not allowed',
+  },
+  ru: {
+    invalid: 'Некорректный запрос',
+    required: 'Введите сообщение',
+    tooLong: 'Сообщение должно содержать не более 1 000 символов',
+    method: 'Метод не поддерживается',
+  },
+  kk: {
+    invalid: 'Сұрау жарамсыз',
+    required: 'Хабарлама енгізіңіз',
+    tooLong: 'Хабарлама 1 000 таңбадан аспауы керек',
+    method: 'Әдіске рұқсат етілмейді',
+  },
+  es: {
+    invalid: 'La solicitud no es válida',
+    required: 'El mensaje es obligatorio',
+    tooLong: 'El mensaje debe tener 1.000 caracteres o menos',
+    method: 'Método no permitido',
+  },
+};
+
+function requestLanguage(request: Request, raw?: Record<string, unknown>) {
+  if (
+    typeof raw?.language === 'string' &&
+    LANGUAGES.includes(raw.language as Language)
+  )
+    return raw.language as Language;
+  const preferred = request.headers
+    .get('accept-language')
+    ?.toLowerCase()
+    .split(',')[0]
+    ?.split('-')[0];
+  return LANGUAGES.includes(preferred as Language)
+    ? (preferred as Language)
+    : 'en';
+}
 
 export async function POST(request: Request) {
   const user = await getCurrentUserFromRequest(request);
@@ -37,24 +82,20 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch {
-    return json({ error: 'Invalid JSON body' }, 400);
+    return json({ error: ERROR_COPY[requestLanguage(request)].invalid }, 400);
   }
   if (!body || typeof body !== 'object')
-    return json({ error: 'Message is required' }, 400);
+    return json({ error: ERROR_COPY[requestLanguage(request)].invalid }, 400);
   const raw = body as Record<string, unknown>;
+  const language = requestLanguage(request, raw);
+  const errorCopy = ERROR_COPY[language];
   const message = typeof raw.message === 'string' ? raw.message.trim() : '';
-  if (!message) return json({ error: 'Message is required' }, 400);
-  if (message.length > 1000)
-    return json({ error: 'Message must be 1,000 characters or fewer' }, 400);
+  if (!message) return json({ error: errorCopy.required }, 400);
+  if (message.length > 1000) return json({ error: errorCopy.tooLong }, 400);
   const mode: Mode =
     typeof raw.mode === 'string' && MODES.includes(raw.mode as Mode)
       ? (raw.mode as Mode)
       : 'study';
-  const language: Language =
-    typeof raw.language === 'string' &&
-    LANGUAGES.includes(raw.language as Language)
-      ? (raw.language as Language)
-      : 'en';
 
   // Crisis responses bypass generation entirely and never consume quota.
   const inputSafety = assessUserInput(message);
@@ -140,9 +181,9 @@ function chatId() {
     : `chat-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-function methodNotAllowed() {
+function methodNotAllowed(request: Request) {
   return Response.json(
-    { error: 'Method not allowed' },
+    { error: ERROR_COPY[requestLanguage(request)].method },
     { status: 405, headers: { Allow: 'POST' } },
   );
 }
