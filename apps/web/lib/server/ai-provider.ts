@@ -104,10 +104,11 @@ async function generateGeminiReply({
         store: false,
         system_instruction: systemPrompt,
         input: interactionInput,
-        // temperature 0.5: more focused than default 0.7, avoids over-verbose output.
-        // max_output_tokens omitted for Gemini Interactions because the exact field name
-        // can vary by API generation; adding an unknown key risks a 400.
-        generation_config: { temperature: 0.5 },
+        generation_config: {
+          temperature: 0.5,
+          max_output_tokens: 500,
+          thinking_level: 'low',
+        },
       }),
     });
     console.info('[MindPulse] Gemini response status:', response.status);
@@ -117,7 +118,7 @@ async function generateGeminiReply({
       });
       return {
         ok: false,
-        status: 502,
+        status: response.status === 429 ? 429 : 502,
         body: { error: 'gemini_request_failed', status: response.status },
       };
     }
@@ -125,7 +126,7 @@ async function generateGeminiReply({
     if (!reply)
       return {
         ok: false,
-        status: 502,
+        status: response.status === 429 ? 429 : 502,
         body: { error: 'gemini_empty_response' },
       };
     return { ok: true, reply };

@@ -21,6 +21,8 @@ Counters land in the D1 `events` table as (name, day, count):
 | `recovery_plan_created`                                             | /api/recovery returns a plan (AI or fallback)        |
 | `recovery_completed`                                                | a recovery plan is marked done (server or client)    |
 | `tool_result_saved`                                                 | a tool result is saved to an account                 |
+| `tool_started` / `tool_completed`                                   | a tool request starts / returns a valid answer       |
+| `ai_request_succeeded` / `ai_request_failed`                        | provider request outcome                             |
 | `feedback_submitted` / `feedback_helped_yes` / `feedback_helped_no` | feedback form                                        |
 | `returning_visit`                                                   | first dashboard visit of a day per device            |
 
@@ -51,6 +53,8 @@ npx wrangler d1 execute mindpulse-db --remote --config apps/web/wrangler.jsonc `
   goals, clearly labeled as goals.
 - Feedback rows are anonymous by design — never try to join them to accounts.
 - Crisis-flagged content is never stored or counted anywhere.
+- AI outcome counters are aggregate-only and never include prompts, answers,
+  identities, IP addresses, or campaign attribution.
 
 ## Suggested tester script
 

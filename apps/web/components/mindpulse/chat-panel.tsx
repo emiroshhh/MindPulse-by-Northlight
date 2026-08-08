@@ -17,6 +17,7 @@ import {
   writeJson,
 } from '@/lib/mindpulse/local-store';
 import { authHeaders } from '@/lib/mindpulse/client-auth';
+import { sendBetaEvent } from '@/lib/mindpulse/beta-events';
 import { getToolsForLanguage } from '@/lib/mindpulse/i18n';
 import {
   toolsByMode,
@@ -177,6 +178,7 @@ export function ChatPanel({
     event?.preventDefault();
     const text = (example ?? chatInput).trim();
     if (!text || chatLoading) return;
+    sendBetaEvent('tool_started');
     setChatLoading(true);
     setChatError('');
     setLimitAccountRequired(false);
@@ -228,6 +230,7 @@ export function ChatPanel({
         return;
       }
       if (body.usage) setUsage(body.usage);
+      sendBetaEvent('tool_completed');
       setSaveState('idle');
       setMessages((items) => [
         ...items,

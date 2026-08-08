@@ -41,6 +41,9 @@ export type SessionDebugResult = {
 
 type WorkerBindings = {
   DB?: D1DatabaseLike;
+  AI_ENABLED?: string | undefined;
+  AI_GLOBAL_DAILY_LIMIT?: string | undefined;
+  AI_GLOBAL_MONTHLY_LIMIT?: string | undefined;
   GEMINI_API_KEY?: string | undefined;
   GEMINI_MODEL?: string | undefined;
   SESSION_SECRET?: string | undefined;
@@ -72,6 +75,9 @@ export async function getBindings(): Promise<WorkerBindings> {
     return env as WorkerBindings;
   } catch {
     return {
+      AI_ENABLED: process.env.AI_ENABLED,
+      AI_GLOBAL_DAILY_LIMIT: process.env.AI_GLOBAL_DAILY_LIMIT,
+      AI_GLOBAL_MONTHLY_LIMIT: process.env.AI_GLOBAL_MONTHLY_LIMIT,
       GEMINI_API_KEY: process.env.GEMINI_API_KEY,
       GEMINI_MODEL: process.env.GEMINI_MODEL,
       SESSION_SECRET: process.env.SESSION_SECRET,

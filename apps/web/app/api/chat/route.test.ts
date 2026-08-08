@@ -30,6 +30,7 @@ const authMocks = vi.hoisted(() => {
   return {
     getCurrentUser: vi.fn(),
     getCurrentUserFromRequest: vi.fn(),
+    getBindings: vi.fn().mockResolvedValue({}),
     getAuthDb: vi.fn().mockResolvedValue({ prepare }),
     requireDb: vi.fn().mockResolvedValue({ prepare }),
     json: (body: unknown, status = 200) =>
