@@ -10,7 +10,12 @@ import {
 } from '../../../lib/server/auth';
 import { generateMindPulseReply } from '../../../lib/server/ai-provider';
 import { crisisPayload } from '../../../lib/server/crisis';
-import { reserveDailyUsage } from '../../../lib/server/usage';
+import {
+  refundDailyUsage,
+  reserveDailyUsage,
+  reserveGlobalAiCapacity,
+} from '../../../lib/server/usage';
+import { recordEvent } from '../../../lib/server/events';
 import {
   buildInteractionInput,
   buildSystemPrompt,
@@ -114,11 +119,26 @@ export async function POST(request: Request) {
     );
   }
 
+  const capacity = await reserveGlobalAiCapacity();
+  if (!capacity.allowed) {
+    await refundDailyUsage({ request, user });
+    return json({ error: capacity.reason }, 429);
+  }
   const aiResult = await generateMindPulseReply({
     systemPrompt: buildSystemPrompt(mode, language),
     interactionInput: buildInteractionInput(message, raw.history),
   });
-  if (!aiResult.ok) return json(aiResult.body, aiResult.status);
+  if (!aiResult.ok) {
+    await capacity.release();
+    await refundDailyUsage({ request, user });
+    try {
+      await recordEvent(await getAuthDb(), 'ai_request_failed');
+    } catch {}
+    return json(aiResult.body, aiResult.status);
+  }
+  try {
+    await recordEvent(await getAuthDb(), 'ai_request_succeeded');
+  } catch {}
 
   const safeReply = assessModelOutput(aiResult.reply).flagged
     ? safeOutputFallbacksFor(language).join('\n\n')

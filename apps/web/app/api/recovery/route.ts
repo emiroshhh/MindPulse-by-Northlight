@@ -15,7 +15,11 @@ import {
 import { generateMindPulseReply } from '../../../lib/server/ai-provider';
 import { crisisPayload } from '../../../lib/server/crisis';
 import { recordEvent } from '../../../lib/server/events';
-import { reserveDailyUsage } from '../../../lib/server/usage';
+import {
+  refundDailyUsage,
+  reserveDailyUsage,
+  reserveGlobalAiCapacity,
+} from '../../../lib/server/usage';
 import {
   recoveryRepairInstruction,
   buildRecoveryInput,
@@ -66,10 +70,7 @@ export async function POST(request: Request) {
   let plan: RecoveryPlan | null = null;
   let source: 'ai' | 'fallback' = 'ai';
 
-  const first = await generateMindPulseReply({
-    systemPrompt,
-    interactionInput: input,
-  });
+  const first = await generateRecoveryReply(systemPrompt, input);
   if (first.ok && !assessModelOutput(first.reply).flagged) {
     const attempt = parseRecoveryPlanText(first.reply);
     if (attempt.ok) plan = attempt.plan;
@@ -79,10 +80,10 @@ export async function POST(request: Request) {
   // entirely also lands on the fallback — the student still gets a plan
   // built from their own items.
   if (!plan) {
-    const second = await generateMindPulseReply({
-      systemPrompt: `${systemPrompt}\n\n${recoveryRepairInstruction(recoveryRequest.language)}`,
-      interactionInput: input,
-    });
+    const second = await generateRecoveryReply(
+      `${systemPrompt}\n\n${recoveryRepairInstruction(recoveryRequest.language)}`,
+      input,
+    );
     if (second.ok && !assessModelOutput(second.reply).flagged) {
       const attempt = parseRecoveryPlanText(second.reply);
       if (attempt.ok) plan = attempt.plan;
@@ -92,6 +93,7 @@ export async function POST(request: Request) {
   if (!plan) {
     plan = buildFallbackRecoveryPlan(recoveryRequest);
     source = 'fallback';
+    await refundDailyUsage({ request, user });
   }
 
   let saved: { id: string } | null = null;
@@ -130,6 +132,29 @@ export async function POST(request: Request) {
   }
 
   return json({ plan, source, usage, saved });
+}
+
+async function generateRecoveryReply(
+  systemPrompt: string,
+  interactionInput: string,
+) {
+  const capacity = await reserveGlobalAiCapacity();
+  if (!capacity.allowed)
+    return { ok: false as const, capacityUnavailable: true };
+  const result = await generateMindPulseReply({
+    systemPrompt,
+    interactionInput,
+  });
+  try {
+    await recordEvent(
+      await getAuthDb(),
+      result.ok ? 'ai_request_succeeded' : 'ai_request_failed',
+    );
+  } catch {
+    // Analytics must not affect Recovery.
+  }
+  if (!result.ok) await capacity.release();
+  return result;
 }
 
 function recoveryTitle(isoNow: string, language: string) {

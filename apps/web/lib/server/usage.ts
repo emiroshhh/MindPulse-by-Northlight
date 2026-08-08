@@ -1,4 +1,4 @@
-import { getAuthDb, type AuthUser } from './auth';
+import { getAuthDb, getBindings, type AuthUser } from './auth';
 
 export const GUEST_DAILY_LIMIT = 5;
 export const ACCOUNT_DAILY_LIMIT = 20;
@@ -10,6 +10,85 @@ export type DailyUsage = {
   remaining: number;
   accountRequired: boolean;
 };
+
+export type GlobalAiCapacity =
+  | { allowed: true; release: () => Promise<void> }
+  | { allowed: false; reason: 'ai_disabled' | 'global_capacity_reached' };
+
+export async function reserveGlobalAiCapacity(): Promise<GlobalAiCapacity> {
+  const env = (await getBindings()) ?? {};
+  if (env.AI_ENABLED?.trim().toLowerCase() === 'false')
+    return { allowed: false, reason: 'ai_disabled' };
+  const limits = [
+    {
+      bucket: `day:${new Date().toISOString().slice(0, 10)}`,
+      limit: positiveInt(env.AI_GLOBAL_DAILY_LIMIT),
+    },
+    {
+      bucket: `month:${new Date().toISOString().slice(0, 7)}`,
+      limit: positiveInt(env.AI_GLOBAL_MONTHLY_LIMIT),
+    },
+  ].filter(
+    (item): item is { bucket: string; limit: number } => item.limit !== null,
+  );
+  if (!limits.length) return { allowed: true, release: async () => {} };
+  const db = await getAuthDb();
+  const now = new Date().toISOString();
+  const reserved: string[] = [];
+  for (const item of limits) {
+    const result = await db
+      .prepare(
+        `INSERT INTO ai_capacity (bucket, request_count, updated_at) VALUES (?, 1, ?) ON CONFLICT(bucket) DO UPDATE SET request_count = request_count + 1, updated_at = excluded.updated_at WHERE ai_capacity.request_count < ?`,
+      )
+      .bind(item.bucket, now, item.limit)
+      .run();
+    if (((result as { meta?: { changes?: number } }).meta?.changes ?? 0) < 1) {
+      await releaseGlobalAiCapacity(reserved);
+      return { allowed: false, reason: 'global_capacity_reached' };
+    }
+    reserved.push(item.bucket);
+  }
+  return { allowed: true, release: () => releaseGlobalAiCapacity(reserved) };
+}
+
+export async function refundDailyUsage({
+  request,
+  user,
+}: {
+  request: Request;
+  user: AuthUser | null;
+}) {
+  const day = new Date().toISOString().slice(0, 10);
+  const guestKey = user ? null : await guestUsageKey(request);
+  const id = user ? `user:${user.id}:${day}` : `guest:${guestKey}:${day}`;
+  const db = await getAuthDb();
+  await db
+    .prepare(
+      'UPDATE daily_usage SET message_count = message_count - 1, updated_at = ? WHERE id = ? AND message_count > 0',
+    )
+    .bind(new Date().toISOString(), id)
+    .run();
+}
+
+async function releaseGlobalAiCapacity(buckets: string[]) {
+  if (!buckets.length) return;
+  const db = await getAuthDb();
+  await Promise.all(
+    buckets.map((bucket) =>
+      db
+        .prepare(
+          'UPDATE ai_capacity SET request_count = request_count - 1, updated_at = ? WHERE bucket = ? AND request_count > 0',
+        )
+        .bind(new Date().toISOString(), bucket)
+        .run(),
+    ),
+  );
+}
+
+function positiveInt(value: string | undefined) {
+  const number = Number(value?.trim());
+  return Number.isSafeInteger(number) && number > 0 ? number : null;
+}
 
 /**
  * Atomically reserve one AI message from the caller's daily quota.

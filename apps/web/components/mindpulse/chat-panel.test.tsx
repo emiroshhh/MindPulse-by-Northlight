@@ -69,8 +69,16 @@ describe('ChatPanel guided intake', () => {
       screen.getByRole('button', { name: 'Get my first answer' }),
     );
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
-    const [, init] = fetchMock.mock.calls[0]!;
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.some(([url]) => String(url).includes('/api/chat')),
+      ).toBe(true),
+    );
+    const chatCall = fetchMock.mock.calls.find(([url]) =>
+      String(url).includes('/api/chat'),
+    );
+    expect(chatCall).toBeDefined();
+    const [, init] = chatCall!;
     const payload = JSON.parse(String(init?.body)) as { message: string };
     expect(payload.message).toContain('Subject or topic: Photosynthesis');
     expect(payload.message).toContain(
