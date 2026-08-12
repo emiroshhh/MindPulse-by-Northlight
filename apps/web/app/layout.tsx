@@ -3,18 +3,15 @@ import './globals.css';
 import { LanguageProvider } from '@/components/language-provider';
 import { LocalizedSkipLink } from '@/components/localized-skip-link';
 import { ServiceWorkerRegister } from '@/components/service-worker-register';
+import { CANONICAL_ORIGIN, DEFAULT_OPEN_GRAPH } from '@/lib/seo';
 
 export const metadata: Metadata = {
+  metadataBase: new URL(CANONICAL_ORIGIN),
   title: { default: 'MindPulse', template: '%s · MindPulse' },
   description:
     'An AI study and self-growth assistant for planning, motivation, habits, goals, and learning.',
   applicationName: 'MindPulse',
-  openGraph: {
-    type: 'website',
-    siteName: 'MindPulse by Northlight',
-    title: 'MindPulse by Northlight',
-    description: 'A calmer student workspace for messy days.',
-  },
+  openGraph: DEFAULT_OPEN_GRAPH,
   twitter: {
     card: 'summary',
     title: 'MindPulse by Northlight',

@@ -16,6 +16,8 @@ describe('/logout GET', () => {
     expect(response.headers.get('Set-Cookie')).toBeNull();
     expect(html).toContain('logout button');
     expect(html).not.toContain('localStorage.removeItem');
+    expect(html).not.toMatch(/<link\b[^>]*\brel=["']canonical["']/i);
+    expect(html).not.toMatch(/<meta\b[^>]*\bproperty=["']og:url["']/i);
   });
 
   it('is also non-mutating for RSC prefetch-style requests', async () => {
