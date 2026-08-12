@@ -5,15 +5,12 @@ import { LocalizedSkipLink } from '@/components/localized-skip-link';
 import { ServiceWorkerRegister } from '@/components/service-worker-register';
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.SITE_URL ?? 'http://localhost:3000'),
   title: { default: 'MindPulse', template: '%s · MindPulse' },
   description:
     'An AI study and self-growth assistant for planning, motivation, habits, goals, and learning.',
   applicationName: 'MindPulse',
-  alternates: { canonical: '/' },
   openGraph: {
     type: 'website',
-    url: '/',
     siteName: 'MindPulse by Northlight',
     title: 'MindPulse by Northlight',
     description: 'A calmer student workspace for messy days.',
