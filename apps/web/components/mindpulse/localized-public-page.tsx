@@ -11,7 +11,6 @@ import {
 import { languages, type LanguageCode } from '@/lib/mindpulse/tools';
 import { useLanguagePreference } from '@/lib/mindpulse/use-language-preference';
 import { useLocalizedMetadata } from '@/lib/mindpulse/use-localized-metadata';
-import { EnglishOnlyNotice } from './english-only-notice';
 import { FeedbackModal } from './feedback-modal';
 import { SiteFooter } from './site-footer';
 
@@ -61,14 +60,8 @@ export function LocalizedPublicPage({ page }: { page: PublicPageId }) {
     },
   };
   const label = labels[language];
-  const usesEnglishFallback = language === 'ru' || language === 'kk';
-  const documentLanguage = usesEnglishFallback ? 'en' : language;
+  const documentLanguage = language;
 
-  // Russian and Kazakh long-form articles intentionally fall back to English.
-  // The root provider applies the stored UI locale in its layout effect, so a
-  // microtask applies this page-specific document policy after all layout
-  // effects but before the browser can paint. Cleanup restores the stored UI
-  // locale when navigating back to a fully localized route.
   useLayoutEffect(() => {
     let active = true;
     queueMicrotask(() => {
@@ -81,10 +74,7 @@ export function LocalizedPublicPage({ page }: { page: PublicPageId }) {
   }, [documentLanguage, language]);
 
   return (
-    <div
-      lang={usesEnglishFallback ? language : undefined}
-      className="ambient min-h-screen overflow-x-hidden"
-    >
+    <div lang={language} className="ambient min-h-screen overflow-x-hidden">
       <header className="border-b border-ink/5 bg-canvas/85 backdrop-blur-xl">
         <nav className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-8">
           <Link
@@ -137,7 +127,6 @@ export function LocalizedPublicPage({ page }: { page: PublicPageId }) {
         id="main-content"
         className="mx-auto max-w-5xl min-w-0 px-4 py-10 sm:px-8 sm:py-12"
       >
-        <EnglishOnlyNotice />
         <Link
           href="/app"
           className="inline-flex min-h-11 items-center gap-2 rounded-full bg-surface px-5 text-sm font-semibold shadow-soft"
@@ -145,7 +134,7 @@ export function LocalizedPublicPage({ page }: { page: PublicPageId }) {
           <ArrowLeft size={16} /> {label.back}
         </Link>
 
-        <div lang={usesEnglishFallback ? 'en' : undefined}>
+        <div>
           <section className="mt-8 min-w-0 rounded-[2rem] bg-surface p-6 shadow-soft sm:p-10">
             <p className="inline-flex max-w-full items-center gap-2 rounded-full bg-sage-soft px-4 py-2 text-xs font-bold uppercase tracking-[.14em] text-sage">
               <Sparkles size={15} className="shrink-0" />{' '}
