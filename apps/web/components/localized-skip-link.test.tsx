@@ -1,9 +1,8 @@
 // @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
 import React from 'react';
-import { act } from 'react';
 import { hydrateRoot } from 'react-dom/client';
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   LANGUAGE_KEY,
@@ -16,9 +15,7 @@ afterEach(cleanup);
 
 describe('LocalizedSkipLink', () => {
   it('hydrates from English without mismatches, then synchronizes stored and live locale changes', async () => {
-    const consoleError = vi
-      .spyOn(console, 'error')
-      .mockImplementation(() => undefined);
+    const consoleError = vi.spyOn(console, 'error');
     const cases = [
       ['es', 'Ir al contenido', 'es'],
       ['ru', 'Перейти к содержимому', 'ru'],
@@ -39,12 +36,15 @@ describe('LocalizedSkipLink', () => {
       expect(container.textContent).toBe('Skip to content');
       expect(document.documentElement.lang).toBe('en');
 
-      const root = hydrateRoot(
-        container,
-        <LanguageProvider>
-          <LocalizedSkipLink />
-        </LanguageProvider>,
-      );
+      let root: ReturnType<typeof hydrateRoot> | undefined;
+      await act(async () => {
+        root = hydrateRoot(
+          container,
+          <LanguageProvider>
+            <LocalizedSkipLink />
+          </LanguageProvider>,
+        );
+      });
       await waitFor(() => {
         expect(container).toHaveTextContent(label);
         expect(container.querySelector('a')).toHaveAttribute(
@@ -53,15 +53,13 @@ describe('LocalizedSkipLink', () => {
         );
         expect(document.documentElement.lang).toBe(expectedLanguage);
       });
-      await act(async () => root.unmount());
+      expect(root).toBeDefined();
+      await act(async () => root!.unmount());
+      expect(container).toBeEmptyDOMElement();
       container.remove();
     }
 
-    expect(
-      consoleError.mock.calls.some((call) =>
-        /hydration|did not match|server rendered/i.test(call.join(' ')),
-      ),
-    ).toBe(false);
+    expect(consoleError).not.toHaveBeenCalled();
     consoleError.mockRestore();
 
     localStorage.clear();
