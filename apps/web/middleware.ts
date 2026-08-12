@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
 /**
  * Security headers for Worker-rendered responses (SSR pages and API routes).
@@ -40,10 +41,14 @@ export const SECURITY_HEADERS: Record<string, string> = {
   ].join('; '),
 };
 
-export function middleware() {
+export function middleware(request: NextRequest) {
   const response = NextResponse.next();
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
     response.headers.set(name, value);
+  }
+  const pathname = request.nextUrl.pathname;
+  if (pathname === '/api' || pathname.startsWith('/api/')) {
+    response.headers.set('X-Robots-Tag', 'noindex, nofollow');
   }
   return response;
 }

@@ -8,6 +8,11 @@ describe('/logout GET', () => {
     const html = await response.text();
 
     expect(response.status).toBe(200);
+    expect(response.headers.get('X-Robots-Tag')).toBe('noindex, nofollow');
+    expect(response.headers.get('Cache-Control')).toBe('no-store');
+    expect(response.headers.get('Content-Type')).toBe(
+      'text/html; charset=utf-8',
+    );
     expect(response.headers.get('Set-Cookie')).toBeNull();
     expect(html).toContain('logout button');
     expect(html).not.toContain('localStorage.removeItem');
@@ -26,6 +31,7 @@ describe('/logout GET', () => {
     const html = await response.text();
 
     expect(response.status).toBe(200);
+    expect(response.headers.get('X-Robots-Tag')).toBe('noindex, nofollow');
     expect(response.headers.get('Set-Cookie')).toBeNull();
     expect(html).not.toContain('localStorage.removeItem');
   });
