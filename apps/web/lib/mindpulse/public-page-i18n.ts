@@ -1,3 +1,8 @@
+import {
+  KAZAKH_PUBLIC_PAGES,
+  RUSSIAN_PUBLIC_PAGES,
+} from './public-page-translations';
+
 export type PublicPageId = 'privacy' | 'why' | 'beta' | 'case-study' | 'impact';
 
 export type PublicPageCopy = {
@@ -13,9 +18,15 @@ export type PublicPageCopy = {
   ctaSecondary: string;
 };
 
-type BilingualPage = { en: PublicPageCopy; es: PublicPageCopy };
+export type LocalizedPublicPage = Record<
+  'en' | 'ru' | 'kk' | 'es',
+  PublicPageCopy
+>;
 
-export const PUBLIC_PAGES: Record<PublicPageId, BilingualPage> = {
+const ENGLISH_AND_SPANISH_PUBLIC_PAGES: Record<
+  PublicPageId,
+  Pick<LocalizedPublicPage, 'en' | 'es'>
+> = {
   privacy: {
     en: {
       metadataTitle: 'Privacy',
@@ -554,6 +565,23 @@ export const PUBLIC_PAGES: Record<PublicPageId, BilingualPage> = {
   },
 };
 
+export const PUBLIC_PAGES: Record<PublicPageId, LocalizedPublicPage> =
+  Object.fromEntries(
+    (Object.keys(ENGLISH_AND_SPANISH_PUBLIC_PAGES) as PublicPageId[]).map(
+      (page) => [
+        page,
+        {
+          ...ENGLISH_AND_SPANISH_PUBLIC_PAGES[page],
+          ru: RUSSIAN_PUBLIC_PAGES[page],
+          kk: KAZAKH_PUBLIC_PAGES[page],
+        },
+      ],
+    ),
+  ) as Record<PublicPageId, LocalizedPublicPage>;
+
 export function publicPageCopyFor(id: PublicPageId, language: string) {
-  return language === 'es' ? PUBLIC_PAGES[id].es : PUBLIC_PAGES[id].en;
+  return (
+    PUBLIC_PAGES[id][language as keyof LocalizedPublicPage] ??
+    PUBLIC_PAGES[id].en
+  );
 }

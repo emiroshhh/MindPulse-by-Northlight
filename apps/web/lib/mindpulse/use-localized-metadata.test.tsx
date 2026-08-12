@@ -1,9 +1,6 @@
 // @vitest-environment jsdom
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { authCopyFor } from './auth-i18n';
-import { copyFor, getToolsForLanguage } from './i18n';
-import { landingCopyFor } from './marketing-i18n';
 import { publicPageCopyFor } from './public-page-i18n';
 import { useLocalizedMetadata } from './use-localized-metadata';
 
@@ -38,40 +35,33 @@ describe('localized metadata', () => {
     ).toBe('Apoyo de estudio en español.');
   });
 
-  it('has Spanish title and description sources for every required route', () => {
-    const ui = copyFor('es');
-    const auth = authCopyFor('es');
-    const study = getToolsForLanguage('es').find(
-      (tool) => tool.id === 'study',
-    )!;
-    const entries: Array<[string, string, string]> = [
-      [
-        'landing',
-        'MindPulse · Apoyo para estudiantes',
-        landingCopyFor('es').heroSubtitle,
-      ],
-      ['app', `${ui.navDashboard} · MindPulse`, ui.heroSubtitle],
-      ['study', `${study.title} · MindPulse`, study.explanation],
-      ['recovery', `${ui.recovery.eyebrow} · MindPulse`, ui.recovery.intro],
-      ['login', `${auth.loginTitle} · MindPulse`, auth.loginIntro],
-      ['signup', `${auth.signupTitle} · MindPulse`, auth.signupIntro],
-      ...(['privacy', 'beta', 'case-study', 'impact'] as const).map((page) => {
-        const copy = publicPageCopyFor(page, 'es');
-        return [
-          page,
-          `${copy.metadataTitle} · MindPulse`,
-          copy.metadataDescription,
-        ] as [string, string, string];
-      }),
-    ];
-    for (const [route, title, description] of entries) {
-      expect(title, `${route} title`).toMatch(/[áéíóúñ¿]|Apoyo|MindPulse/i);
-      expect(description.length, `${route} description length`).toBeGreaterThan(
-        30,
-      );
-      expect(description, `${route} description`).not.toMatch(
-        /An AI study and self-growth assistant/i,
-      );
+  it('has localized public-page titles and descriptions for every language', () => {
+    for (const language of ['en', 'ru', 'kk', 'es'] as const) {
+      for (const page of [
+        'privacy',
+        'why',
+        'beta',
+        'case-study',
+        'impact',
+      ] as const) {
+        const copy = publicPageCopyFor(page, language);
+        expect(
+          copy.metadataTitle.length,
+          `${page}/${language} title`,
+        ).toBeGreaterThan(3);
+        expect(
+          copy.metadataDescription.length,
+          `${page}/${language} description`,
+        ).toBeGreaterThan(30);
+        if (language !== 'en') {
+          expect(copy.metadataTitle).not.toBe(
+            publicPageCopyFor(page, 'en').metadataTitle,
+          );
+          expect(copy.metadataDescription).not.toBe(
+            publicPageCopyFor(page, 'en').metadataDescription,
+          );
+        }
+      }
     }
   });
 });

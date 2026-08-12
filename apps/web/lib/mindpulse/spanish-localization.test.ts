@@ -98,29 +98,41 @@ describe('Spanish product localization', () => {
     expect(authCopyFor('kk')).not.toBe(authCopyFor('en'));
   });
 
-  it('provides Spanish copy and an accessible Russian/Kazakh English fallback for every long-form page', async () => {
-    for (const page of Object.keys(PUBLIC_PAGES) as Array<
-      keyof typeof PUBLIC_PAGES
-    >) {
-      const copy = publicPageCopyFor(page, 'es');
-      expect(copy.metadataTitle.length).toBeGreaterThan(3);
-      expect(copy.metadataDescription.length).toBeGreaterThan(30);
-      expect(copy.title.length).toBeGreaterThan(10);
-      expect(copy.intro.length).toBeGreaterThan(40);
-      expect(copy.sections.length).toBeGreaterThanOrEqual(5);
-      expect(copy.sections.every((section) => section.body.length > 20)).toBe(
-        true,
-      );
-    }
-    expect(publicPageCopyFor('privacy', 'es').metadataTitle).toBe('Privacidad');
-    expect(publicPageCopyFor('case-study', 'es').metadataTitle).toBe(
-      'Caso de estudio',
-    );
-
-    for (const language of ['ru', 'kk'] as const) {
+  it('provides complete localized copy and metadata for every public page and language', async () => {
+    for (const language of ['en', 'ru', 'kk', 'es'] as const) {
       for (const page of Object.keys(PUBLIC_PAGES) as Array<
         keyof typeof PUBLIC_PAGES
       >) {
+        const copy = publicPageCopyFor(page, language);
+        expect(copy.metadataTitle.length).toBeGreaterThan(3);
+        expect(copy.metadataDescription.length).toBeGreaterThan(30);
+        expect(copy.title.length).toBeGreaterThan(10);
+        expect(copy.intro.length).toBeGreaterThan(40);
+        expect(copy.sections.length).toBeGreaterThanOrEqual(5);
+        expect(copy.sections.every((section) => section.body.length > 20)).toBe(
+          true,
+        );
+        expect(
+          [
+            copy.metadataTitle,
+            copy.metadataDescription,
+            copy.eyebrow,
+            copy.title,
+            copy.intro,
+            copy.ctaTitle,
+            copy.ctaBody,
+            copy.ctaPrimary,
+            copy.ctaSecondary,
+            ...copy.sections.flatMap((section) => [
+              section.title,
+              section.body,
+              ...(section.items ?? []),
+            ]),
+          ].every((value) => value.trim().length > 0),
+        ).toBe(true);
+        if (language !== 'en') {
+          expect(copy).not.toBe(PUBLIC_PAGES[page].en);
+        }
         cleanup();
         localStorage.setItem(LANGUAGE_KEY, JSON.stringify(language));
         document.documentElement.lang = 'en';
@@ -129,25 +141,18 @@ describe('Spanish product localization', () => {
         const { container } = render(
           React.createElement(LocalizedPublicPage, { page }),
         );
-        const englishCopy = publicPageCopyFor(page, 'en');
         await waitFor(() => {
-          expect(document.documentElement.lang).toBe('en');
+          expect(document.documentElement.lang).toBe(language);
           expect(container.firstElementChild).toHaveAttribute('lang', language);
-          expect(
-            container.querySelector('main > div[lang="en"]'),
-          ).not.toBeNull();
-          expect(container.querySelector('h1')).toHaveTextContent(
-            englishCopy.title,
-          );
-          expect(document.title).toBe(
-            `${englishCopy.metadataTitle} · MindPulse`,
-          );
+          expect(container.querySelector('h1')).toHaveTextContent(copy.title);
+          expect(document.title).toBe(`${copy.metadataTitle} · MindPulse`);
           expect(
             document.querySelector('meta[name="description"]'),
-          ).toHaveAttribute('content', englishCopy.metadataDescription);
+          ).toHaveAttribute('content', copy.metadataDescription);
         });
       }
     }
+    expect(publicPageCopyFor('privacy', 'es').metadataTitle).toBe('Privacidad');
     cleanup();
   });
 
