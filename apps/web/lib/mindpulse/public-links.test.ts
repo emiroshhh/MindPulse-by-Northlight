@@ -2,6 +2,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { localizedMarketingPath } from '../seo';
 
 const webRoot = fileURLToPath(new URL('../../', import.meta.url));
 const sourceFiles = [
@@ -26,7 +27,6 @@ describe('public internal links', () => {
       }
     }
 
-    expect(routes).toContain('/case-study');
     for (const route of routes) {
       const routeName = route === '/' ? '' : route.slice(1);
       const pagePath = routeName
@@ -38,5 +38,18 @@ describe('public internal links', () => {
         `Missing implementation for ${route}`,
       ).toBe(true);
     }
+
+    const localizedPageFiles = [
+      'page.tsx',
+      'why/page.tsx',
+      'beta/page.tsx',
+      'case-study/page.tsx',
+      'impact/page.tsx',
+      'privacy/page.tsx',
+    ];
+    for (const pageFile of localizedPageFiles) {
+      expect(existsSync(`${webRoot}/app/[locale]/${pageFile}`)).toBe(true);
+    }
+    expect(localizedMarketingPath('es', '/case-study')).toBe('/es/case-study');
   });
 });

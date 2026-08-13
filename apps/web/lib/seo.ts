@@ -2,6 +2,9 @@ import type { Metadata } from 'next';
 
 export const CANONICAL_ORIGIN = 'https://usemindpulse.com' as const;
 
+export const SUPPORTED_MARKETING_LOCALES = ['en', 'ru', 'kk', 'es'] as const;
+export type MarketingLocale = (typeof SUPPORTED_MARKETING_LOCALES)[number];
+
 export const INDEXABLE_MARKETING_PATHS = [
   '/',
   '/why',
@@ -12,6 +15,43 @@ export const INDEXABLE_MARKETING_PATHS = [
 ] as const;
 
 export type IndexableMarketingPath = (typeof INDEXABLE_MARKETING_PATHS)[number];
+
+export function isMarketingLocale(value: string): value is MarketingLocale {
+  return SUPPORTED_MARKETING_LOCALES.some((locale) => locale === value);
+}
+
+export function localizedMarketingPath(
+  locale: MarketingLocale,
+  pathname: IndexableMarketingPath,
+): `/${MarketingLocale}${string}` {
+  return `/${locale}${pathname === '/' ? '' : pathname}`;
+}
+
+export function replaceMarketingLocale(
+  pathname: string,
+  locale: MarketingLocale,
+): string {
+  const segments = pathname.split('/');
+  if (segments[1] && isMarketingLocale(segments[1])) {
+    segments[1] = locale;
+    return segments.join('/') || `/${locale}`;
+  }
+  return localizedMarketingPath(locale, '/');
+}
+
+export function languageAlternates(pathname: IndexableMarketingPath) {
+  const languages = Object.fromEntries(
+    SUPPORTED_MARKETING_LOCALES.map((locale) => [
+      locale,
+      absoluteSiteUrl(localizedMarketingPath(locale, pathname)),
+    ]),
+  ) as Record<MarketingLocale, string>;
+
+  return {
+    ...languages,
+    'x-default': languages.en,
+  };
+}
 
 export const SOCIAL_PREVIEW_IMAGE_PATH =
   '/mindpulse-social-preview.png' as const;
@@ -30,21 +70,26 @@ export function absoluteSiteUrl(pathname: `/${string}`): string {
 }
 
 export function createPublicPageMetadata({
+  locale,
   pathname,
   title,
   description,
 }: {
+  locale: MarketingLocale;
   pathname: IndexableMarketingPath;
   title: string;
   description: string;
 }): Metadata {
-  const url = absoluteSiteUrl(pathname);
+  const url = absoluteSiteUrl(localizedMarketingPath(locale, pathname));
   const socialImageUrl = absoluteSiteUrl(SOCIAL_PREVIEW_IMAGE_PATH);
 
   return {
     title: { absolute: title },
     description,
-    alternates: { canonical: url },
+    alternates: {
+      canonical: url,
+      languages: languageAlternates(pathname),
+    },
     openGraph: {
       type: 'website',
       siteName: 'MindPulse by Northlight',

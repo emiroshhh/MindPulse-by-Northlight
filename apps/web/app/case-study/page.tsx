@@ -2,6 +2,7 @@ import { LocalizedPublicPage } from '@/components/mindpulse/localized-public-pag
 import { createPublicPageMetadata } from '@/lib/seo';
 
 export const metadata = createPublicPageMetadata({
+  locale: 'en',
   pathname: '/case-study',
   title: 'MindPulse Case Study — Safety, Privacy & Architecture',
   description:

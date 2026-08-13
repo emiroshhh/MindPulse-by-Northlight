@@ -2,6 +2,7 @@ import { LandingPage } from '@/components/landing-page';
 import { createPublicPageMetadata } from '@/lib/seo';
 
 export const metadata = createPublicPageMetadata({
+  locale: 'en',
   pathname: '/',
   title: 'MindPulse — AI Study Assistant & Planner for Students',
   description:

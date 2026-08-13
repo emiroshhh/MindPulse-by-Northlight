@@ -18,7 +18,7 @@ const publicRoutes = new Map([
     '/',
     {
       filename: 'index.html',
-      url: 'https://usemindpulse.com/',
+      url: 'https://usemindpulse.com/en',
       title: 'MindPulse — AI Study Assistant & Planner for Students',
       description:
         'MindPulse is an AI study assistant for students that turns real tasks, deadlines, and stuck points into clear next steps, realistic plans, and recovery support.',
@@ -28,7 +28,7 @@ const publicRoutes = new Map([
     '/why',
     {
       filename: 'why.html',
-      url: 'https://usemindpulse.com/why',
+      url: 'https://usemindpulse.com/en/why',
       title: 'Why MindPulse Was Built — Student-First AI Support',
       description:
         'Why MindPulse was built: a student-first AI workspace designed to make studying, planning, and restarting after missed days more manageable.',
@@ -38,7 +38,7 @@ const publicRoutes = new Map([
     '/beta',
     {
       filename: 'beta.html',
-      url: 'https://usemindpulse.com/beta',
+      url: 'https://usemindpulse.com/en/beta',
       title: 'MindPulse Student Beta — Test the AI Study Workspace',
       description:
         'Try the MindPulse student beta on one real task, deadline, habit, goal, or planning problem, then share anonymous feedback about what helped.',
@@ -48,7 +48,7 @@ const publicRoutes = new Map([
     '/case-study',
     {
       filename: 'case-study.html',
-      url: 'https://usemindpulse.com/case-study',
+      url: 'https://usemindpulse.com/en/case-study',
       title: 'MindPulse Case Study — Safety, Privacy & Architecture',
       description:
         'A transparent case study of how MindPulse approaches AI student support, product design, safety, privacy, and its technical architecture.',
@@ -58,7 +58,7 @@ const publicRoutes = new Map([
     '/impact',
     {
       filename: 'impact.html',
-      url: 'https://usemindpulse.com/impact',
+      url: 'https://usemindpulse.com/en/impact',
       title: 'MindPulse Impact — Beta Goals & Measurement',
       description:
         'How MindPulse measures beta impact through honest goals, anonymous usage signals, student feedback, and iteration without inflated claims.',
@@ -68,7 +68,7 @@ const publicRoutes = new Map([
     '/privacy',
     {
       filename: 'privacy.html',
-      url: 'https://usemindpulse.com/privacy',
+      url: 'https://usemindpulse.com/en/privacy',
       title: 'MindPulse Privacy — How Student Data Is Handled',
       description:
         'Plain-language details on what MindPulse stores for guests and accounts, how AI processing works, usage limits, feedback, retention, and deletion.',
@@ -76,12 +76,33 @@ const publicRoutes = new Map([
   ],
 ]);
 
+const localizedRoutes = new Map();
+for (const locale of ['en', 'ru', 'kk', 'es']) {
+  for (const suffix of [
+    '',
+    '/why',
+    '/beta',
+    '/case-study',
+    '/impact',
+    '/privacy',
+  ]) {
+    const route = `/${locale}${suffix}`;
+    localizedRoutes.set(route, {
+      filename: suffix
+        ? path.join(locale, `${suffix.slice(1)}.html`)
+        : `${locale}.html`,
+      url: `https://usemindpulse.com${route}`,
+      suffix,
+    });
+  }
+}
+
 const authRoutes = new Map([
   ['/login', 'login.html'],
   ['/signup', 'signup.html'],
 ]);
 
-const expectedSitemapUrls = [...publicRoutes.values()].map(({ url }) => url);
+const expectedSitemapUrls = [...localizedRoutes.values()].map(({ url }) => url);
 
 const forbiddenOrigins = [
   'http://localhost',
@@ -150,6 +171,16 @@ function canonicalUrls(head) {
 
 function openGraphUrls(head) {
   return metaContents(head, 'property', 'og:url');
+}
+
+function languageAlternateUrls(head) {
+  return Object.fromEntries(
+    tags(head, 'link')
+      .filter((tag) =>
+        attribute(tag, 'rel')?.toLowerCase().split(/\s+/).includes('alternate'),
+      )
+      .map((tag) => [attribute(tag, 'hreflang'), attribute(tag, 'href')]),
+  );
 }
 
 function assertExactly(route, label, actual, expected) {
@@ -324,6 +355,39 @@ for (const [route, expected] of publicRoutes) {
   assertNoForbiddenOrigin(route, head);
 }
 
+for (const [route, expected] of localizedRoutes) {
+  const head = await builtHead(route, expected.filename);
+  assertExactly(route, 'canonical', canonicalUrls(head), expected.url);
+  assertExactly(route, 'og:url', openGraphUrls(head), expected.url);
+  assert(titleContents(head).length === 1, `${route}: expected one title`);
+  assert(
+    metaContents(head, 'name', 'description').length === 1,
+    `${route}: expected one description`,
+  );
+  assertExactly(
+    route,
+    'og:image',
+    metaContents(head, 'property', 'og:image'),
+    socialImageUrl,
+  );
+
+  const alternates = languageAlternateUrls(head);
+  const expectedAlternates = Object.fromEntries(
+    ['en', 'ru', 'kk', 'es'].map((locale) => [
+      locale,
+      `https://usemindpulse.com/${locale}${expected.suffix}`,
+    ]),
+  );
+  expectedAlternates['x-default'] = expectedAlternates.en;
+  assert(
+    JSON.stringify(alternates) === JSON.stringify(expectedAlternates),
+    `${route}: hreflang alternates are incomplete or incorrect`,
+  );
+
+  assertIndexableRobots(route, head);
+  assertNoForbiddenOrigin(route, head);
+}
+
 for (const [route, filename] of authRoutes) {
   const head = await builtHead(route, filename);
   assertNoCanonicalOrOpenGraphUrl(route, head);
@@ -342,6 +406,7 @@ for (const [route, filename] of authRoutes) {
 const approvedHtmlFiles = new Set(
   [
     ...[...publicRoutes.values()].map(({ filename }) => filename),
+    ...[...localizedRoutes.values()].map(({ filename }) => filename),
     ...authRoutes.values(),
   ].map((filename) => path.resolve(appOutputDirectory, filename)),
 );
@@ -378,12 +443,12 @@ const sitemapLocations = [...sitemapXml.matchAll(/<loc>([^<]+)<\/loc>/gi)].map(
 );
 const sitemapEntries = sitemapXml.match(/<url(?:\s|>)/gi) ?? [];
 assert(
-  sitemapEntries.length === 6,
-  'sitemap: expected exactly six <url> entries',
+  sitemapEntries.length === 24,
+  'sitemap: expected exactly 24 <url> entries',
 );
 assert(
-  sitemapLocations.length === 6,
-  'sitemap: expected exactly six <loc> entries',
+  sitemapLocations.length === 24,
+  'sitemap: expected exactly 24 <loc> entries',
 );
 assert(
   new Set(sitemapLocations).size === sitemapLocations.length,
@@ -397,6 +462,10 @@ assert(
 assert(
   !/<(?:lastmod|changefreq|priority)>/i.test(sitemapXml),
   'sitemap: contains fabricated freshness or priority metadata',
+);
+assert(
+  (sitemapXml.match(/<xhtml:link\b/gi) ?? []).length === 120,
+  'sitemap: expected five hreflang links for each localized URL',
 );
 assertNoForbiddenOrigin('sitemap', sitemapXml);
 
@@ -483,5 +552,5 @@ assert(
 );
 
 console.log(
-  `SEO build assertions passed for ${builtHtmlFiles.length} generated HTML documents (${publicRoutes.size} public and ${authRoutes.size} auth), sitemap.xml, robots.txt, manifest, and social preview.`,
+  `SEO build assertions passed for ${builtHtmlFiles.length} generated HTML documents (${localizedRoutes.size} localized public, ${publicRoutes.size} redirect-source, and ${authRoutes.size} auth), sitemap.xml, robots.txt, manifest, and social preview.`,
 );
