@@ -3,9 +3,9 @@ import { createPublicPageMetadata } from '@/lib/seo';
 
 export const metadata = createPublicPageMetadata({
   pathname: '/privacy',
-  title: 'Privacy',
+  title: 'MindPulse Privacy — How Student Data Is Handled',
   description:
-    'Plain-language privacy information for the MindPulse student beta.',
+    'Plain-language details on what MindPulse stores for guests and accounts, how AI processing works, usage limits, feedback, retention, and deletion.',
 });
 
 export default function PrivacyPage() {

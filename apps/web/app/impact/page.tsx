@@ -3,8 +3,9 @@ import { createPublicPageMetadata } from '@/lib/seo';
 
 export const metadata = createPublicPageMetadata({
   pathname: '/impact',
-  title: 'Impact',
-  description: 'Honest beta goals and impact measurement for MindPulse.',
+  title: 'MindPulse Impact — Beta Goals & Measurement',
+  description:
+    'How MindPulse measures beta impact through honest goals, anonymous usage signals, student feedback, and iteration without inflated claims.',
 });
 
 export default function ImpactPage() {

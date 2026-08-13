@@ -3,8 +3,9 @@ import { createPublicPageMetadata } from '@/lib/seo';
 
 export const metadata = createPublicPageMetadata({
   pathname: '/why',
-  title: 'Why I built this',
-  description: 'The student problem and product principles behind MindPulse.',
+  title: 'Why MindPulse Was Built — Student-First AI Support',
+  description:
+    'Why MindPulse was built: a student-first AI workspace designed to make studying, planning, and restarting after missed days more manageable.',
 });
 
 export default function WhyPage() {
