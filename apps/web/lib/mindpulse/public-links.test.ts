@@ -47,8 +47,10 @@ describe('public internal links', () => {
       'impact/page.tsx',
       'privacy/page.tsx',
     ];
-    for (const pageFile of localizedPageFiles) {
-      expect(existsSync(`${webRoot}/app/[locale]/${pageFile}`)).toBe(true);
+    for (const locale of ['en', 'ru', 'kk', 'es']) {
+      for (const pageFile of localizedPageFiles) {
+        expect(existsSync(`${webRoot}/app/${locale}/${pageFile}`)).toBe(true);
+      }
     }
     expect(localizedMarketingPath('es', '/case-study')).toBe('/es/case-study');
   });
