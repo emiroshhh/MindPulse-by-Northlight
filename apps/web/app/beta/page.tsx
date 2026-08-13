@@ -2,6 +2,7 @@ import { LocalizedPublicPage } from '@/components/mindpulse/localized-public-pag
 import { createPublicPageMetadata } from '@/lib/seo';
 
 export const metadata = createPublicPageMetadata({
+  locale: 'en',
   pathname: '/beta',
   title: 'MindPulse Student Beta — Test the AI Study Workspace',
   description:

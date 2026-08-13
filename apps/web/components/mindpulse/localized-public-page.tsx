@@ -9,21 +9,33 @@ import {
   type PublicPageId,
 } from '@/lib/mindpulse/public-page-i18n';
 import { languages, type LanguageCode } from '@/lib/mindpulse/tools';
-import { useLanguagePreference } from '@/lib/mindpulse/use-language-preference';
+import { useRouteLanguage } from '@/lib/mindpulse/use-route-language';
 import { useLocalizedMetadata } from '@/lib/mindpulse/use-localized-metadata';
+import {
+  localizedMarketingPath,
+  type IndexableMarketingPath,
+  type MarketingLocale,
+} from '@/lib/seo';
 import { FeedbackModal } from './feedback-modal';
 import { SiteFooter } from './site-footer';
 
-const SECONDARY_HREF: Record<PublicPageId, string> = {
-  privacy: '/study',
-  why: '/case-study',
-  beta: '/privacy',
-  'case-study': '/beta',
-  impact: '/beta',
-};
+const SECONDARY_HREF: Record<PublicPageId, IndexableMarketingPath | '/study'> =
+  {
+    privacy: '/study',
+    why: '/case-study',
+    beta: '/privacy',
+    'case-study': '/beta',
+    impact: '/beta',
+  };
 
-export function LocalizedPublicPage({ page }: { page: PublicPageId }) {
-  const [language, setLanguage] = useLanguagePreference();
+export function LocalizedPublicPage({
+  page,
+  initialLanguage,
+}: {
+  page: PublicPageId;
+  initialLanguage?: MarketingLocale;
+}) {
+  const [language, setLanguage] = useRouteLanguage(initialLanguage);
   const copy = useMemo(
     () => publicPageCopyFor(page, language),
     [page, language],
@@ -61,6 +73,11 @@ export function LocalizedPublicPage({ page }: { page: PublicPageId }) {
   };
   const label = labels[language];
   const documentLanguage = language;
+  const secondaryPath = SECONDARY_HREF[page];
+  const secondaryHref =
+    secondaryPath === '/study'
+      ? secondaryPath
+      : localizedMarketingPath(language, secondaryPath);
 
   useLayoutEffect(() => {
     let active = true;
@@ -191,7 +208,7 @@ export function LocalizedPublicPage({ page }: { page: PublicPageId }) {
                 <ArrowRight size={16} className="shrink-0" />
               </Link>
               <Link
-                href={SECONDARY_HREF[page]}
+                href={secondaryHref}
                 className="inline-flex min-h-12 min-w-0 items-center justify-center rounded-full bg-canvas/10 px-5 text-center font-semibold text-canvas"
               >
                 <span className="break-words">{copy.ctaSecondary}</span>
@@ -203,7 +220,7 @@ export function LocalizedPublicPage({ page }: { page: PublicPageId }) {
         <div className="mt-6">
           <FeedbackModal language={language} />
         </div>
-        <SiteFooter language={language} />
+        <SiteFooter language={language} marketingLocale={language} />
       </main>
     </div>
   );

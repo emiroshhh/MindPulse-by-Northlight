@@ -33,7 +33,7 @@ const publicRouteMetadata: Array<{
 }> = [
   {
     pathname: '/',
-    expectedUrl: 'https://usemindpulse.com/',
+    expectedUrl: 'https://usemindpulse.com/en',
     expectedTitle: 'MindPulse — AI Study Assistant & Planner for Students',
     expectedDescription:
       'MindPulse is an AI study assistant for students that turns real tasks, deadlines, and stuck points into clear next steps, realistic plans, and recovery support.',
@@ -41,7 +41,7 @@ const publicRouteMetadata: Array<{
   },
   {
     pathname: '/why',
-    expectedUrl: 'https://usemindpulse.com/why',
+    expectedUrl: 'https://usemindpulse.com/en/why',
     expectedTitle: 'Why MindPulse Was Built — Student-First AI Support',
     expectedDescription:
       'Why MindPulse was built: a student-first AI workspace designed to make studying, planning, and restarting after missed days more manageable.',
@@ -49,7 +49,7 @@ const publicRouteMetadata: Array<{
   },
   {
     pathname: '/beta',
-    expectedUrl: 'https://usemindpulse.com/beta',
+    expectedUrl: 'https://usemindpulse.com/en/beta',
     expectedTitle: 'MindPulse Student Beta — Test the AI Study Workspace',
     expectedDescription:
       'Try the MindPulse student beta on one real task, deadline, habit, goal, or planning problem, then share anonymous feedback about what helped.',
@@ -57,7 +57,7 @@ const publicRouteMetadata: Array<{
   },
   {
     pathname: '/case-study',
-    expectedUrl: 'https://usemindpulse.com/case-study',
+    expectedUrl: 'https://usemindpulse.com/en/case-study',
     expectedTitle: 'MindPulse Case Study — Safety, Privacy & Architecture',
     expectedDescription:
       'A transparent case study of how MindPulse approaches AI student support, product design, safety, privacy, and its technical architecture.',
@@ -65,7 +65,7 @@ const publicRouteMetadata: Array<{
   },
   {
     pathname: '/impact',
-    expectedUrl: 'https://usemindpulse.com/impact',
+    expectedUrl: 'https://usemindpulse.com/en/impact',
     expectedTitle: 'MindPulse Impact — Beta Goals & Measurement',
     expectedDescription:
       'How MindPulse measures beta impact through honest goals, anonymous usage signals, student feedback, and iteration without inflated claims.',
@@ -73,7 +73,7 @@ const publicRouteMetadata: Array<{
   },
   {
     pathname: '/privacy',
-    expectedUrl: 'https://usemindpulse.com/privacy',
+    expectedUrl: 'https://usemindpulse.com/en/privacy',
     expectedTitle: 'MindPulse Privacy — How Student Data Is Handled',
     expectedDescription:
       'Plain-language details on what MindPulse stores for guests and accounts, how AI processing works, usage limits, feedback, retention, and deletion.',
@@ -158,6 +158,14 @@ describe('production SEO metadata', () => {
       expect(normalizeMetadataUrl(metadata.alternates?.canonical)).toBe(
         expectedUrl,
       );
+      const suffix = expectedUrl.replace('https://usemindpulse.com/en', '');
+      expect(metadata.alternates?.languages).toEqual({
+        en: `https://usemindpulse.com/en${suffix}`,
+        ru: `https://usemindpulse.com/ru${suffix}`,
+        kk: `https://usemindpulse.com/kk${suffix}`,
+        es: `https://usemindpulse.com/es${suffix}`,
+        'x-default': `https://usemindpulse.com/en${suffix}`,
+      });
       expect(metadata.openGraph).toEqual({
         type: 'website',
         siteName: 'MindPulse by Northlight',

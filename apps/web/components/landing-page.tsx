@@ -19,9 +19,11 @@ import Link from 'next/link';
 import { useMemo } from 'react';
 import { FeedbackModal } from '@/components/mindpulse/feedback-modal';
 import { SiteFooter } from '@/components/mindpulse/site-footer';
+import { LANDING_TITLES } from '@/lib/marketing-seo';
 import { landingCopyFor } from '@/lib/mindpulse/marketing-i18n';
-import { useLanguagePreference } from '@/lib/mindpulse/use-language-preference';
+import { useRouteLanguage } from '@/lib/mindpulse/use-route-language';
 import { useLocalizedMetadata } from '@/lib/mindpulse/use-localized-metadata';
+import { localizedMarketingPath, type MarketingLocale } from '@/lib/seo';
 import {
   languages,
   languageLabelFor,
@@ -39,23 +41,24 @@ const FEATURE_ICONS = [
   MessageSquareText,
 ] as const;
 
-export function LandingPage() {
-  const [language, setLanguage] = useLanguagePreference();
+export function LandingPage({
+  initialLanguage,
+}: {
+  initialLanguage?: MarketingLocale;
+} = {}) {
+  const [language, setLanguage] = useRouteLanguage(initialLanguage);
   const copy = useMemo(() => landingCopyFor(language), [language]);
 
-  const titles: Record<LanguageCode, string> = {
-    en: 'MindPulse · Student support',
-    ru: 'MindPulse · Поддержка для студентов',
-    kk: 'MindPulse · Студенттерге қолдау',
-    es: 'MindPulse · Apoyo para estudiantes',
-  };
-  useLocalizedMetadata(titles[language], copy.heroSubtitle);
+  useLocalizedMetadata(LANDING_TITLES[language], copy.heroSubtitle);
 
   return (
     <div className="ambient min-h-screen overflow-hidden">
       <header className="sticky top-0 z-40 border-b border-ink/5 bg-canvas/85 backdrop-blur-xl">
         <nav className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-8">
-          <Link href="/" className="flex items-center gap-3">
+          <Link
+            href={localizedMarketingPath(language, '/')}
+            className="flex items-center gap-3"
+          >
             <span className="grid h-10 w-10 place-items-center rounded-2xl bg-ink text-canvas">
               <Brain size={20} />
             </span>
@@ -80,7 +83,7 @@ export function LandingPage() {
               {copy.navHow}
             </a>
             <Link
-              href="/beta"
+              href={localizedMarketingPath(language, '/beta')}
               className="inline-flex min-h-11 items-center hover:text-ink"
             >
               {copy.navBeta}
@@ -286,7 +289,7 @@ export function LandingPage() {
             </div>
             <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
               <Link
-                href="/beta"
+                href={localizedMarketingPath(language, '/beta')}
                 className="inline-flex min-h-12 items-center justify-center rounded-full bg-sage px-6 font-semibold text-canvas"
               >
                 {copy.betaCta}
@@ -302,7 +305,7 @@ export function LandingPage() {
 
         <div className="px-5 pb-10 sm:px-8">
           <div className="mx-auto max-w-7xl">
-            <SiteFooter language={language} />
+            <SiteFooter language={language} marketingLocale={language} />
           </div>
         </div>
       </main>
