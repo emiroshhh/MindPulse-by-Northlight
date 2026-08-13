@@ -1,7 +1,7 @@
 {
   "name": "MindPulse",
   "short_name": "MindPulse",
-  "description": "A calm, private wellbeing space for teens.",
+  "description": "An AI study and productivity workspace for students.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f7f8f4",

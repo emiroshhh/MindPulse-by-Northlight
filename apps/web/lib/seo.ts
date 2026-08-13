@@ -13,6 +13,11 @@ export const INDEXABLE_MARKETING_PATHS = [
 
 export type IndexableMarketingPath = (typeof INDEXABLE_MARKETING_PATHS)[number];
 
+export const SOCIAL_PREVIEW_IMAGE_PATH =
+  '/mindpulse-social-preview.png' as const;
+export const SOCIAL_PREVIEW_IMAGE_ALT =
+  'MindPulse by Northlight — AI study support for students' as const;
+
 export const DEFAULT_OPEN_GRAPH = {
   type: 'website',
   siteName: 'MindPulse by Northlight',
@@ -30,15 +35,44 @@ export function createPublicPageMetadata({
   description,
 }: {
   pathname: IndexableMarketingPath;
-  title?: string;
+  title: string;
   description: string;
 }): Metadata {
   const url = absoluteSiteUrl(pathname);
+  const socialImageUrl = absoluteSiteUrl(SOCIAL_PREVIEW_IMAGE_PATH);
 
   return {
-    ...(title ? { title } : {}),
+    title: { absolute: title },
     description,
     alternates: { canonical: url },
-    openGraph: { ...DEFAULT_OPEN_GRAPH, url },
+    openGraph: {
+      type: 'website',
+      siteName: 'MindPulse by Northlight',
+      title,
+      description,
+      url,
+      images: [
+        {
+          url: socialImageUrl,
+          width: 1200,
+          height: 630,
+          alt: SOCIAL_PREVIEW_IMAGE_ALT,
+          type: 'image/png',
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [
+        {
+          url: socialImageUrl,
+          width: 1200,
+          height: 630,
+          alt: SOCIAL_PREVIEW_IMAGE_ALT,
+        },
+      ],
+    },
   };
 }
