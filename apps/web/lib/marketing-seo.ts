@@ -1,6 +1,10 @@
 import type { Metadata } from 'next';
 import { landingCopyFor } from './mindpulse/marketing-i18n';
 import {
+  acquisitionPageCopyFor,
+  type AcquisitionPageId,
+} from './mindpulse/acquisition-page-i18n';
+import {
   publicPageCopyFor,
   type PublicPageId,
 } from './mindpulse/public-page-i18n';
@@ -25,6 +29,18 @@ const PUBLIC_PAGE_PATHS: Record<PublicPageId, IndexableMarketingPath> = {
   privacy: '/privacy',
 };
 
+export function brandedMarketingTitle(title: string): string {
+  return title.includes('MindPulse') ? title : `${title} · MindPulse`;
+}
+
+const ACQUISITION_PAGE_PATHS: Record<
+  AcquisitionPageId,
+  IndexableMarketingPath
+> = {
+  'ai-study-planner': '/ai-study-planner',
+  'catch-up-on-schoolwork': '/catch-up-on-schoolwork',
+};
+
 export function landingMetadata(locale: MarketingLocale): Metadata {
   return createPublicPageMetadata({
     locale,
@@ -42,7 +58,20 @@ export function publicPageMetadata(
   return createPublicPageMetadata({
     locale,
     pathname: PUBLIC_PAGE_PATHS[page],
-    title: `${copy.metadataTitle} · MindPulse`,
+    title: brandedMarketingTitle(copy.metadataTitle),
+    description: copy.metadataDescription,
+  });
+}
+
+export function acquisitionPageMetadata(
+  page: AcquisitionPageId,
+  locale: MarketingLocale,
+): Metadata {
+  const copy = acquisitionPageCopyFor(page, locale);
+  return createPublicPageMetadata({
+    locale,
+    pathname: ACQUISITION_PAGE_PATHS[page],
+    title: copy.metadataTitle,
     description: copy.metadataDescription,
   });
 }

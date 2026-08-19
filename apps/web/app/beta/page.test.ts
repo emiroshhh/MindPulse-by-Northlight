@@ -19,7 +19,7 @@ describe('/beta', () => {
     const source = JSON.stringify(PUBLIC_PAGES.beta.en);
 
     expect(pageSource).toContain('LocalizedPublicPage page="beta"');
-    expect(source).toContain('Try one tool on one real task.');
+    expect(source).toContain('Test MindPulse on one real study task.');
     expect(source).toContain('Try one tool');
     expect(source).toContain('Use one real task');
     expect(source).toContain('Send feedback');

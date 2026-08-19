@@ -1,6 +1,10 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { NextRequest } from 'next/server';
+import {
+  DOCUMENT_LANGUAGE_HEADER,
+  marketingLocaleForPathname,
+} from './lib/seo';
 import { SECURITY_HEADERS, middleware } from './middleware';
 
 function request(pathname: string) {
@@ -70,4 +74,30 @@ describe('security middleware', () => {
       'max-age=31536000; includeSubDomains',
     );
   });
+
+  it.each([
+    ['/en', 'en'],
+    ['/ru/why', 'ru'],
+    ['/kk/ai-study-planner', 'kk'],
+    ['/es/catch-up-on-schoolwork/', 'es'],
+  ])('passes the correct document language for %s', (pathname, locale) => {
+    expect(marketingLocaleForPathname(pathname)).toBe(locale);
+    expect(
+      middleware(request(pathname)).headers.get(
+        `x-middleware-request-${DOCUMENT_LANGUAGE_HEADER}`,
+      ),
+    ).toBe(locale);
+  });
+
+  it.each(['/app', '/ru/app', '/fr', '/en/not-a-route', '/sitemap.xml'])(
+    'keeps non-marketing route %s locale-neutral',
+    (pathname) => {
+      expect(marketingLocaleForPathname(pathname)).toBeUndefined();
+      expect(
+        middleware(request(pathname)).headers.get(
+          `x-middleware-request-${DOCUMENT_LANGUAGE_HEADER}`,
+        ),
+      ).toBeNull();
+    },
+  );
 });

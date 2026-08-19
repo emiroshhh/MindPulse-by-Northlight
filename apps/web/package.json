@@ -15,7 +15,8 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --configLoader runner",
-    "test:seo:built": "node scripts/assert-built-seo.mjs"
+    "test:seo:built": "node scripts/assert-built-seo.mjs",
+    "test:seo:origin": "node scripts/audit-seo-origin.mjs"
   },
   "dependencies": {
     "@mindpulse/shared": "*",
