@@ -1,6 +1,8 @@
 import { LandingPage } from '@/components/landing-page';
 import { createPublicPageMetadata } from '@/lib/seo';
 
+export const dynamic = 'force-static';
+
 export const metadata = createPublicPageMetadata({
   locale: 'en',
   pathname: '/',

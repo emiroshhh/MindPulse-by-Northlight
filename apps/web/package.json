@@ -16,7 +16,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run --configLoader runner",
     "test:seo:built": "node scripts/assert-built-seo.mjs",
-    "test:seo:origin": "node scripts/audit-seo-origin.mjs"
+    "test:seo:origin": "node scripts/audit-seo-origin.mjs",
+    "test:seo:worker": "node scripts/run-seo-origin-worker.mjs"
   },
   "dependencies": {
     "@mindpulse/shared": "*",

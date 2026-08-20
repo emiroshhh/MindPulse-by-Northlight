@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { AuthForm } from '@/components/auth-form';
 
+export const dynamic = 'force-static';
+
 export const metadata: Metadata = {
   title: 'Log in',
   robots: { index: false, follow: true },

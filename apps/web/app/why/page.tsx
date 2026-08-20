@@ -1,6 +1,8 @@
 import { LocalizedPublicPage } from '@/components/mindpulse/localized-public-page';
 import { createPublicPageMetadata } from '@/lib/seo';
 
+export const dynamic = 'force-static';
+
 export const metadata = createPublicPageMetadata({
   locale: 'en',
   pathname: '/why',

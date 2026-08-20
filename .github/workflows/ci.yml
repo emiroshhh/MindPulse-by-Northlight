@@ -23,3 +23,5 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - name: Audit raw OpenNext Worker SEO output
+        run: npm run test:seo:worker --workspace=@mindpulse/web

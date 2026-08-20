@@ -5,6 +5,15 @@ import { fileURLToPath } from 'node:url';
 const webDirectory = fileURLToPath(new URL('../', import.meta.url));
 const appOutputDirectory = path.join(webDirectory, '.next', 'server', 'app');
 const workerAssetsDirectory = path.join(webDirectory, '.open-next', 'assets');
+const buildId = (
+  await readFile(path.join(webDirectory, '.next', 'BUILD_ID'), 'utf8')
+).trim();
+const openNextCacheDirectory = path.join(
+  webDirectory,
+  '.open-next',
+  'cache',
+  buildId,
+);
 const locales = ['en', 'ru', 'kk', 'es'];
 const paths = [
   '',
@@ -22,6 +31,21 @@ const localizedRoutes = paths.flatMap((suffix) =>
 const expectedSitemapUrls = localizedRoutes.map(
   (route) => `https://usemindpulse.com${route}`,
 );
+const staticRoutes = [
+  '/',
+  '/beta',
+  '/case-study',
+  '/impact',
+  '/privacy',
+  '/why',
+];
+const staticAuthRoutes = ['/login', '/signup'];
+const requestRenderedProductRoutes = [
+  '/app',
+  '/study',
+  '/planner',
+  '/recovery',
+];
 const forbiddenOrigins = [
   'http://localhost',
   'https://localhost',
@@ -51,6 +75,20 @@ const appPathManifest = JSON.parse(
     path.join(webDirectory, '.next', 'app-path-routes-manifest.json'),
   ),
 );
+const prerenderManifest = JSON.parse(
+  await readFile(path.join(webDirectory, '.next', 'prerender-manifest.json')),
+);
+
+function routeArtifactPath(route, extension) {
+  const relative = route === '/' ? 'index' : route.slice(1);
+  return path.join(appOutputDirectory, `${relative}.${extension}`);
+}
+
+function routeCachePath(route) {
+  const relative = route === '/' ? 'index' : route.slice(1);
+  return path.join(openNextCacheDirectory, `${relative}.cache`);
+}
+
 for (const route of localizedRoutes) {
   assert(
     Object.values(appPathManifest).includes(route),
@@ -58,12 +96,46 @@ for (const route of localizedRoutes) {
   );
   const routeFile = `${route.slice(1)}/page.js`;
   await access(path.join(appOutputDirectory, routeFile));
+  assert(
+    !Object.hasOwn(prerenderManifest.routes, route),
+    `${route}: must remain request-rendered for server-correct html lang`,
+  );
 }
-for (const route of ['/login', '/signup']) {
+for (const route of staticAuthRoutes) {
   assert(
     Object.values(appPathManifest).includes(route),
     `${route}: missing from the production app route manifest`,
   );
+}
+
+for (const route of [...staticRoutes, ...staticAuthRoutes]) {
+  assert(
+    Object.hasOwn(prerenderManifest.routes, route),
+    `${route}: expected a prerender-manifest entry`,
+  );
+  await access(routeArtifactPath(route, 'html'));
+  await access(routeCachePath(route));
+}
+
+for (const route of requestRenderedProductRoutes) {
+  assert(
+    !Object.hasOwn(prerenderManifest.routes, route),
+    `${route}: product route unexpectedly became prerendered`,
+  );
+}
+
+for (const route of staticAuthRoutes) {
+  const html = await readFile(routeArtifactPath(route, 'html'), 'utf8');
+  assert(
+    /<meta\s+name="robots"\s+content="noindex, follow"\s*\/?>/i.test(html),
+    `${route}: prerendered artifact must contain noindex, follow`,
+  );
+  assert(
+    !/<link\s+rel="canonical"/i.test(html) &&
+      !/<meta\s+property="og:url"/i.test(html),
+    `${route}: auth artifact must not expose a canonical or og:url`,
+  );
+  assertNoForbiddenOrigin(route, html);
 }
 
 const sitemapXml = await readFile(
