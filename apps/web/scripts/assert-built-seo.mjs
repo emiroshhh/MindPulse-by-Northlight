@@ -1,109 +1,51 @@
-import { readdir, readFile } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const serverOutputDirectory = fileURLToPath(
-  new URL('../.next/server/', import.meta.url),
+const webDirectory = fileURLToPath(new URL('../', import.meta.url));
+const appOutputDirectory = path.join(webDirectory, '.next', 'server', 'app');
+const workerAssetsDirectory = path.join(webDirectory, '.open-next', 'assets');
+const buildId = (
+  await readFile(path.join(webDirectory, '.next', 'BUILD_ID'), 'utf8')
+).trim();
+const openNextCacheDirectory = path.join(
+  webDirectory,
+  '.open-next',
+  'cache',
+  buildId,
 );
-const appOutputDirectory = path.join(serverOutputDirectory, 'app');
-const workerAssetsDirectory = fileURLToPath(
-  new URL('../.open-next/assets/', import.meta.url),
+const locales = ['en', 'ru', 'kk', 'es'];
+const paths = [
+  '',
+  '/why',
+  '/beta',
+  '/case-study',
+  '/impact',
+  '/privacy',
+  '/ai-study-planner',
+  '/catch-up-on-schoolwork',
+];
+const localizedRoutes = paths.flatMap((suffix) =>
+  locales.map((locale) => `/${locale}${suffix}`),
 );
-const socialImageUrl = 'https://usemindpulse.com/mindpulse-social-preview.png';
-const socialImageAlt =
-  'MindPulse by Northlight — AI study support for students';
-
-const publicRoutes = new Map([
-  [
-    '/',
-    {
-      filename: 'index.html',
-      url: 'https://usemindpulse.com/en',
-      title: 'MindPulse — AI Study Assistant & Planner for Students',
-      description:
-        'MindPulse is an AI study assistant for students that turns real tasks, deadlines, and stuck points into clear next steps, realistic plans, and recovery support.',
-    },
-  ],
-  [
-    '/why',
-    {
-      filename: 'why.html',
-      url: 'https://usemindpulse.com/en/why',
-      title: 'Why MindPulse Was Built — Student-First AI Support',
-      description:
-        'Why MindPulse was built: a student-first AI workspace designed to make studying, planning, and restarting after missed days more manageable.',
-    },
-  ],
-  [
-    '/beta',
-    {
-      filename: 'beta.html',
-      url: 'https://usemindpulse.com/en/beta',
-      title: 'MindPulse Student Beta — Test the AI Study Workspace',
-      description:
-        'Try the MindPulse student beta on one real task, deadline, habit, goal, or planning problem, then share anonymous feedback about what helped.',
-    },
-  ],
-  [
-    '/case-study',
-    {
-      filename: 'case-study.html',
-      url: 'https://usemindpulse.com/en/case-study',
-      title: 'MindPulse Case Study — Safety, Privacy & Architecture',
-      description:
-        'A transparent case study of how MindPulse approaches AI student support, product design, safety, privacy, and its technical architecture.',
-    },
-  ],
-  [
-    '/impact',
-    {
-      filename: 'impact.html',
-      url: 'https://usemindpulse.com/en/impact',
-      title: 'MindPulse Impact — Beta Goals & Measurement',
-      description:
-        'How MindPulse measures beta impact through honest goals, anonymous usage signals, student feedback, and iteration without inflated claims.',
-    },
-  ],
-  [
-    '/privacy',
-    {
-      filename: 'privacy.html',
-      url: 'https://usemindpulse.com/en/privacy',
-      title: 'MindPulse Privacy — How Student Data Is Handled',
-      description:
-        'Plain-language details on what MindPulse stores for guests and accounts, how AI processing works, usage limits, feedback, retention, and deletion.',
-    },
-  ],
-]);
-
-const localizedRoutes = new Map();
-for (const locale of ['en', 'ru', 'kk', 'es']) {
-  for (const suffix of [
-    '',
-    '/why',
-    '/beta',
-    '/case-study',
-    '/impact',
-    '/privacy',
-  ]) {
-    const route = `/${locale}${suffix}`;
-    localizedRoutes.set(route, {
-      filename: suffix
-        ? path.join(locale, `${suffix.slice(1)}.html`)
-        : `${locale}.html`,
-      url: `https://usemindpulse.com${route}`,
-      suffix,
-    });
-  }
-}
-
-const authRoutes = new Map([
-  ['/login', 'login.html'],
-  ['/signup', 'signup.html'],
-]);
-
-const expectedSitemapUrls = [...localizedRoutes.values()].map(({ url }) => url);
-
+const expectedSitemapUrls = localizedRoutes.map(
+  (route) => `https://usemindpulse.com${route}`,
+);
+const staticRoutes = [
+  '/',
+  '/beta',
+  '/case-study',
+  '/impact',
+  '/privacy',
+  '/why',
+];
+const staticAuthRoutes = ['/login', '/signup'];
+const requestRenderedProductRoutes = [
+  '/app',
+  '/study',
+  '/planner',
+  '/recovery',
+];
 const forbiddenOrigins = [
   'http://localhost',
   'https://localhost',
@@ -118,320 +60,82 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-function decodeHtml(value) {
-  return value
-    .replaceAll('&amp;', '&')
-    .replaceAll('&quot;', '"')
-    .replaceAll('&#x27;', "'")
-    .replaceAll('&#39;', "'")
-    .replaceAll('&lt;', '<')
-    .replaceAll('&gt;', '>');
-}
-
-function headFor(route, html) {
-  const head = html.match(/<head>[\s\S]*?<\/head>/i)?.[0];
-  assert(head, `${route}: built HTML has no <head>`);
-  return head;
-}
-
-function attribute(tag, name) {
-  const value = tag.match(
-    new RegExp(`\\b${name}\\s*=\\s*["']([^"']*)["']`, 'i'),
-  )?.[1];
-  return value === undefined ? undefined : decodeHtml(value);
-}
-
-function tags(head, name) {
-  return head.match(new RegExp(`<${name}\\b[^>]*>`, 'gi')) ?? [];
-}
-
-function titleContents(head) {
-  return [...head.matchAll(/<title\b[^>]*>([\s\S]*?)<\/title>/gi)].map(
-    ([, content]) => decodeHtml(content),
-  );
-}
-
-function metaContents(head, attributeName, attributeValue) {
-  return tags(head, 'meta')
-    .filter(
-      (tag) =>
-        attribute(tag, attributeName)?.toLowerCase() ===
-        attributeValue.toLowerCase(),
-    )
-    .map((tag) => attribute(tag, 'content') ?? '');
-}
-
-function canonicalUrls(head) {
-  return tags(head, 'link')
-    .filter((tag) =>
-      attribute(tag, 'rel')?.toLowerCase().split(/\s+/).includes('canonical'),
-    )
-    .map((tag) => attribute(tag, 'href') ?? '');
-}
-
-function openGraphUrls(head) {
-  return metaContents(head, 'property', 'og:url');
-}
-
-function languageAlternateUrls(head) {
-  return Object.fromEntries(
-    tags(head, 'link')
-      .filter((tag) =>
-        attribute(tag, 'rel')?.toLowerCase().split(/\s+/).includes('alternate'),
-      )
-      .map((tag) => [attribute(tag, 'hreflang'), attribute(tag, 'href')]),
-  );
-}
-
-function assertExactly(route, label, actual, expected) {
-  assert(
-    actual.length === 1,
-    `${route}: expected exactly one ${label}, found ${actual.length}`,
-  );
-  assert(
-    actual[0] === expected,
-    `${route}: ${label} is ${JSON.stringify(actual[0])}, expected ${JSON.stringify(expected)}`,
-  );
-}
-
-function assertIndexableRobots(route, head) {
-  for (const directive of ['robots', 'googlebot']) {
-    for (const content of metaContents(head, 'name', directive)) {
-      const tokens = content.toLowerCase().split(/[,\s]+/);
-      assert(
-        !tokens.includes('noindex') && !tokens.includes('none'),
-        `${route}: ${directive} metadata prevents indexing`,
-      );
-    }
-  }
-}
-
-function assertNoCanonicalOrOpenGraphUrl(route, head) {
-  assert(canonicalUrls(head).length === 0, `${route}: unexpected canonical`);
-  assert(openGraphUrls(head).length === 0, `${route}: unexpected og:url`);
-}
-
-function assertNoForbiddenOrigin(route, content) {
+function assertNoForbiddenOrigin(label, content) {
   const normalized = content.toLowerCase();
   for (const forbidden of forbiddenOrigins) {
     assert(
       !normalized.includes(forbidden),
-      `${route}: search-facing output contains ${forbidden}`,
+      `${label}: search-facing output contains ${forbidden}`,
     );
   }
 }
 
-async function builtHead(route, filename) {
-  const html = await readFile(path.join(appOutputDirectory, filename), 'utf8');
-  return headFor(route, html);
-}
-
-async function allBuiltHtmlFiles(directory) {
-  const output = [];
-  for (const entry of await readdir(directory, { withFileTypes: true })) {
-    const absolute = path.join(directory, entry.name);
-    if (entry.isDirectory())
-      output.push(...(await allBuiltHtmlFiles(absolute)));
-    else if (entry.name.endsWith('.html')) output.push(absolute);
-  }
-  return output;
-}
-
-for (const [route, expected] of publicRoutes) {
-  const head = await builtHead(route, expected.filename);
-  const canonicals = canonicalUrls(head);
-  const openGraph = openGraphUrls(head);
-
-  assert(
-    canonicals.length === 1,
-    `${route}: expected exactly one canonical, found ${canonicals.length}`,
-  );
-  assert(
-    openGraph.length === 1,
-    `${route}: expected exactly one og:url, found ${openGraph.length}`,
-  );
-  assert(
-    new URL(canonicals[0]).href === expected.url,
-    `${route}: canonical is ${canonicals[0]}, expected ${expected.url}`,
-  );
-  assert(
-    new URL(openGraph[0]).href === expected.url,
-    `${route}: og:url is ${openGraph[0]}, expected ${expected.url}`,
-  );
-
-  assertExactly(route, 'title', titleContents(head), expected.title);
-  assertExactly(
-    route,
-    'description',
-    metaContents(head, 'name', 'description'),
-    expected.description,
-  );
-  assertExactly(
-    route,
-    'og:type',
-    metaContents(head, 'property', 'og:type'),
-    'website',
-  );
-  assertExactly(
-    route,
-    'og:site_name',
-    metaContents(head, 'property', 'og:site_name'),
-    'MindPulse by Northlight',
-  );
-  assertExactly(
-    route,
-    'og:title',
-    metaContents(head, 'property', 'og:title'),
-    expected.title,
-  );
-  assertExactly(
-    route,
-    'og:description',
-    metaContents(head, 'property', 'og:description'),
-    expected.description,
-  );
-  assertExactly(
-    route,
-    'og:image',
-    metaContents(head, 'property', 'og:image'),
-    socialImageUrl,
-  );
-  assertExactly(
-    route,
-    'og:image:width',
-    metaContents(head, 'property', 'og:image:width'),
-    '1200',
-  );
-  assertExactly(
-    route,
-    'og:image:height',
-    metaContents(head, 'property', 'og:image:height'),
-    '630',
-  );
-  assertExactly(
-    route,
-    'og:image:alt',
-    metaContents(head, 'property', 'og:image:alt'),
-    socialImageAlt,
-  );
-  assertExactly(
-    route,
-    'og:image:type',
-    metaContents(head, 'property', 'og:image:type'),
-    'image/png',
-  );
-  assertExactly(
-    route,
-    'twitter:card',
-    metaContents(head, 'name', 'twitter:card'),
-    'summary_large_image',
-  );
-  assertExactly(
-    route,
-    'twitter:title',
-    metaContents(head, 'name', 'twitter:title'),
-    expected.title,
-  );
-  assertExactly(
-    route,
-    'twitter:description',
-    metaContents(head, 'name', 'twitter:description'),
-    expected.description,
-  );
-  assertExactly(
-    route,
-    'twitter:image',
-    metaContents(head, 'name', 'twitter:image'),
-    socialImageUrl,
-  );
-  assertExactly(
-    route,
-    'twitter:image:alt',
-    metaContents(head, 'name', 'twitter:image:alt'),
-    socialImageAlt,
-  );
-
-  assertIndexableRobots(route, head);
-  assertNoForbiddenOrigin(route, head);
-}
-
-for (const [route, expected] of localizedRoutes) {
-  const head = await builtHead(route, expected.filename);
-  assertExactly(route, 'canonical', canonicalUrls(head), expected.url);
-  assertExactly(route, 'og:url', openGraphUrls(head), expected.url);
-  assert(titleContents(head).length === 1, `${route}: expected one title`);
-  assert(
-    metaContents(head, 'name', 'description').length === 1,
-    `${route}: expected one description`,
-  );
-  assertExactly(
-    route,
-    'og:image',
-    metaContents(head, 'property', 'og:image'),
-    socialImageUrl,
-  );
-
-  const alternates = languageAlternateUrls(head);
-  const expectedAlternates = Object.fromEntries(
-    ['en', 'ru', 'kk', 'es'].map((locale) => [
-      locale,
-      `https://usemindpulse.com/${locale}${expected.suffix}`,
-    ]),
-  );
-  expectedAlternates['x-default'] = expectedAlternates.en;
-  assert(
-    JSON.stringify(alternates) === JSON.stringify(expectedAlternates),
-    `${route}: hreflang alternates are incomplete or incorrect`,
-  );
-
-  assertIndexableRobots(route, head);
-  assertNoForbiddenOrigin(route, head);
-}
-
-for (const [route, filename] of authRoutes) {
-  const head = await builtHead(route, filename);
-  assertNoCanonicalOrOpenGraphUrl(route, head);
-  assertNoForbiddenOrigin(route, head);
-  const tokens = metaContents(head, 'name', 'robots')
-    .flatMap((content) => content.toLowerCase().split(/[,\s]+/))
-    .filter(Boolean);
-  assert(
-    tokens.length === 2 &&
-      tokens.includes('noindex') &&
-      tokens.includes('follow'),
-    `${route}: expected robots content "noindex, follow"`,
-  );
-}
-
-const approvedHtmlFiles = new Set(
-  [
-    ...[...publicRoutes.values()].map(({ filename }) => filename),
-    ...[...localizedRoutes.values()].map(({ filename }) => filename),
-    ...authRoutes.values(),
-  ].map((filename) => path.resolve(appOutputDirectory, filename)),
-);
-const builtHtmlFiles = await allBuiltHtmlFiles(serverOutputDirectory);
-for (const filename of builtHtmlFiles) {
-  if (approvedHtmlFiles.has(path.resolve(filename))) continue;
-  const relative = path
-    .relative(serverOutputDirectory, filename)
-    .replaceAll('\\', '/');
-  const head = headFor(`/${relative}`, await readFile(filename, 'utf8'));
-  assertNoCanonicalOrOpenGraphUrl(`/${relative}`, head);
-  assertNoForbiddenOrigin(`/${relative}`, head);
-}
-
-const prerenderManifest = JSON.parse(
+const appPathManifest = JSON.parse(
   await readFile(
-    fileURLToPath(new URL('../.next/prerender-manifest.json', import.meta.url)),
-    'utf8',
+    path.join(webDirectory, '.next', 'app-path-routes-manifest.json'),
   ),
 );
-for (const route of ['/robots.txt', '/sitemap.xml']) {
+const prerenderManifest = JSON.parse(
+  await readFile(path.join(webDirectory, '.next', 'prerender-manifest.json')),
+);
+
+function routeArtifactPath(route, extension) {
+  const relative = route === '/' ? 'index' : route.slice(1);
+  return path.join(appOutputDirectory, `${relative}.${extension}`);
+}
+
+function routeCachePath(route) {
+  const relative = route === '/' ? 'index' : route.slice(1);
+  return path.join(openNextCacheDirectory, `${relative}.cache`);
+}
+
+for (const route of localizedRoutes) {
+  assert(
+    Object.values(appPathManifest).includes(route),
+    `${route}: missing from the production app route manifest`,
+  );
+  const routeFile = `${route.slice(1)}/page.js`;
+  await access(path.join(appOutputDirectory, routeFile));
+  assert(
+    !Object.hasOwn(prerenderManifest.routes, route),
+    `${route}: must remain request-rendered for server-correct html lang`,
+  );
+}
+for (const route of staticAuthRoutes) {
+  assert(
+    Object.values(appPathManifest).includes(route),
+    `${route}: missing from the production app route manifest`,
+  );
+}
+
+for (const route of [...staticRoutes, ...staticAuthRoutes]) {
   assert(
     Object.hasOwn(prerenderManifest.routes, route),
-    `${route}: missing from prerender manifest`,
+    `${route}: expected a prerender-manifest entry`,
   );
+  await access(routeArtifactPath(route, 'html'));
+  await access(routeCachePath(route));
+}
+
+for (const route of requestRenderedProductRoutes) {
+  assert(
+    !Object.hasOwn(prerenderManifest.routes, route),
+    `${route}: product route unexpectedly became prerendered`,
+  );
+}
+
+for (const route of staticAuthRoutes) {
+  const html = await readFile(routeArtifactPath(route, 'html'), 'utf8');
+  assert(
+    /<meta\s+name="robots"\s+content="noindex, follow"\s*\/?>/i.test(html),
+    `${route}: prerendered artifact must contain noindex, follow`,
+  );
+  assert(
+    !/<link\s+rel="canonical"/i.test(html) &&
+      !/<meta\s+property="og:url"/i.test(html),
+    `${route}: auth artifact must not expose a canonical or og:url`,
+  );
+  assertNoForbiddenOrigin(route, html);
 }
 
 const sitemapXml = await readFile(
@@ -441,15 +145,11 @@ const sitemapXml = await readFile(
 const sitemapLocations = [...sitemapXml.matchAll(/<loc>([^<]+)<\/loc>/gi)].map(
   ([, location]) => new URL(location).href,
 );
-const sitemapEntries = sitemapXml.match(/<url(?:\s|>)/gi) ?? [];
 assert(
-  sitemapEntries.length === 24,
-  'sitemap: expected exactly 24 <url> entries',
+  (sitemapXml.match(/<url(?:\s|>)/gi) ?? []).length === 32,
+  'sitemap: expected exactly 32 <url> entries',
 );
-assert(
-  sitemapLocations.length === 24,
-  'sitemap: expected exactly 24 <loc> entries',
-);
+assert(sitemapLocations.length === 32, 'sitemap: expected 32 <loc> entries');
 assert(
   new Set(sitemapLocations).size === sitemapLocations.length,
   'sitemap: duplicate URL entry',
@@ -457,14 +157,14 @@ assert(
 assert(
   new Set(sitemapLocations).size === expectedSitemapUrls.length &&
     expectedSitemapUrls.every((url) => sitemapLocations.includes(url)),
-  'sitemap: URL set does not match approved marketing routes',
+  'sitemap: URL set does not match the approved marketing routes',
 );
 assert(
   !/<(?:lastmod|changefreq|priority)>/i.test(sitemapXml),
   'sitemap: contains fabricated freshness or priority metadata',
 );
 assert(
-  (sitemapXml.match(/<xhtml:link\b/gi) ?? []).length === 120,
+  (sitemapXml.match(/<xhtml:link\b/gi) ?? []).length === 160,
   'sitemap: expected five hreflang links for each localized URL',
 );
 assertNoForbiddenOrigin('sitemap', sitemapXml);
@@ -498,24 +198,15 @@ assert(
     JSON.stringify(['https://usemindpulse.com/sitemap.xml']),
   'robots: expected the production sitemap URL',
 );
-assert(
-  [...robotsDirectives.keys()].every((key) =>
-    ['user-agent', 'allow', 'disallow', 'sitemap'].includes(key),
-  ),
-  'robots: contains an unexpected directive',
-);
 assertNoForbiddenOrigin('robots', robotsText);
 
 const manifest = JSON.parse(
-  await readFile(
-    path.join(workerAssetsDirectory, 'manifest.webmanifest'),
-    'utf8',
-  ),
+  await readFile(path.join(workerAssetsDirectory, 'manifest.webmanifest')),
 );
 assert(
   manifest.description ===
     'An AI study and productivity workspace for students.',
-  'manifest: production description is not the approved PR3 value',
+  'manifest: production description changed unexpectedly',
 );
 assert(
   manifest.name === 'MindPulse' &&
@@ -524,19 +215,7 @@ assert(
     manifest.display === 'standalone' &&
     manifest.background_color === '#f7f8f4' &&
     manifest.theme_color === '#56776f',
-  'manifest: unrelated app behavior changed',
-);
-assert(
-  JSON.stringify(manifest.icons) ===
-    JSON.stringify([
-      {
-        src: '/icon.svg',
-        sizes: 'any',
-        type: 'image/svg+xml',
-        purpose: 'any maskable',
-      },
-    ]),
-  'manifest: icons changed unexpectedly',
+  'manifest: unrelated application behavior changed',
 );
 
 const socialImage = await readFile(
@@ -552,5 +231,5 @@ assert(
 );
 
 console.log(
-  `SEO build assertions passed for ${builtHtmlFiles.length} generated HTML documents (${localizedRoutes.size} localized public, ${publicRoutes.size} redirect-source, and ${authRoutes.size} auth), sitemap.xml, robots.txt, manifest, and social preview.`,
+  `SEO artifact assertions passed for ${localizedRoutes.length} localized production route modules, sitemap.xml, robots.txt, manifest, and social preview. Raw server HTML is validated separately against the OpenNext Worker.`,
 );

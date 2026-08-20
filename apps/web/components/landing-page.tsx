@@ -20,6 +20,7 @@ import { useMemo } from 'react';
 import { FeedbackModal } from '@/components/mindpulse/feedback-modal';
 import { SiteFooter } from '@/components/mindpulse/site-footer';
 import { LANDING_TITLES } from '@/lib/marketing-seo';
+import { acquisitionLinksCopyFor } from '@/lib/mindpulse/acquisition-links-i18n';
 import { landingCopyFor } from '@/lib/mindpulse/marketing-i18n';
 import { useRouteLanguage } from '@/lib/mindpulse/use-route-language';
 import { useLocalizedMetadata } from '@/lib/mindpulse/use-localized-metadata';
@@ -48,6 +49,10 @@ export function LandingPage({
 } = {}) {
   const [language, setLanguage] = useRouteLanguage(initialLanguage);
   const copy = useMemo(() => landingCopyFor(language), [language]);
+  const acquisitionLinks = useMemo(
+    () => acquisitionLinksCopyFor(language),
+    [language],
+  );
 
   useLocalizedMetadata(LANDING_TITLES[language], copy.heroSubtitle);
 
@@ -224,6 +229,54 @@ export function LandingPage({
           </div>
         </section>
 
+        <section className="px-5 pb-20 sm:px-8">
+          <div className="mx-auto max-w-7xl">
+            <p className="text-xs font-bold uppercase tracking-[.2em] text-sage">
+              {acquisitionLinks.eyebrow}
+            </p>
+            <h2 className="mt-3 max-w-3xl text-4xl font-semibold sm:text-5xl">
+              {acquisitionLinks.title}
+            </h2>
+            <div className="mt-8 grid gap-4 md:grid-cols-2">
+              <Link
+                href={localizedMarketingPath(language, '/ai-study-planner')}
+                className="rounded-mp bg-surface p-6 shadow-soft"
+              >
+                <CalendarDays className="text-sage" aria-hidden="true" />
+                <h3 className="mt-5 text-2xl font-semibold">
+                  {acquisitionLinks.plannerTitle}
+                </h3>
+                <p className="mt-3 leading-8 text-muted">
+                  {acquisitionLinks.plannerDescription}
+                </p>
+                <span className="mt-5 inline-flex items-center gap-2 font-semibold text-sage">
+                  {acquisitionLinks.readLabel}{' '}
+                  <ArrowRight aria-hidden="true" size={16} />
+                </span>
+              </Link>
+              <Link
+                href={localizedMarketingPath(
+                  language,
+                  '/catch-up-on-schoolwork',
+                )}
+                className="rounded-mp bg-surface p-6 shadow-soft"
+              >
+                <LifeBuoy className="text-sage" aria-hidden="true" />
+                <h3 className="mt-5 text-2xl font-semibold">
+                  {acquisitionLinks.recoveryTitle}
+                </h3>
+                <p className="mt-3 leading-8 text-muted">
+                  {acquisitionLinks.recoveryDescription}
+                </p>
+                <span className="mt-5 inline-flex items-center gap-2 font-semibold text-sage">
+                  {acquisitionLinks.readLabel}{' '}
+                  <ArrowRight aria-hidden="true" size={16} />
+                </span>
+              </Link>
+            </div>
+          </div>
+        </section>
+
         <section className="px-5 py-20 sm:px-8">
           <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[.9fr_1.1fr]">
             <div>
@@ -255,7 +308,7 @@ export function LandingPage({
               <h2 className="mt-4 text-2xl font-semibold">
                 {copy.privacyTitle}
               </h2>
-              <p className="mt-2 max-w-2xl leading-7 text-muted">
+              <p className="mt-2 max-w-2xl leading-7 text-ink">
                 {copy.privacyCopy}
               </p>
             </div>

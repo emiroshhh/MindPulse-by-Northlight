@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import {
+  DOCUMENT_LANGUAGE_HEADER,
+  marketingLocaleForPathname,
+} from '@/lib/seo';
 
 /**
  * Security headers for Worker-rendered responses (SSR pages and API routes).
@@ -42,7 +46,15 @@ export const SECURITY_HEADERS: Record<string, string> = {
 };
 
 export function middleware(request: NextRequest) {
-  const response = NextResponse.next();
+  const requestHeaders = new Headers(request.headers);
+  const documentLanguage = marketingLocaleForPathname(request.nextUrl.pathname);
+  if (documentLanguage) {
+    requestHeaders.set(DOCUMENT_LANGUAGE_HEADER, documentLanguage);
+  } else {
+    requestHeaders.delete(DOCUMENT_LANGUAGE_HEADER);
+  }
+
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
     response.headers.set(name, value);
   }

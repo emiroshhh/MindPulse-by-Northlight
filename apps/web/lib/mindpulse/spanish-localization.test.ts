@@ -9,6 +9,7 @@ import { LocalizedPublicPage } from '@/components/mindpulse/localized-public-pag
 import { authCopyFor } from './auth-i18n';
 import { chatCopyFor, copyFor, getToolsForLanguage } from './i18n';
 import { landingCopyFor } from './marketing-i18n';
+import { brandedMarketingTitle } from '../marketing-seo';
 import {
   LANGUAGE_KEY,
   LANGUAGE_CHANGE_EVENT,
@@ -145,14 +146,18 @@ describe('Spanish product localization', () => {
           expect(document.documentElement.lang).toBe(language);
           expect(container.firstElementChild).toHaveAttribute('lang', language);
           expect(container.querySelector('h1')).toHaveTextContent(copy.title);
-          expect(document.title).toBe(`${copy.metadataTitle} · MindPulse`);
+          expect(document.title).toBe(
+            brandedMarketingTitle(copy.metadataTitle),
+          );
           expect(
             document.querySelector('meta[name="description"]'),
           ).toHaveAttribute('content', copy.metadataDescription);
         });
       }
     }
-    expect(publicPageCopyFor('privacy', 'es').metadataTitle).toBe('Privacidad');
+    expect(publicPageCopyFor('privacy', 'es').metadataTitle).toBe(
+      'Datos estudiantiles, IA y privacidad',
+    );
     cleanup();
   });
 
@@ -183,7 +188,9 @@ describe('Spanish product localization', () => {
       path.resolve(process.cwd(), 'app/layout.tsx'),
       'utf8',
     );
-    expect(layout).toContain('<html lang="en">');
+    expect(layout).toContain('<html lang={documentLanguage}>');
+    expect(layout).toContain('DOCUMENT_LANGUAGE_HEADER');
+    expect(layout).toContain('await headers()');
     expect(layout).not.toContain('dangerouslySetInnerHTML');
     expect(layout).not.toContain('suppressHydrationWarning');
 

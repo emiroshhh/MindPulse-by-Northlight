@@ -3,7 +3,9 @@
 import { ArrowLeft, ArrowRight, Brain, Globe2, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useLayoutEffect, useMemo } from 'react';
+import { brandedMarketingTitle } from '@/lib/marketing-seo';
 import { applyDocumentLanguage } from '@/lib/mindpulse/local-store';
+import { acquisitionLinksCopyFor } from '@/lib/mindpulse/acquisition-links-i18n';
 import {
   publicPageCopyFor,
   type PublicPageId,
@@ -42,7 +44,7 @@ export function LocalizedPublicPage({
   );
 
   useLocalizedMetadata(
-    `${copy.metadataTitle} · MindPulse`,
+    brandedMarketingTitle(copy.metadataTitle),
     copy.metadataDescription,
   );
 
@@ -51,28 +53,30 @@ export function LocalizedPublicPage({
     { back: string; open: string; language: string }
   > = {
     en: {
-      back: 'Back to dashboard',
+      back: 'Back to MindPulse overview',
       open: 'Open the app',
       language: 'Language',
     },
     ru: {
-      back: 'Вернуться на панель',
+      back: 'Вернуться к обзору MindPulse',
       open: 'Открыть приложение',
       language: 'Язык',
     },
     kk: {
-      back: 'Панельге оралу',
+      back: 'MindPulse шолу бетіне оралу',
       open: 'Қолданбаны ашу',
       language: 'Тіл',
     },
     es: {
-      back: 'Volver al panel',
+      back: 'Volver a la descripción de MindPulse',
       open: 'Abrir la aplicación',
       language: 'Idioma',
     },
   };
   const label = labels[language];
+  const acquisitionLinks = acquisitionLinksCopyFor(language);
   const documentLanguage = language;
+  const homeHref = localizedMarketingPath(language, '/');
   const secondaryPath = SECONDARY_HREF[page];
   const secondaryHref =
     secondaryPath === '/study'
@@ -95,7 +99,7 @@ export function LocalizedPublicPage({
       <header className="border-b border-ink/5 bg-canvas/85 backdrop-blur-xl">
         <nav className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-8">
           <Link
-            href="/app"
+            href={homeHref}
             className="flex min-h-11 min-w-11 items-center justify-center gap-3 sm:justify-start"
           >
             <span className="grid h-10 w-10 place-items-center rounded-2xl bg-ink text-canvas">
@@ -145,7 +149,7 @@ export function LocalizedPublicPage({
         className="mx-auto max-w-5xl min-w-0 px-4 py-10 sm:px-8 sm:py-12"
       >
         <Link
-          href="/app"
+          href={homeHref}
           className="inline-flex min-h-11 items-center gap-2 rounded-full bg-surface px-5 text-sm font-semibold shadow-soft"
         >
           <ArrowLeft size={16} /> {label.back}
@@ -190,6 +194,46 @@ export function LocalizedPublicPage({
                 )}
               </article>
             ))}
+          </section>
+
+          <section className="mt-6 rounded-[2rem] bg-sage-soft p-6 shadow-soft sm:p-8">
+            <p className="text-xs font-bold uppercase tracking-[.14em] text-sage">
+              {acquisitionLinks.eyebrow}
+            </p>
+            <h2 className="mt-3 text-3xl font-semibold">
+              {acquisitionLinks.title}
+            </h2>
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              <Link
+                href={localizedMarketingPath(language, '/ai-study-planner')}
+                className="rounded-mp bg-surface p-5"
+              >
+                <b className="text-lg">{acquisitionLinks.plannerTitle}</b>
+                <p className="mt-2 leading-7 text-muted">
+                  {acquisitionLinks.plannerDescription}
+                </p>
+                <span className="mt-4 inline-flex items-center gap-2 font-semibold text-sage">
+                  {acquisitionLinks.readLabel}{' '}
+                  <ArrowRight aria-hidden="true" size={16} />
+                </span>
+              </Link>
+              <Link
+                href={localizedMarketingPath(
+                  language,
+                  '/catch-up-on-schoolwork',
+                )}
+                className="rounded-mp bg-surface p-5"
+              >
+                <b className="text-lg">{acquisitionLinks.recoveryTitle}</b>
+                <p className="mt-2 leading-7 text-muted">
+                  {acquisitionLinks.recoveryDescription}
+                </p>
+                <span className="mt-4 inline-flex items-center gap-2 font-semibold text-sage">
+                  {acquisitionLinks.readLabel}{' '}
+                  <ArrowRight aria-hidden="true" size={16} />
+                </span>
+              </Link>
+            </div>
           </section>
 
           <section className="mt-6 min-w-0 rounded-[2rem] bg-ink p-6 text-canvas shadow-soft sm:p-8">

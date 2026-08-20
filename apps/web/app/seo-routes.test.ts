@@ -5,7 +5,16 @@ import robots from './robots';
 import sitemap from './sitemap';
 
 const locales = ['en', 'ru', 'kk', 'es'] as const;
-const paths = ['', '/why', '/beta', '/case-study', '/impact', '/privacy'];
+const paths = [
+  '',
+  '/why',
+  '/beta',
+  '/case-study',
+  '/impact',
+  '/privacy',
+  '/ai-study-planner',
+  '/catch-up-on-schoolwork',
+];
 const expectedUrls = paths.flatMap((path) =>
   locales.map((locale) => `https://usemindpulse.com/${locale}${path}`),
 );
@@ -16,11 +25,11 @@ function values(value: string | string[] | undefined): string[] {
 }
 
 describe('SEO discovery routes', () => {
-  it('publishes all 24 localized marketing URLs with reciprocal alternates', async () => {
+  it('publishes all 32 localized marketing URLs with reciprocal alternates', async () => {
     const entries = await sitemap();
     const urls = entries.map(({ url }) => new URL(url).href);
 
-    expect(entries).toHaveLength(24);
+    expect(entries).toHaveLength(32);
     expect(new Set(urls)).toEqual(new Set(expectedUrls));
     expect(new Set(urls)).toHaveLength(entries.length);
 
@@ -77,6 +86,16 @@ describe('SEO discovery routes', () => {
       },
       { source: '/impact', destination: '/en/impact', permanent: true },
       { source: '/privacy', destination: '/en/privacy', permanent: true },
+      {
+        source: '/ai-study-planner',
+        destination: '/en/ai-study-planner',
+        permanent: true,
+      },
+      {
+        source: '/catch-up-on-schoolwork',
+        destination: '/en/catch-up-on-schoolwork',
+        permanent: true,
+      },
     ]);
   });
 });

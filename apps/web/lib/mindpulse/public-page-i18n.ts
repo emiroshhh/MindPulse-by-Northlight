@@ -29,11 +29,11 @@ const ENGLISH_AND_SPANISH_PUBLIC_PAGES: Record<
 > = {
   privacy: {
     en: {
-      metadataTitle: 'Privacy',
+      metadataTitle: 'Student Data, AI Messages & Privacy',
       metadataDescription:
-        'Plain-language privacy information for the MindPulse student beta.',
+        'How MindPulse stores guest and account data, sends messages for AI processing, measures aggregate beta use, and supports permanent account deletion.',
       eyebrow: 'Plain-language privacy',
-      title: 'Privacy for the MindPulse beta',
+      title: 'How MindPulse handles student data and AI messages.',
       intro:
         'MindPulse is an AI student-support beta designed to help with studying, planning, reflection, goals, and consistency — not to collect sensitive personal information.',
       sections: [
@@ -85,11 +85,12 @@ const ENGLISH_AND_SPANISH_PUBLIC_PAGES: Record<
       ctaSecondary: 'Try Study Mode',
     },
     es: {
-      metadataTitle: 'Privacidad',
+      metadataTitle: 'Datos estudiantiles, IA y privacidad',
       metadataDescription:
-        'Información clara sobre la privacidad de la beta de MindPulse para estudiantes.',
+        'Cómo MindPulse guarda datos de invitados y cuentas, procesa mensajes con IA, mide el uso agregado de la beta y permite eliminar la cuenta.',
       eyebrow: 'Privacidad en lenguaje claro',
-      title: 'Privacidad en la beta de MindPulse',
+      title:
+        'Cómo trata MindPulse los datos estudiantiles y los mensajes de IA.',
       intro:
         'MindPulse es una beta de apoyo estudiantil con IA. Está diseñada para ayudar a estudiar, planificar, reflexionar, definir metas y ser constante, no para recopilar información personal sensible.',
       sections: [
@@ -143,13 +144,13 @@ const ENGLISH_AND_SPANISH_PUBLIC_PAGES: Record<
   },
   why: {
     en: {
-      metadataTitle: 'Why I built this',
+      metadataTitle: 'Why MindPulse Was Built for Overwhelmed Students',
       metadataDescription:
-        'The student problem and product principles behind MindPulse.',
+        'Why MindPulse focuses on one manageable next step when schoolwork, deadlines, missed days, and guilt make it difficult to start.',
       eyebrow: 'The project story',
-      title: 'I built MindPulse for the moment before progress starts.',
+      title: 'A calmer way to start when schoolwork feels overwhelming.',
       intro:
-        'Students often know they need to study, plan, or reflect, but the first step can feel like the hardest part. MindPulse is meant to make that step smaller, clearer, and less judgmental.',
+        'Students often know they need to study, plan, or catch up, but a pile of deadlines and missed work can hide the first useful action. MindPulse is built to make that action smaller, clearer, and free from judgment.',
       sections: [
         {
           title: 'The problem',
@@ -186,14 +187,13 @@ const ENGLISH_AND_SPANISH_PUBLIC_PAGES: Record<
       ctaSecondary: 'Read the case study',
     },
     es: {
-      metadataTitle: 'Por qué creé esto',
+      metadataTitle: 'Por qué MindPulse ayuda cuando estudiar abruma',
       metadataDescription:
-        'El problema estudiantil y los principios de producto detrás de MindPulse.',
+        'Por qué MindPulse se centra en una siguiente acción manejable cuando las tareas, las fechas, las faltas y la culpa hacen difícil empezar.',
       eyebrow: 'La historia del proyecto',
-      title:
-        'Creé MindPulse para ese momento justo antes de empezar a avanzar.',
+      title: 'Una forma más tranquila de empezar cuando estudiar te abruma.',
       intro:
-        'Los estudiantes suelen saber que necesitan estudiar, planificar o reflexionar, pero el primer paso puede parecer el más difícil. MindPulse busca hacerlo más pequeño, claro y libre de juicios.',
+        'A menudo sabes que necesitas estudiar, planificar o ponerte al día, pero una pila de entregas y trabajo atrasado puede ocultar la primera acción útil. MindPulse busca que esa acción sea más pequeña, clara y libre de juicios.',
       sections: [
         {
           title: 'El problema',
@@ -232,11 +232,11 @@ const ENGLISH_AND_SPANISH_PUBLIC_PAGES: Record<
   },
   beta: {
     en: {
-      metadataTitle: 'Beta testing',
+      metadataTitle: 'Student Beta: Test MindPulse on a Real Study Task',
       metadataDescription:
-        'A practical guide to testing the free MindPulse student beta.',
+        'Test the free MindPulse student beta on one real task, deadline, study plan, habit, goal, or backlog, then share privacy-conscious feedback.',
       eyebrow: 'Student beta',
-      title: 'Try one tool on one real task.',
+      title: 'Test MindPulse on one real study task.',
       intro:
         'A useful beta test takes only a few minutes. Honest feedback about what helped, felt unclear, or was missing matters more than trying every feature.',
       sections: [
@@ -274,11 +274,11 @@ const ENGLISH_AND_SPANISH_PUBLIC_PAGES: Record<
       ctaSecondary: 'Read privacy details',
     },
     es: {
-      metadataTitle: 'Prueba beta',
+      metadataTitle: 'Beta para estudiantes: prueba una tarea real',
       metadataDescription:
-        'Guía práctica para probar la beta gratuita de MindPulse para estudiantes.',
+        'Prueba la beta gratuita de MindPulse con una tarea, entrega, plan, hábito, meta o atraso real y comparte comentarios que respetan tu privacidad.',
       eyebrow: 'Beta para estudiantes',
-      title: 'Prueba una herramienta con una tarea real.',
+      title: 'Prueba MindPulse con una tarea de estudio real.',
       intro:
         'Una prueba útil solo toma unos minutos. Los comentarios sinceros sobre qué ayudó, no quedó claro o faltó importan más que probar cada función.',
       sections: [
@@ -318,11 +318,12 @@ const ENGLISH_AND_SPANISH_PUBLIC_PAGES: Record<
   },
   'case-study': {
     en: {
-      metadataTitle: 'Case study',
+      metadataTitle: 'AI Student Support Case Study: Safety, Privacy & Design',
       metadataDescription:
-        'MindPulse product, safety, privacy, and technical architecture case study.',
+        'How MindPulse turns student overload into a next step through focused AI tools, Recovery Mode, safety screening, private storage, and honest measurement.',
       eyebrow: 'Product case study',
-      title: 'A guest-first AI workspace built for real student friction.',
+      title:
+        'How MindPulse turns student overload into one realistic next step.',
       intro:
         'MindPulse combines focused AI tools, a small-action dashboard, safety screening, private accounts, and honest beta measurement in one accessible student product.',
       sections: [
@@ -390,12 +391,12 @@ const ENGLISH_AND_SPANISH_PUBLIC_PAGES: Record<
       ctaSecondary: 'See beta guide',
     },
     es: {
-      metadataTitle: 'Caso de estudio',
+      metadataTitle: 'Caso de apoyo estudiantil con IA: seguridad y diseño',
       metadataDescription:
-        'Caso de estudio sobre el producto, la seguridad, la privacidad y la arquitectura de MindPulse.',
+        'Cómo MindPulse convierte el agobio en un siguiente paso mediante herramientas de IA, Modo Recuperación, filtros de seguridad y almacenamiento privado.',
       eyebrow: 'Caso de estudio del producto',
       title:
-        'Un espacio de IA con acceso como invitado, creado para dificultades estudiantiles reales.',
+        'Cómo MindPulse convierte el agobio académico en un siguiente paso realista.',
       intro:
         'MindPulse combina herramientas de IA específicas, un panel centrado en una acción pequeña, filtros de seguridad, cuentas privadas y medición honesta de la beta.',
       sections: [
@@ -465,11 +466,11 @@ const ENGLISH_AND_SPANISH_PUBLIC_PAGES: Record<
   },
   impact: {
     en: {
-      metadataTitle: 'Impact',
+      metadataTitle: 'Beta Impact: What MindPulse Measures and Does Not Claim',
       metadataDescription:
-        'Honest beta goals and impact measurement for MindPulse.',
+        'What MindPulse counts during the beta, which outcomes remain unproven, and how anonymous aggregate signals and feedback guide product decisions.',
       eyebrow: 'Impact, without inflated claims',
-      title: 'Measure whether students actually move forward.',
+      title: 'What MindPulse measures—and what it does not claim.',
       intro:
         'MindPulse is an early beta. It does not claim outcomes it has not measured. The current goal is to learn whether the product helps students find a clearer, more manageable next step.',
       sections: [
@@ -514,11 +515,11 @@ const ENGLISH_AND_SPANISH_PUBLIC_PAGES: Record<
       ctaSecondary: 'How to beta test',
     },
     es: {
-      metadataTitle: 'Impacto',
+      metadataTitle: 'Impacto de la beta: qué mide MindPulse y qué no afirma',
       metadataDescription:
-        'Metas honestas de la beta y medición del impacto de MindPulse.',
+        'Qué cuenta MindPulse durante la beta, qué resultados aún no están demostrados y cómo los totales anónimos y los comentarios orientan el producto.',
       eyebrow: 'Impacto sin afirmaciones infladas',
-      title: 'Medir si los estudiantes realmente logran avanzar.',
+      title: 'Qué mide MindPulse y qué resultados todavía no afirma.',
       intro:
         'MindPulse es una beta temprana. No afirma resultados que aún no ha medido. La meta actual es saber si ayuda a encontrar un siguiente paso más claro y manejable.',
       sections: [
