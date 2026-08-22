@@ -5,7 +5,10 @@ import { guestUsageKey } from './usage';
 describe('guestUsageKey', () => {
   it('uses cf-connecting-ip if present', async () => {
     const request = new Request('https://mindpulse.test', {
-      headers: { 'cf-connecting-ip': '203.0.113.1', 'user-agent': 'test-agent' },
+      headers: {
+        'cf-connecting-ip': '203.0.113.1',
+        'user-agent': 'test-agent',
+      },
     });
     const key = await guestUsageKey(request);
     expect(key).toBeTypeOf('string');

@@ -148,9 +148,7 @@ export async function reserveDailyUsage({
  * Not an identity system — documented as such in the README.
  */
 export async function guestUsageKey(request: Request) {
-  const ip =
-    request.headers.get('cf-connecting-ip') ??
-    'unknown-ip';
+  const ip = request.headers.get('cf-connecting-ip') ?? 'unknown-ip';
   const userAgent = request.headers.get('user-agent') ?? 'unknown-agent';
   const bytes = new TextEncoder().encode(`${ip}|${userAgent}`);
   const digest = await crypto.subtle.digest('SHA-256', bytes);

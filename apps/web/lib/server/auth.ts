@@ -603,10 +603,7 @@ function readCookieValue(header: string, name: string) {
 
 export async function clientIp() {
   const h = await headers();
-  return (
-    h.get('cf-connecting-ip') ??
-    'unknown'
-  );
+  return h.get('cf-connecting-ip') ?? 'unknown';
 }
 
 export function secureId(prefix: string) {
