@@ -209,20 +209,20 @@ describe('clearSessionCookieHeaders', () => {
 describe('clientIp', () => {
   it('returns cf-connecting-ip if present', async () => {
     vi.mocked(headers).mockResolvedValue(
-      new Headers({ 'cf-connecting-ip': '203.0.113.1' }) as any,
+      new Headers({ 'cf-connecting-ip': '203.0.113.1' }) as unknown as ReturnType<typeof headers>,
     );
     expect(await clientIp()).toBe('203.0.113.1');
   });
 
   it('returns unknown if cf-connecting-ip is missing', async () => {
     vi.mocked(headers).mockResolvedValue(
-      new Headers({ 'x-forwarded-for': '203.0.113.2' }) as any,
+      new Headers({ 'x-forwarded-for': '203.0.113.2' }) as unknown as ReturnType<typeof headers>,
     );
     expect(await clientIp()).toBe('unknown');
   });
 
   it('returns unknown if headers are empty', async () => {
-    vi.mocked(headers).mockResolvedValue(new Headers() as any);
+    vi.mocked(headers).mockResolvedValue(new Headers() as unknown as ReturnType<typeof headers>);
     expect(await clientIp()).toBe('unknown');
   });
 });
