@@ -7,6 +7,7 @@ import {
   createSession,
   debugSessionResolution,
   getUserBySessionToken,
+  clientIp,
   logoutSuccessHtmlResponse,
   readSessionTokenFromRequest,
   readTokenFromRequest,
@@ -15,6 +16,15 @@ import {
   type AuthUser,
   type D1DatabaseLike,
 } from './auth';
+
+import { vi } from 'vitest';
+
+vi.mock('next/headers', () => ({
+  headers: vi.fn(),
+  cookies: vi.fn(),
+}));
+
+import { headers } from 'next/headers';
 
 function makeSessionDb(options: {
   user?: AuthUser;
@@ -193,6 +203,27 @@ describe('clearSessionCookieHeaders', () => {
     expect(headers[0]).toContain('__Host-mindpulse_session=');
     expect(headers[1]).toContain('mindpulse_session=');
     for (const header of headers) expect(header).toContain('Max-Age=0');
+  });
+});
+
+describe('clientIp', () => {
+  it('returns cf-connecting-ip if present', async () => {
+    vi.mocked(headers).mockResolvedValue(
+      new Headers({ 'cf-connecting-ip': '203.0.113.1' }) as any,
+    );
+    expect(await clientIp()).toBe('203.0.113.1');
+  });
+
+  it('returns unknown if cf-connecting-ip is missing', async () => {
+    vi.mocked(headers).mockResolvedValue(
+      new Headers({ 'x-forwarded-for': '203.0.113.2' }) as any,
+    );
+    expect(await clientIp()).toBe('unknown');
+  });
+
+  it('returns unknown if headers are empty', async () => {
+    vi.mocked(headers).mockResolvedValue(new Headers() as any);
+    expect(await clientIp()).toBe('unknown');
   });
 });
 

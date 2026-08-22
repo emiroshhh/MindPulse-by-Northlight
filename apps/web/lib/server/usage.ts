@@ -150,7 +150,6 @@ export async function reserveDailyUsage({
 export async function guestUsageKey(request: Request) {
   const ip =
     request.headers.get('cf-connecting-ip') ??
-    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
     'unknown-ip';
   const userAgent = request.headers.get('user-agent') ?? 'unknown-agent';
   const bytes = new TextEncoder().encode(`${ip}|${userAgent}`);
