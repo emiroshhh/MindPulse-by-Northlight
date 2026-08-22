@@ -44,7 +44,6 @@ export async function generateMindPulseReply({
 }: GenerateReplyOptions): Promise<GenerateReplyResult> {
   const env = await getAiRuntimeEnv();
   const provider = selectAiProvider(env.AI_PROVIDER);
-  console.info('[MindPulse] AI provider selected:', provider);
 
   if (provider === 'deepseek') {
     return generateDeepSeekReply({ env, systemPrompt, interactionInput });
@@ -89,7 +88,6 @@ async function generateGeminiReply({
 }: GenerateReplyOptions & { env: AiRuntimeEnv }): Promise<GenerateReplyResult> {
   const key = env.GEMINI_API_KEY;
   const model = env.GEMINI_MODEL ?? DEFAULT_GEMINI_MODEL;
-  console.info('[MindPulse] GEMINI_API_KEY configured:', Boolean(key));
   if (!key) return { ok: false, status: 503, body: { error: 'missing_key' } };
 
   const controller = new AbortController();
@@ -111,11 +109,7 @@ async function generateGeminiReply({
         },
       }),
     });
-    console.info('[MindPulse] Gemini response status:', response.status);
     if (!response.ok) {
-      console.error('[MindPulse] Gemini request failed:', {
-        status: response.status,
-      });
       return {
         ok: false,
         status: response.status === 429 ? 429 : 502,
@@ -130,10 +124,7 @@ async function generateGeminiReply({
         body: { error: 'gemini_empty_response' },
       };
     return { ok: true, reply };
-  } catch (error) {
-    console.error('[MindPulse] Gemini unavailable:', {
-      name: error instanceof Error ? error.name : 'UnknownError',
-    });
+  } catch {
     return { ok: false, status: 502, body: { error: 'gemini_unavailable' } };
   } finally {
     clearTimeout(timeout);
@@ -147,7 +138,6 @@ async function generateDeepSeekReply({
 }: GenerateReplyOptions & { env: AiRuntimeEnv }): Promise<GenerateReplyResult> {
   const key = env.DEEPSEEK_API_KEY;
   const model = env.DEEPSEEK_MODEL ?? DEFAULT_DEEPSEEK_MODEL;
-  console.info('[MindPulse] DEEPSEEK_API_KEY configured:', Boolean(key));
   if (!key) return { ok: false, status: 503, body: { error: 'missing_key' } };
 
   const controller = new AbortController();
@@ -171,11 +161,7 @@ async function generateDeepSeekReply({
         stream: false,
       }),
     });
-    console.info('[MindPulse] DeepSeek response status:', response.status);
     if (!response.ok) {
-      console.error('[MindPulse] DeepSeek request failed:', {
-        status: response.status,
-      });
       return {
         ok: false,
         status: 502,
@@ -190,10 +176,7 @@ async function generateDeepSeekReply({
         body: { error: 'deepseek_empty_response' },
       };
     return { ok: true, reply };
-  } catch (error) {
-    console.error('[MindPulse] DeepSeek unavailable:', {
-      name: error instanceof Error ? error.name : 'UnknownError',
-    });
+  } catch {
     return { ok: false, status: 502, body: { error: 'deepseek_unavailable' } };
   } finally {
     clearTimeout(timeout);
