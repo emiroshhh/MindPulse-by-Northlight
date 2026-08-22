@@ -44,7 +44,6 @@ export async function generateMindPulseReply({
 }: GenerateReplyOptions): Promise<GenerateReplyResult> {
   const env = await getAiRuntimeEnv();
   const provider = selectAiProvider(env.AI_PROVIDER);
-  console.info('[MindPulse] AI provider selected:', provider);
 
   if (provider === 'deepseek') {
     return generateDeepSeekReply({ env, systemPrompt, interactionInput });
@@ -89,7 +88,6 @@ async function generateGeminiReply({
 }: GenerateReplyOptions & { env: AiRuntimeEnv }): Promise<GenerateReplyResult> {
   const key = env.GEMINI_API_KEY;
   const model = env.GEMINI_MODEL ?? DEFAULT_GEMINI_MODEL;
-  console.info('[MindPulse] GEMINI_API_KEY configured:', Boolean(key));
   if (!key) return { ok: false, status: 503, body: { error: 'missing_key' } };
 
   const controller = new AbortController();
@@ -111,7 +109,6 @@ async function generateGeminiReply({
         },
       }),
     });
-    console.info('[MindPulse] Gemini response status:', response.status);
     if (!response.ok) {
       console.error('[MindPulse] Gemini request failed:', {
         status: response.status,
@@ -147,7 +144,6 @@ async function generateDeepSeekReply({
 }: GenerateReplyOptions & { env: AiRuntimeEnv }): Promise<GenerateReplyResult> {
   const key = env.DEEPSEEK_API_KEY;
   const model = env.DEEPSEEK_MODEL ?? DEFAULT_DEEPSEEK_MODEL;
-  console.info('[MindPulse] DEEPSEEK_API_KEY configured:', Boolean(key));
   if (!key) return { ok: false, status: 503, body: { error: 'missing_key' } };
 
   const controller = new AbortController();
@@ -171,7 +167,6 @@ async function generateDeepSeekReply({
         stream: false,
       }),
     });
-    console.info('[MindPulse] DeepSeek response status:', response.status);
     if (!response.ok) {
       console.error('[MindPulse] DeepSeek request failed:', {
         status: response.status,
