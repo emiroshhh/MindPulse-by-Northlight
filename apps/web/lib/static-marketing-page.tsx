@@ -1,12 +1,44 @@
 import { LandingPage } from '@/components/landing-page';
 import { LocalizedAcquisitionPage } from '@/components/mindpulse/localized-acquisition-page';
 import { LocalizedPublicPage } from '@/components/mindpulse/localized-public-page';
-import type { AcquisitionPageId } from '@/lib/mindpulse/acquisition-page-i18n';
+import { JsonLd } from '@/components/mindpulse/json-ld';
+import {
+  organizationSchema,
+  softwareApplicationSchema,
+  websiteSchema,
+  breadcrumbSchema,
+} from '@/lib/mindpulse/structured-data';
+import {
+  acquisitionPageCopyFor,
+  type AcquisitionPageId,
+} from '@/lib/mindpulse/acquisition-page-i18n';
 import type { PublicPageId } from '@/lib/mindpulse/public-page-i18n';
-import type { MarketingLocale } from '@/lib/seo';
+import {
+  absoluteSiteUrl,
+  localizedMarketingPath,
+  type MarketingLocale,
+  type IndexableMarketingPath,
+} from '@/lib/seo';
+
+const ACQUISITION_PATH_MAP: Record<AcquisitionPageId, IndexableMarketingPath> =
+  {
+    'ai-study-planner': '/ai-study-planner',
+    'catch-up-on-schoolwork': '/catch-up-on-schoolwork',
+  };
 
 export function StaticLandingPage({ locale }: { locale: MarketingLocale }) {
-  return <LandingPage initialLanguage={locale} />;
+  return (
+    <>
+      <JsonLd
+        data={[
+          organizationSchema(),
+          websiteSchema(),
+          softwareApplicationSchema(),
+        ]}
+      />
+      <LandingPage initialLanguage={locale} />
+    </>
+  );
 }
 
 export function StaticPublicPage({
@@ -26,5 +58,23 @@ export function StaticAcquisitionPage({
   locale: MarketingLocale;
   page: AcquisitionPageId;
 }) {
-  return <LocalizedAcquisitionPage page={page} locale={locale} />;
+  const copy = acquisitionPageCopyFor(page, locale);
+  const marketingPath = ACQUISITION_PATH_MAP[page];
+
+  const items = [
+    {
+      name: 'MindPulse',
+      url: absoluteSiteUrl(localizedMarketingPath(locale, '/')),
+    },
+    {
+      name: copy.title,
+      url: absoluteSiteUrl(localizedMarketingPath(locale, marketingPath)),
+    },
+  ];
+  return (
+    <>
+      <JsonLd data={breadcrumbSchema(items)} />
+      <LocalizedAcquisitionPage page={page} locale={locale} />
+    </>
+  );
 }
