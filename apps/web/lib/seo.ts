@@ -143,5 +143,11 @@ export function createPublicPageMetadata({
         },
       ],
     },
+    robots: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   };
 }
