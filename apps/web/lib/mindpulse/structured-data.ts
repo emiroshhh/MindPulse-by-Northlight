@@ -1,4 +1,4 @@
-import { absoluteSiteUrl, CANONICAL_ORIGIN, SUPPORTED_MARKETING_LOCALES } from '../seo';
+import { CANONICAL_ORIGIN, SUPPORTED_MARKETING_LOCALES } from '../seo';
 
 const ORG_ID = `${CANONICAL_ORIGIN}/#organization`;
 const WEBSITE_ID = `${CANONICAL_ORIGIN}/#website`;
@@ -28,7 +28,7 @@ export function websiteSchema() {
 
 export function softwareApplicationSchema() {
   // Note: We do not fabricate aggregateRating or reviews. MindPulse currently lacks
-  // legitimate qualifying review data. This schema is strictly for semantic/entity 
+  // legitimate qualifying review data. This schema is strictly for semantic/entity
   // understanding and is not currently eligible for the Google Software App rich result.
   return {
     '@context': 'https://schema.org',
